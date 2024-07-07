@@ -352,7 +352,7 @@ def budgetary():
                 months = day_diff_value / 30
 
                 # Find out the total amount to be repaid
-                total_debt = original_debt_amount * (1 + (original_interest_rate * months / 100))
+                total_debt = round(original_debt_amount * (1 + (original_interest_rate * months / 100)), 2)
 
                 if currency != original_debt_currency:
                     flash(f'Original debt currency is in {original_debt_currency.upper()}!', 'alert-danger')
