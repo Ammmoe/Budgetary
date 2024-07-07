@@ -1,0 +1,272 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Daily Budgetary
+{% endblock %}
+
+{% block main %}
+
+    <form action="/budgetary" method="post" id="form">
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="input-group">
+                    <span class="input-group-text fw-bold">Date</span>
+                    <input class="form-control" name="date" id="date" placeholder="Date" type="date">
+                </div>
+            </div>
+
+            <div class="col-md-8 mb-4">
+                <div class="input-group">
+                    <span class="input-group-text fw-bold">Budgetary Type</span>
+                    <select name="budgetary-type" id="budgetary-type" class="form-select" onchange="displayForm(this.value)">
+                        <option selected disabled>Select budgetary type</option>
+                        <option value="income">Income</option>
+                        <option value="spending">Expense</option>
+                        <option value="investment">Investment</option>
+                        <option value="debt">Debt</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Income fields -->
+        <div class="" id="income" style="display:none;">
+            <div class="row">
+                <div class="col-md-6 mb-4">   
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">Income Type</span>
+                        <select name="income-type" id="income-type" class="form-select">
+                            <option selected disabled>Select income type</option>
+                            <option value="salary">Salary</option>
+                            <option value="bank-interest">Bank Interest</option>
+                            <option value="other-income">Other</option>
+                        </select>
+                    </div>
+                </div>
+    
+                <div class="col-md-6 mb-4">
+                    <input autofocus class="form-control" name="incomeOther" placeholder="For other income, please specify.." type="text">
+                </div> 
+            </div>
+        </div>
+
+        <!-- Spending fields -->
+        <div id="spending" style="display:none;">
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">Expense Type</span>
+                        <select name="spending-type" id="spending-type" class="form-select">
+                            <option selected disabled>Select expense type</option>
+                            <option value="food">Food</option>
+                            <option value="transportation">Transportation</option>
+                            <option value="clothing">Clothing</option>
+                            <option value="rent">Rent</option>
+                            <option value="other-spending">Other</option>
+                        </select> 
+                    </div>
+                </div>
+    
+                <div class="col-md-6 mb-4">
+                    <input autofocus class="form-control" name="spendingOther" placeholder="For other expense, please specify.." type="text">
+                </div>
+            </div>
+        </div>
+
+        <!-- Investment fields -->
+        <div id="investment" style="display:none;">
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">Investment Type</span>
+                        <select name="investment-type" id="investment-type" class="form-select" onchange="displayInvestment(this.value)">
+                            <option selected disabled>Select investment type</option>
+                            <option value="stock">Stock</option>
+                            <option value="cryptocurrency">Cryptocurrency</option>
+                            <option value="real-estate">Real Estate</option>
+                            <option value="other-investment">Other</option>
+                        </select> 
+                    </div>
+                </div>
+    
+                <div class="col-md-6 mb-4">
+                    <input autofocus class="form-control" name="investmentOther" placeholder="For other investment, please specify.." type="text">
+                </div>
+            </div>
+    
+            <!-- Choose specific investment -->
+            <div class="row" id="stock" style="display:none;">
+                <div class="col-md-12 mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">Stock Symbol</span>
+                        <input class="form-control" name="stockSymbol" placeholder="Input stock symbol.." type="text">
+                    </div>
+                </div>
+            </div>
+    
+            <div class="row" id="cryptocurrency" style="display:none;">
+                <div class="col-md-12 mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">Crypto Symbol</span>
+                        <input class="form-control" name="cryptoSymbol" placeholder="Input crypto symbol.." type="text">
+                    </div>
+                </div>
+            </div>
+            
+            <div id="real-estate" style="display:none;">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="input-group">
+                            <span class="input-group-text fw-bold">Real Estate</span>
+                            <select name="realEstate" id="realEstate" class="form-select">
+                                <option selected disabled>Select real estate</option>
+                                <option value="residential">Residential</option>
+                                <option value="land">Land</option>
+                                <option value="industrial">Industrial</option>
+                                <option value="otherRealEstate">Other</option>
+                            </select>
+                        </div>
+                    </div>
+        
+                    <!-- Specify if other real estate is chosen -->
+                    <div class="col-md-6 mb-4">
+                        <input class="form-control" name="realEstateOther" placeholder="For other real estate, please specify.." type="text">
+                    </div>
+                </div>
+            </div>
+    
+            <!-- Check if user buys or sells investment -->
+            <div id="radio" style="display:none;">
+                <div class="row justify-content-center align-items-center">
+                    <div class="col-6 mb-4">
+                        <div class="form-check form-check-inline">
+                            <input type="radio" class="form-check-input" value="buy" id="buy" name="buyOrSell">
+                            <label class="form-check-label fw-bold" for="buy">Buy</label>
+                        </div>
+                        
+                        <div class="form-check form-check-inline">
+                            <input type="radio" class="form-check-input" value="sell" id="sell" name="buyOrSell">
+                            <label class="form-check-label fw-bold" for="sell">Sell</label>
+                        </div>
+                    </div>
+        
+                    <div class="col-6 mb-4">
+                        <div class="input-group">
+                            <!-- Specify the amount of items -->
+                            <label for="quantityOfItems" class="input-group-text fw-bold">Quantity</label>
+                            <input class="form-control" name="quantityOfItems" id="quantityOfItems" placeholder="Quantity of Shares, Crypto, or Real Estate.." type="number" step="0.000001">
+                        </div>
+                    </div>
+                </div>
+            </div>    
+        </div>
+
+        <!-- debt fields -->
+        <div style="display:none;" id="debt">
+            <div class="row">
+                <!-- Select debt category -->
+                <div class="col-md-4 mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">Debt Category</span>
+                        <select name="debt-category" id="debt-category" class="form-select" onchange="enableInterestRate(this.value)">
+                            <option selected disabled>Select debt category</option>
+                            <option value="borrow">Borrow</option>
+                            <option value="lend">Lend</option>
+                            <option value="repay">Repay</option>
+                        </select>         
+                    </div>
+                </div>
+
+                <!-- Specify debtors/creditors -->
+                <div id="debtor" class="col-md-4 mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">Debtor or Creditor</span>
+                        <input autofocus class="form-control" name="debtor" placeholder="Input debtor or creditor" type="text">
+                    </div>
+                </div>
+
+                <!-- Specify the interest rate per month -->
+                <div class="col-md-4 mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text fw-bold">Monthly Interest Rate</span>
+                        <input autofocus class="form-control" name="interestRate" id="interestRate" disabled="disabled" placeholder="Input interest rate" type="number" step="0.1">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Specifiying cash or bank balance for income -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="input-group">
+                    <span class="input-group-text fw-bold">Payment Method</span>
+                    <select name="payment-method" id="payment-method" class="form-select">
+                        <option selected disabled>Select payment method</option>
+                        <option value="cash">Cash</option>
+                        <option value="banking">Banking</option>
+                    </select> 
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="input-group">
+                    <!-- To dynamically generate currency symbols -->
+                    <span class="input-group-text fw-bold">Amount</span>
+                    <select name="currency" id="currency" class="form-select" style="width: 30px;">
+                        <option value="usd" selected>USD</option>
+                        <option value="sgd">SGD</option>
+                        <option value="thb">THB</option>
+                        <option value="mmk">MMK</option>
+                    </select>
+                    <input type="number" name="amount" id="amount" placeholder="Input amount" style="flex-grow: 1;">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" type="submit">Submit</button>
+    </form>
+
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        var dt = new Date();
+        var year = dt.getFullYear();
+        var month = ("0" + (dt.getMonth() + 1)).slice(-2);
+        var day = ("0" + dt.getDate()).slice(-2);
+        var formattedDate = year + "-" + month + "-" + day;
+        document.getElementById('date').value = formattedDate;
+
+
+        function displayForm(type) {
+            document.getElementById('income').style.display = "none";
+            document.getElementById('spending').style.display = "none";
+            document.getElementById('investment').style.display = "none";
+            document.getElementById('debt').style.display = "none";
+
+            document.getElementById(type).style.display = "block";
+        }
+
+
+        function displayInvestment(value) {
+            document.getElementById('stock').style.display = "none";
+            document.getElementById('cryptocurrency').style.display = "none";
+            document.getElementById('real-estate').style.display = "none";
+            
+            document.getElementById('radio').style.display = "block";
+            document.getElementById(value).style.display = "block";
+        }
+
+
+        function enableInterestRate(value) {
+            if (value === 'repay') {
+                document.getElementById('interestRate').disabled = true;
+            }
+
+            else {
+                document.getElementById('interestRate').disabled = false;
+            }
+        }
+    </script>
+{% endblock %}
