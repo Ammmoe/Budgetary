@@ -33,11 +33,11 @@ def after_request(response):
     return response
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
     # Create homepage routes
-    return apology("TO DO", 400)
+    return render_template("index.html")
 
 
 @app.route("/budgetary", methods=["GET", "POST"])
@@ -316,6 +316,7 @@ def budgetary():
                 # Return error if the user selects repay and chooses someone who's not in the borrow or lend list
                 if debtor_creditor not in existing_debtors_list:
                     flash('Choose someone from the existing debtors or creditors!', 'alert-danger')
+                    return redirect(url_for('budgetary'))
 
                 # Day difference between today and the day where debt is first borrowed.
                 day_diff = db.execute(
@@ -340,7 +341,7 @@ def budgetary():
                     "SELECT debt_category FROM debt WHERE debtor_or_creditor = ? ORDER BY id DESC",
                     debtor_creditor
                 )
-
+                
                 day_diff_value = day_diff[0]['day_diff']
                 original_interest_rate = original_interest[0]['interest_rate']
                 original_payment_method = original_debt[0]['payment_method']
