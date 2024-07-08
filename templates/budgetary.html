@@ -23,7 +23,7 @@
                         <option value="income">Income</option>
                         <option value="spending">Expense</option>
                         <option value="investment">Investment</option>
-                        <option value="debt">Debt</option>
+                        <option value="debt">Debt or Receivable</option>
                     </select>
                 </div>
             </div>
@@ -167,9 +167,9 @@
                 <!-- Select debt category -->
                 <div class="col-md-4 mb-4">
                     <div class="input-group">
-                        <span class="input-group-text fw-bold">Debt Category</span>
+                        <span class="input-group-text fw-bold">Category</span>
                         <select name="debt-category" id="debt-category" class="form-select" onchange="enableInterestRate(this.value)">
-                            <option selected disabled>Select debt category</option>
+                            <option selected disabled>Select category</option>
                             <option value="borrow">Borrow</option>
                             <option value="lend">Lend</option>
                             <option value="repay">Repay</option>

@@ -6,12 +6,162 @@
 
 {% block main %}
 <div action="/" method="post">
-    <div class="card text-bg-light mb-3" style="max-width: 18rem;">
+    
+    <div class="card border-dark mb-4 col-md-12">
         <div class="card-header">Total Assets & Liabilities</div>
         <div class="card-body">
-        <h5 class="card-title">Light card title</h5>
-        <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+            <span class="card-title h5">Total Assets & Liabilities in</span>
+            <select name="total-currency" id="total-currency" class="submit h5">
+                <option value="usd" selected>USD</option>
+                <option value="sgd">SGD</option>
+                <option value="thb">THB</option>
+                <option value="mmk">MMK</option>
+            </select>
+            <div class="card-text h3" id="total-assets">100,000,000</div>
         </div>
     </div>
+
+    <div class="card border-dark mb-4 col-md-12">
+        <div class="card-header text-bg-success">Cash & Bank Deposits</div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                  <tr class="fw-bold">
+                    <th scope="col"></th>
+                    <th scope="col">Cash</th>
+                    <th scope="col">Bank Deposits</th>
+                  </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                  <tr>
+                    <td scope="row">USD</td>
+                    <td>1000</td>
+                    <td>1000</td>
+                  </tr>
+                  <tr>
+                    <td scope="row">SGD</td>
+                    <td>1000</td>
+                    <td>1000</td>
+                  </tr>
+                  <tr>
+                    <td scope="row">THB</td>
+                    <td>1000</td>
+                    <td>1000</td>
+                  </tr>
+                  <tr>
+                    <td scope="row">MMK</td>
+                    <td>1000</td>
+                    <td>1000</td>
+                  </tr>
+                </tbody>
+                <tfoot class="table-group-divider">
+                    <td scope="row">Total in
+                        <select name="cash-currency" id="cash-currency" class="submit">
+                            <option value="usd" selected>USD</option>
+                            <option value="sgd">SGD</option>
+                            <option value="thb">THB</option>
+                            <option value="mmk">MMK</option>
+                        </select>
+                    </td>
+                    <td>100,000,000</td>
+                    <td>100,000,000</td>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="card border-dark mb-4 col-md-12">
+        <div class="card-header text-bg-warning">Investments</div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                  <tr class="fw-bold">
+                    <th scope="col">Type</th>
+                    <th scope="col">Symbol</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Market Value in USD</th>
+                  </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                  <tr>
+                    <td>stock</td>
+                    <td>AAPL</td>
+                    <td>3</td>
+                    <td>1050 (+50)</td>
+                  </tr>
+                  <tr>
+                    <td>cryptocurrency</td>
+                    <td>BTC</td>
+                    <td>3</td>
+                    <td>980 (-20)</td>
+                  </tr>
+                  <tr>
+                    <td>real-estate</td>
+                    <td>housing</td>
+                    <td>1</td>
+                    <td>1000 (+0)</td>
+                  </tr>
+                </tbody>
+                <tfoot class="table-group-divider">
+                    <th colspan="2"> </th>
+                    <td scope="row">Total in
+                        <select name="cash-currency" id="cash-currency" class="submit">
+                            <option value="usd" selected>USD</option>
+                            <option value="sgd">SGD</option>
+                            <option value="thb">THB</option>
+                            <option value="mmk">MMK</option>
+                        </select>
+                    </td>
+                    <td>100,000,000 (+2400)</td>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="card border-dark mb-4 col-md-12">
+        <div class="card-header text-bg-danger">Debts & Receivables</div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr class="fw-bold">
+                        <th scope="col">Category</th>
+                        <th scope="col">Debtor or Creditor</th>
+                        <th scope="col">Date</th>
+                        <th scope="col">Interest Rate</th>
+                        <th scope="col">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="table-group-divider">
+                    <tr>
+                        <td>receivable</td>
+                        <td>Williams</td>
+                        <td>03/22/2020</td>
+                        <td>2%</td>
+                        <td>2200 (+200)</td>
+                    </tr>
+                    <tr>
+                        <td>payable</td>
+                        <td>Harry</td>
+                        <td>05/2/2023</td>
+                        <td>1%</td>
+                        <td>1020 (+20)</td>
+                    </tr>
+                </tbody>
+                <tfoot class="table-group-divider">
+                    <th colspan="3"> </th>
+                    <td scope="row">Total in
+                        <select name="cash-currency" id="cash-currency" class="submit">
+                            <option value="usd" selected>USD</option>
+                            <option value="sgd">SGD</option>
+                            <option value="thb">THB</option>
+                            <option value="mmk">MMK</option>
+                        </select>
+                    </td>
+                    <td>100,000,000 (+2500)</td>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
