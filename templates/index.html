@@ -87,19 +87,19 @@
                     <td>stock</td>
                     <td>AAPL</td>
                     <td>3</td>
-                    <td>1050 (+50)</td>
+                    <td>1050 <span class="text-success">(+50)</span></td>
                   </tr>
                   <tr>
                     <td>cryptocurrency</td>
                     <td>BTC</td>
                     <td>3</td>
-                    <td>980 (-20)</td>
+                    <td>980 <span class="text-danger">(-20)</span></td>
                   </tr>
                   <tr>
                     <td>real-estate</td>
                     <td>housing</td>
                     <td>1</td>
-                    <td>1000 (+0)</td>
+                    <td>1000 <span class="text-secondary">(+0)</span></td>
                   </tr>
                 </tbody>
                 <tfoot class="table-group-divider">
@@ -112,7 +112,7 @@
                             <option value="mmk">MMK</option>
                         </select>
                     </td>
-                    <td>100,000,000 (+2400)</td>
+                    <td>100,000,000 <span class="text-success">(+2400)</span></td>
                 </tfoot>
             </table>
         </div>
@@ -128,27 +128,30 @@
                         <th scope="col">Debtor or Creditor</th>
                         <th scope="col">Date</th>
                         <th scope="col">Interest Rate</th>
+                        <th scope="col">Currency</th>
                         <th scope="col">Amount</th>
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                    <tr>
+                    <tr class="text-success">
                         <td>receivable</td>
                         <td>Williams</td>
                         <td>03/22/2020</td>
                         <td>2%</td>
+                        <td>SGD</td>
                         <td>2200 (+200)</td>
                     </tr>
-                    <tr>
+                    <tr class="text-danger">
                         <td>payable</td>
                         <td>Harry</td>
                         <td>05/2/2023</td>
                         <td>1%</td>
+                        <td>USD</td>
                         <td>1020 (+20)</td>
                     </tr>
                 </tbody>
                 <tfoot class="table-group-divider">
-                    <th colspan="3"> </th>
+                    <th colspan="4"> </th>
                     <td scope="row">Total in
                         <select name="cash-currency" id="cash-currency" class="submit">
                             <option value="usd" selected>USD</option>
@@ -157,7 +160,7 @@
                             <option value="mmk">MMK</option>
                         </select>
                     </td>
-                    <td>100,000,000 (+2500)</td>
+                    <td>100,000,000 <span class="text-success">(+2500)</span></td>
                 </tfoot>
             </table>
         </div>

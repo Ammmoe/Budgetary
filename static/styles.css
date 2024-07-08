@@ -59,3 +59,13 @@ h1 {
     font-family: 'Montserrat', sans-serif;
     font-size: 48px;
 }
+
+tr.text-success th,
+tr.text-success td {
+    color: inherit;
+}
+
+tr.text-danger th,
+tr.text-danger td {
+    color: inherit;
+}
