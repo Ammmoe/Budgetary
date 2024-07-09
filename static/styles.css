@@ -22,27 +22,6 @@ nav .navbar-brand .green
     color: #2e944b;
 }
 
-table {
-    background-color: transparent;
-    margin-bottom: 1rem;
-    width: 100%;
-}
-
-table th,
-table td {
-    padding: 0.75rem;
-    vertical-align: middle;
-}
-
-table th {
-    background-color: #2B547E;
-    color: white;
-}
-
-tbody tr:nth-of-type(odd) {
-    background-color: rgb(179, 208, 255, 0.3)
-}
-
 .section {
     padding-bottom: 1rem;
     padding-left: 2rem;
