@@ -42,9 +42,11 @@ h1 {
 tr.text-success th,
 tr.text-success td {
     color: inherit;
+    padding: 3px;
 }
 
 tr.text-danger th,
 tr.text-danger td {
     color: inherit;
+    padding: 3px;
 }
