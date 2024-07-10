@@ -36,8 +36,144 @@ def after_request(response):
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
+    user_id = session.get("user_id")
+
     # Create homepage routes
-    return render_template("index.html")
+    if request.method == "GET":
+        # Get income-related cash values
+        income_cash_usd_q = db.execute (
+            "SELECT SUM(amount) AS income_cash_usd FROM transactions WHERE payment_method = 'cash' and currency = 'usd' and id IN \
+                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
+        )
+        income_cash_usd = income_cash_usd_q[0]["income_cash_usd"]
+        if income_cash_usd == None:
+            income_cash_usd = 0
+
+        income_cash_sgd_q = db.execute (
+            "SELECT SUM(amount) AS income_cash_sgd FROM transactions WHERE payment_method = 'cash' and currency = 'sgd' and id IN \
+                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
+        )
+        income_cash_sgd = income_cash_sgd_q[0]["income_cash_sgd"]
+        if income_cash_sgd == None:
+            income_cash_sgd = 0
+
+        income_cash_thb_q = db.execute (
+            "SELECT SUM(amount) AS income_cash_thb FROM transactions WHERE payment_method = 'cash' and currency = 'thb' and id IN \
+                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
+        )
+        income_cash_thb = income_cash_thb_q[0]["income_cash_thb"]
+        if income_cash_thb == None:
+            income_cash_thb = 0
+
+        income_cash_mmk_q = db.execute (
+            "SELECT SUM(amount) AS income_cash_mmk FROM transactions WHERE payment_method = 'cash' and currency = 'mmk' and id IN \
+                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
+        )
+        income_cash_mmk = income_cash_mmk_q[0]["income_cash_mmk"]
+        if income_cash_mmk == None:
+            income_cash_mmk = 0
+
+        # Get income-related bank_deposit values
+        income_bank_usd_q = db.execute (
+            "SELECT SUM(amount) AS income_bank_usd FROM transactions WHERE payment_method = 'banking' and currency = 'usd' and id IN \
+                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
+        )
+        income_bank_usd = income_bank_usd_q[0]["income_bank_usd"]
+        if income_bank_usd == None:
+            income_bank_usd = 0
+
+        income_bank_sgd_q = db.execute (
+            "SELECT SUM(amount) AS income_bank_sgd FROM transactions WHERE payment_method = 'banking' and currency = 'sgd' and id IN \
+                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
+        )
+        income_bank_sgd = income_bank_sgd_q[0]["income_bank_sgd"]
+        if income_bank_sgd == None:
+            income_bank_sgd = 0
+
+        income_bank_thb_q = db.execute (
+            "SELECT SUM(amount) AS income_bank_thb FROM transactions WHERE payment_method = 'banking' and currency = 'thb' and id IN \
+                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
+        )
+        income_bank_thb = income_bank_thb_q[0]["income_bank_thb"]
+        if income_bank_thb == None:
+            income_bank_thb = 0
+
+        income_bank_mmk_q = db.execute (
+            "SELECT SUM(amount) AS income_bank_mmk FROM transactions WHERE payment_method = 'banking' and currency = 'mmk' and id IN \
+                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
+        )
+        income_bank_mmk = income_bank_mmk_q[0]["income_bank_mmk"]
+        if income_bank_mmk == None:
+            income_bank_mmk = 0
+
+        # Get spending-related cash values
+        spending_cash_usd_q = db.execute (
+            "SELECT SUM(amount) AS spending_cash_usd FROM transactions WHERE payment_method = 'cash' and currency = 'usd' and id IN \
+                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
+        )
+        spending_cash_usd = spending_cash_usd_q[0]["spending_cash_usd"]
+        if spending_cash_usd == None:
+            spending_cash_usd = 0
+
+        spending_cash_sgd_q = db.execute (
+            "SELECT SUM(amount) AS spending_cash_sgd FROM transactions WHERE payment_method = 'cash' and currency = 'sgd' and id IN \
+                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
+        )
+        spending_cash_sgd = spending_cash_sgd_q[0]["spending_cash_sgd"]
+        if spending_cash_sgd == None:
+            spending_cash_sgd = 0
+
+        spending_cash_thb_q = db.execute (
+            "SELECT SUM(amount) AS spending_cash_thb FROM transactions WHERE payment_method = 'cash' and currency = 'thb' and id IN \
+                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
+        )
+        spending_cash_thb = spending_cash_thb_q[0]["spending_cash_thb"]
+        if spending_cash_thb == None:
+            spending_cash_thb = 0
+
+        spending_cash_mmk_q = db.execute (
+            "SELECT SUM(amount) AS spending_cash_mmk FROM transactions WHERE payment_method = 'cash' and currency = 'mmk' and id IN \
+                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
+        )
+        spending_cash_mmk = spending_cash_mmk_q[0]["spending_cash_mmk"]
+        if spending_cash_mmk == None:
+            spending_cash_mmk = 0
+
+        # Get spending-related bank_deposit values
+        spending_bank_usd_q = db.execute (
+            "SELECT SUM(amount) AS spending_bank_usd FROM transactions WHERE payment_method = 'banking' and currency = 'usd' and id IN \
+                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
+        )
+        spending_bank_usd = spending_bank_usd_q[0]["spending_bank_usd"]
+        if spending_bank_usd == None:
+            spending_bank_usd = 0
+
+        spending_bank_sgd_q = db.execute (
+            "SELECT SUM(amount) AS spending_bank_sgd FROM transactions WHERE payment_method = 'banking' and currency = 'sgd' and id IN \
+                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
+        )
+        spending_bank_sgd = spending_bank_sgd_q[0]["spending_bank_sgd"]
+        if spending_bank_sgd == None:
+            spending_bank_sgd = 0
+
+        spending_bank_thb_q = db.execute (
+            "SELECT SUM(amount) AS spending_bank_thb FROM transactions WHERE payment_method = 'banking' and currency = 'thb' and id IN \
+                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
+        )
+        spending_bank_thb = spending_bank_thb_q[0]["spending_bank_thb"]
+        if spending_bank_thb == None:
+            spending_bank_thb = 0
+
+        spending_bank_mmk_q = db.execute (
+            "SELECT SUM(amount) AS spending_bank_mmk FROM transactions WHERE payment_method = 'banking' and currency = 'mmk' and id IN \
+                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
+        )
+        spending_bank_mmk = spending_bank_mmk_q[0]["spending_bank_mmk"]
+        if spending_bank_mmk == None:
+            spending_bank_mmk = 0
+
+    return render_template("index.html", cash_usd=spending_cash_usd, cash_sgd=spending_cash_sgd, cash_thb=spending_cash_thb,
+        cash_mmk=spending_cash_mmk, bank_usd=spending_bank_usd, bank_sgd=spending_bank_sgd, bank_thb=spending_bank_thb, bank_mmk=spending_bank_mmk)
 
 
 @app.route("/budgetary", methods=["GET", "POST"])
