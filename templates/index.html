@@ -75,32 +75,32 @@
         <div class="card-body">
             <table class="table">
                 <thead>
-                  <tr class="fw-bold">
-                    <th scope="col">Type</th>
-                    <th scope="col">Symbol</th>
-                    <th scope="col">Quantity</th>
-                    <th scope="col">Market Value in USD</th>
-                  </tr>
+                    <tr class="fw-bold">
+                        <th scope="col">Type</th>
+                        <th scope="col">Symbol</th>
+                        <th scope="col">Quantity</th>
+                        <th scope="col">Market Value in USD (Profit / Loss)</th>
+                    </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                  <tr>
-                    <td>stock</td>
-                    <td>AAPL</td>
-                    <td>3</td>
-                    <td>1050 <span class="text-success">(+50)</span></td>
-                  </tr>
-                  <tr>
-                    <td>cryptocurrency</td>
-                    <td>BTC</td>
-                    <td>3</td>
-                    <td>980 <span class="text-danger">(-20)</span></td>
-                  </tr>
-                  <tr>
-                    <td>real-estate</td>
-                    <td>housing</td>
-                    <td>1</td>
-                    <td>1000 <span class="text-secondary">(+0)</span></td>
-                  </tr>
+                    {% for row in investment_rows %}
+                    <tr>
+                        <td>{{ row['investment_type'] }}</td>
+                        <td>{{ row['symbol'] }}</td>
+                        <td>{{ row['quantity'] }}</td>
+                        <td>{{ row['original_value'] | currency }} 
+                            <span class="
+                            {% if row['profit_loss'] > 0 %}
+                                text-success
+                            {% elif row['profit_loss'] == 0 %}
+                                text-secondary
+                            {% else %}
+                                text-danger
+                            {% endif %}
+                                ">{{ row['profit_loss'] | profit }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
                 </tbody>
                 <tfoot class="table-group-divider">
                     <th colspan="2"> </th>

@@ -80,7 +80,7 @@ def stock_lookup(symbol):
 
         # CSV header: Date,Open,High,Low,Close,Adj Close,Volume
         quotes = list(csv.DictReader(response.content.decode("utf-8").splitlines()))
-        price = round(float(quotes[-1]["Adj Close"]), 2)
+        price = round(float(quotes[-1]["Adj Close"]), 4)
         return {"price": price, "symbol": symbol}
     
     except (KeyError, IndexError, requests.RequestException, ValueError):
@@ -158,3 +158,19 @@ def amount_in_usd(currency, value):
         exchange_rate = forex_rate(currency)["rate"]
         amount_in_usd = (1 / exchange_rate) * float(value)
         return round(float(amount_in_usd), 2)
+
+
+def profit(value):
+    """ Format currency value to be used in homepage """
+    if value > 0:
+        return f"(+{value:,.2f})"
+    
+    if value == 0:
+        return f"(+0)"
+    
+    if value < 0:
+        return f"({value:,.2f})"
+    
+
+def currency(value):
+    return f"{value:,.2f}"

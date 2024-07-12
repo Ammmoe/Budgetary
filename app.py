@@ -5,7 +5,7 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, stock_lookup, amount_in_usd, crypto_lookup
+from helpers import apology, login_required, stock_lookup, amount_in_usd, crypto_lookup, profit, currency
 
 
 # Configure application
@@ -13,7 +13,8 @@ app = Flask(__name__)
 #cache = Cache(app, config={'CACHE_TYPE': 'redis'})
 
 # Custom filter
-# app.jinja_env.filters["usd"] = usd
+app.jinja_env.filters["profit"] = profit
+app.jinja_env.filters["currency"] = currency
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
@@ -628,8 +629,62 @@ def index():
         bank_thb_str = f"{bank_thb:,.2f}"
         bank_mmk_str = f"{bank_mmk:,.2f}"
 
+        investment_rows = db.execute (
+            "SELECT \
+                investment.investment_type, \
+                CASE \
+                    WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
+                    WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
+                    ELSE investment.symbol_real_estate_type \
+                END AS symbol, \
+                SUM(CASE WHEN investment.buy_or_sell = 'buy' THEN investment.quantity ELSE -investment.quantity END) AS quantity, \
+                SUM(CASE WHEN investment.buy_or_sell = 'buy' THEN transactions.amount_in_usd ELSE -transactions.amount_in_usd END) AS original_value \
+            FROM investment JOIN transactions \
+            ON investment.transaction_id = transactions.id \
+            GROUP BY \
+                investment.investment_type, \
+                CASE \
+                    WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
+                    WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
+                    ELSE investment.symbol_real_estate_type \
+                END"
+        )
+
+        new_investment_rows = []
+        for row in investment_rows:
+            quantity = round(float(row['quantity']), 2)
+
+            if row['investment_type'] == 'stock':
+                stock_quote = stock_lookup(row['symbol'])
+                stock_price = stock_quote['price']
+                market_value = round(stock_price * quantity, 2)
+                profit_loss = round(market_value - float(row['original_value']), 2)
+                row['original_value'] = market_value
+                row['profit_loss'] = profit_loss
+                row['quantity'] = quantity
+
+                new_investment_rows.append(row)
+
+            elif row['investment_type'] == 'cryptocurrency':
+                crypto_quote = crypto_lookup(row['symbol'])
+                crypto_price = crypto_quote['price']
+                market_value = round(crypto_price * quantity, 2)
+                profit_loss = round(market_value - float(row['original_value']), 2)
+                row['original_value'] = market_value
+                row['profit_loss'] = profit_loss
+                row['quantity'] = quantity
+
+                new_investment_rows.append(row)
+
+            else:
+                row['profit_loss'] = 0
+                row['quantity'] = quantity
+
+                new_investment_rows.append(row)
+
         return render_template("index.html", cash_usd=cash_usd_str, cash_sgd=cash_sgd_str, cash_thb=cash_thb_str, cash_mmk=cash_mmk_str, \
-            bank_usd=bank_usd_str, bank_sgd=bank_sgd_str, bank_thb=bank_thb_str, bank_mmk=bank_mmk_str)
+            bank_usd=bank_usd_str, bank_sgd=bank_sgd_str, bank_thb=bank_thb_str, bank_mmk=bank_mmk_str, investment_rows=new_investment_rows, \
+            profit=profit, currency=currency)
 
 
 @app.route("/budgetary", methods=["GET", "POST"])
@@ -830,7 +885,7 @@ def budgetary():
                 db.execute(
                     "INSERT INTO investment (user_id, transaction_id, investment_type, investment_comment, symbol_real_estate_type, buy_or_sell, quantity) \
                     VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    user_id, transaction_id, investment_type, other_investment, stock_symbol, buy_sell, quantity
+                    user_id, transaction_id, investment_type, other_investment, stock_symbol.upper(), buy_sell, quantity
                 )
                 flash('Success!', 'alert-success')
                 return redirect(url_for('budgetary'))
@@ -841,7 +896,7 @@ def budgetary():
                 db.execute(
                     "INSERT INTO investment (user_id, transaction_id, investment_type, investment_comment, symbol_real_estate_type, buy_or_sell, quantity) \
                     VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    user_id, transaction_id, investment_type, other_investment, crypto_symbol, buy_sell, quantity
+                    user_id, transaction_id, investment_type, other_investment, crypto_symbol.upper(), buy_sell, quantity
                 )
                 flash('Success!', 'alert-success')
                 return redirect(url_for('budgetary'))
