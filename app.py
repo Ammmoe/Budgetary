@@ -1,11 +1,11 @@
 import os
 
 from cs50 import SQL
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, flash, redirect, render_template, request, session, url_for, jsonify
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, stock_lookup, amount_in_usd, crypto_lookup, profit, currency
+from helpers import apology, login_required, stock_lookup, amount_in_usd, crypto_lookup, profit, currency, days_difference, forex_rate
 
 
 # Configure application
@@ -629,6 +629,22 @@ def index():
         bank_thb_str = f"{bank_thb:,.2f}"
         bank_mmk_str = f"{bank_mmk:,.2f}"
 
+        # Change the currency in cash to usd for total amount calculation
+        cash_sgd_in_usd = amount_in_usd('sgd', cash_sgd)
+        cash_thb_in_usd = amount_in_usd('thb', cash_thb)
+        cash_mmk_in_usd = amount_in_usd('mmk', cash_mmk)
+
+        # Change the currency in banking to usd for total amount calculation
+        bank_sgd_in_usd = amount_in_usd('sgd', bank_sgd)
+        bank_thb_in_usd = amount_in_usd('thb', bank_thb)
+        bank_mmk_in_usd = amount_in_usd('mmk', bank_mmk)
+
+        # Get the total cash in usd
+        total_cash_usd = round((cash_usd + cash_sgd_in_usd + cash_thb_in_usd + cash_mmk_in_usd), 2)
+
+        # Get total bank in usd
+        total_bank_usd = round((bank_usd + bank_sgd_in_usd + bank_thb_in_usd + bank_mmk_in_usd), 2)
+
         # Write database code for homepage investments table
         investment_rows = db.execute (
             "SELECT \
@@ -690,17 +706,32 @@ def index():
             transactions.amount \
             FROM debt JOIN transactions \
             ON debt.transaction_id = transactions.id \
-            WHERE debt.in IN (SELECT MAX(debt.id) FROM debt GROUP BY debtor_or_creditor)"
+            WHERE debt.id IN (SELECT MAX(debt.id) FROM debt GROUP BY debtor_or_creditor)"
         )
 
         new_debt_rows = []
         for row in debt_rows:
+            original_debt_amount = float(row['amount'])
+            interest_rate = float(row['interest_rate'])
+            days_diff = days_difference(row['transaction_date'])
             
+            # Find out the number of months
+            months = days_diff / 30
 
+            # Calculate interest
+            interest = round((original_debt_amount * interest_rate * months / 100), 2)
+
+            # Find out the total amount to be repaid
+            total_debt = round(original_debt_amount + interest, 2)
+        
+            row['amount'] = total_debt
+            row['interest'] = interest
+
+            new_debt_rows.append(row)
 
         return render_template("index.html", cash_usd=cash_usd_str, cash_sgd=cash_sgd_str, cash_thb=cash_thb_str, cash_mmk=cash_mmk_str, \
             bank_usd=bank_usd_str, bank_sgd=bank_sgd_str, bank_thb=bank_thb_str, bank_mmk=bank_mmk_str, investment_rows=new_investment_rows, \
-            profit=profit, currency=currency)
+            profit=profit, currency=currency, debt_rows=new_debt_rows, total_cash_usd=total_cash_usd, total_bank_usd=total_bank_usd)
 
 
 @app.route("/budgetary", methods=["GET", "POST"])
@@ -1182,3 +1213,24 @@ def register():
     # User reached route via GET (as by clicking a link or via redirect)
     else:
         return render_template("register.html")
+    
+
+# Convert usd values into other currencies
+@app.route("/convert_currency")
+def convert_currency():
+    final_currency = request.args.get('final_currency')
+    value_in_usd = float(request.args.get('value_in_usd'))
+
+    if final_currency.upper() == 'USD':
+        converted_amount = round(float(value_in_usd), 2)
+        return jsonify({'converted_amount': currency(converted_amount)})
+    
+    elif final_currency.upper() == 'MMK':
+        exchange_rate = 4970
+        converted_amount = round(exchange_rate * float(value_in_usd), 2)
+        return jsonify({'converted_amount': currency(converted_amount)})
+    
+    else:
+        exchange_rate = forex_rate(final_currency)["rate"]
+        converted_amount = round(exchange_rate * float(value_in_usd), 2)
+        return jsonify({'converted_amount': currency(converted_amount)})

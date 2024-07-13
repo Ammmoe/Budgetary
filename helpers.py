@@ -140,17 +140,14 @@ def forex_rate(symbol):
     except (KeyError, IndexError, requests.RequestException, ValueError):
         return 2
 
-# Testing forex_rate function.  
-# rate_info = forex_rate("THB")
-# print(f"Exchange rate from USD to {rate_info['symbol']}: {rate_info['rate']}")    
 
-
+# Convert other currency values into usd   
 def amount_in_usd(currency, value):
     if currency == 'usd':
         return round(float(value), 2)
 
     elif currency == 'mmk':
-        exchange_rate = 4510
+        exchange_rate = 4970
         amount_in_usd = (1 / exchange_rate) * float(value)
         return round(float(amount_in_usd), 2)
 
@@ -159,18 +156,32 @@ def amount_in_usd(currency, value):
         amount_in_usd = (1 / exchange_rate) * float(value)
         return round(float(amount_in_usd), 2)
 
-
+        
+# function to show in homepage stock profits and debts
 def profit(value):
     """ Format currency value to be used in homepage """
     if value > 0:
         return f"(+{value:,.2f})"
     
     if value == 0:
-        return f"(+0)"
+        return f"(+0.00)"
     
     if value < 0:
         return f"({value:,.2f})"
     
 
+# function to show the amount of currency in comma separated financial terms
 def currency(value):
     return f"{value:,.2f}"
+
+
+# function to get days difference for calculating interest rate
+def days_difference(past_date_str, date_format='%Y-%m-%d'):
+    # Parse the sqlite return string to datetime object.
+    past_date = datetime.datetime.strptime(past_date_str, date_format)
+
+    # Get today's date
+    today = datetime.datetime.today()
+
+    difference = today - past_date
+    return difference.days

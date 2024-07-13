@@ -55,16 +55,18 @@
                   </tr>
                 </tbody>
                 <tfoot class="table-group-divider">
-                    <td scope="row">Total in
-                        <select name="cash-currency" id="cash-currency" class="submit">
+                    <td scope="row">Equivalent Total in
+                        <select name="cash-currency-select" id="cash-currency-select" onchange="convertCashCurrency()">
                             <option value="usd" selected>USD</option>
                             <option value="sgd">SGD</option>
                             <option value="thb">THB</option>
                             <option value="mmk">MMK</option>
                         </select>
                     </td>
-                    <td>100,000,000</td>
-                    <td>100,000,000</td>
+                    <td id="total_cash_raw" style="display: none;">{{ total_cash_usd }}</td>
+                    <td id="total_bank_raw" style="display: none;">{{ total_bank_usd }}</td>
+                    <td id="total_cash">{{ total_cash_usd | currency }}</td>
+                    <td id="total_bank">{{ total_bank_usd | currency }}</td>
                 </tfoot>
             </table>
         </div>
@@ -104,7 +106,7 @@
                 </tbody>
                 <tfoot class="table-group-divider">
                     <th colspan="2"> </th>
-                    <td scope="row">Total in
+                    <td scope="row">Equivalent Total in
                         <select name="cash-currency" id="cash-currency" class="submit">
                             <option value="usd" selected>USD</option>
                             <option value="sgd">SGD</option>
@@ -126,33 +128,45 @@
                     <tr class="fw-bold">
                         <th scope="col">Category</th>
                         <th scope="col">Debtor or Creditor</th>
-                        <th scope="col">Date</th>
+                        <th scope="col">Date (yyyy-mm-dd)</th>
                         <th scope="col">Interest Rate</th>
                         <th scope="col">Currency</th>
-                        <th scope="col">Amount</th>
+                        <th scope="col">Total Amount (Interest)</th>
                     </tr>
                 </thead>
                 <tbody class="table-group-divider">
-                    <tr class="text-success">
-                        <td>receivable</td>
-                        <td>Williams</td>
-                        <td>03/22/2020</td>
-                        <td>2%</td>
-                        <td>SGD</td>
-                        <td>2200 (+200)</td>
+                    {% for row in debt_rows %}
+                    <tr class="
+                    {% if row['debt_category'] == 'borrow' and row['amount'] != 0 %}
+                        text-danger
+                    {% elif row['debt_category'] == 'borrow' and row['amount'] == 0 %}
+                        text-danger text-decoration-line-through
+                    {% elif row['debt_category'] == 'lend' and row['amount'] != 0 %}
+                        text-success
+                    {% elif row['debt_category'] == 'lend' and row['amount'] == 0 %}
+                        text-success text-decoration-line-through
+                    {% endif %}
+                    ">
+                        <td>
+                        {% if row['debt_category'] == 'borrow' %}
+                            payable
+                        {% elif row['debt_category'] == 'lend' %}
+                            receivable
+                        {% endif %}
+                        </td>
+                        <td>{{ row['debtor_or_creditor'] }}</td>
+                        <td>{{ row['transaction_date'] }}</td>
+                        <td>{{ row['interest_rate'] }}%</td>
+                        <td>{{ row['currency'] | upper }}</td>
+                        <td>{{ row['amount'] | currency }}
+                            <span>{{ row['interest'] | profit }}</span>
+                        </td>
                     </tr>
-                    <tr class="text-danger">
-                        <td>payable</td>
-                        <td>Harry</td>
-                        <td>05/2/2023</td>
-                        <td>1%</td>
-                        <td>USD</td>
-                        <td>1020 (+20)</td>
-                    </tr>
+                    {% endfor %}
                 </tbody>
                 <tfoot class="table-group-divider">
                     <th colspan="4"> </th>
-                    <td scope="row">Total in
+                    <td scope="row">Equivalent Total in
                         <select name="cash-currency" id="cash-currency" class="submit">
                             <option value="usd" selected>USD</option>
                             <option value="sgd">SGD</option>
@@ -167,4 +181,26 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function convertCashCurrency() {
+        const selectedCurrency = document.getElementById('cash-currency-select').value;
+        const cashAmount = document.getElementById('total_cash_raw').textContent;
+        const bankAmount = document.getElementById('total_bank_raw').textContent;
+
+        fetch(`/convert_currency?final_currency=${selectedCurrency}&value_in_usd=${cashAmount}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total_cash').textContent = data.converted_amount
+        })
+
+        fetch(`/convert_currency?final_currency=${selectedCurrency}&value_in_usd=${bankAmount}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total_bank').textContent = data.converted_amount
+        })
+    }
+</script>
 {% endblock %}
