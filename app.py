@@ -629,6 +629,7 @@ def index():
         bank_thb_str = f"{bank_thb:,.2f}"
         bank_mmk_str = f"{bank_mmk:,.2f}"
 
+        # Write database code for homepage investments table
         investment_rows = db.execute (
             "SELECT \
                 investment.investment_type, \
@@ -681,6 +682,21 @@ def index():
                 row['quantity'] = quantity
 
                 new_investment_rows.append(row)
+   
+        # Write database code for Debts & Receivables table
+        debt_rows = db.execute (
+            "SELECT \
+            debt.debt_category, debt.debtor_or_creditor, transactions.transaction_date, debt.interest_rate, transactions.currency, \
+            transactions.amount \
+            FROM debt JOIN transactions \
+            ON debt.transaction_id = transactions.id \
+            WHERE debt.in IN (SELECT MAX(debt.id) FROM debt GROUP BY debtor_or_creditor)"
+        )
+
+        new_debt_rows = []
+        for row in debt_rows:
+            
+
 
         return render_template("index.html", cash_usd=cash_usd_str, cash_sgd=cash_sgd_str, cash_thb=cash_thb_str, cash_mmk=cash_mmk_str, \
             bank_usd=bank_usd_str, bank_sgd=bank_sgd_str, bank_thb=bank_thb_str, bank_mmk=bank_mmk_str, investment_rows=new_investment_rows, \
