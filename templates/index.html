@@ -11,13 +11,14 @@
         <div class="card-header">Total Assets & Liabilities</div>
         <div class="card-body">
             <span class="card-title h5">Total Assets & Liabilities in</span>
-            <select name="total-currency" id="total-currency" class="submit h5">
+            <select name="asset-currency-select" id="asset-currency-select" class="h5" onchange="convertAssetCurrency()">
                 <option value="usd" selected>USD</option>
                 <option value="sgd">SGD</option>
                 <option value="thb">THB</option>
                 <option value="mmk">MMK</option>
             </select>
-            <div class="card-text h3" id="total-assets">100,000,000</div>
+            <div style="display: none;" id="total_assets_raw">{{ total_assets }}</div>
+            <div class="card-text h3" id="total_assets">{{ total_assets | currency }}</div>
         </div>
     </div>
 
@@ -107,14 +108,30 @@
                 <tfoot class="table-group-divider">
                     <th colspan="2"> </th>
                     <td scope="row">Equivalent Total in
-                        <select name="cash-currency" id="cash-currency" class="submit">
+                        <select name="investment-currency-select" id="investment-currency-select" onchange="convertInvestmentCurrency()">
                             <option value="usd" selected>USD</option>
                             <option value="sgd">SGD</option>
                             <option value="thb">THB</option>
                             <option value="mmk">MMK</option>
                         </select>
                     </td>
-                    <td>100,000,000 <span class="text-success">(+2400)</span></td>
+                    <td id="investment_total_raw" style="display: none;">
+                        {{ investment_total }}
+                    </td>
+                    <td id="profit_loss_total_raw" style="display: none;">
+                        {{ profit_loss_total }}
+                    </td>
+                    <td>
+                        <span id="investment_total">{{ investment_total | currency }} </span> 
+                        <span id="profit_loss_total" class="
+                        {% if profit_loss_total > 0 %}
+                            text-success
+                        {% elif profit_loss_total == 0 %}
+                            text-secondary
+                        {% else %}
+                            text-danger
+                        {% endif %}">{{ profit_loss_total | profit }}</span>
+                    </td>
                 </tfoot>
             </table>
         </div>
@@ -167,14 +184,26 @@
                 <tfoot class="table-group-divider">
                     <th colspan="4"> </th>
                     <td scope="row">Equivalent Total in
-                        <select name="cash-currency" id="cash-currency" class="submit">
+                        <select name="debt-currency-select" id="debt-currency-select" onchange="convertDebtCurrency()">
                             <option value="usd" selected>USD</option>
                             <option value="sgd">SGD</option>
                             <option value="thb">THB</option>
                             <option value="mmk">MMK</option>
                         </select>
                     </td>
-                    <td>100,000,000 <span class="text-success">(+2500)</span></td>
+                    <td id="debt_total_raw" style="display: none;">{{ debt_total }}</td>
+                    <td id="interest_total_raw" style="display: none;">{{ interest_total }}</td>
+                    <td class="
+                    {% if debt_total > 0 %}
+                        text-success
+                    {% elif debt_total == 0 %}
+                        text-secondary
+                    {% else %}
+                        text-danger
+                    {% endif %}">
+                        <span id="debt_total">{{ debt_total | currency}} </span>
+                        <span id="interest_total">{{ interest_total | profit }}</span>
+                    </td>
                 </tfoot>
             </table>
         </div>
@@ -194,13 +223,60 @@
             .then(response => response.json())
             .then(data => {
                 document.getElementById('total_cash').textContent = data.converted_amount
-        })
+            })
 
         fetch(`/convert_currency?final_currency=${selectedCurrency}&value_in_usd=${bankAmount}`)
             .then(response => response.json())
             .then(data => {
                 document.getElementById('total_bank').textContent = data.converted_amount
-        })
+            })
+    }
+
+    function convertInvestmentCurrency() {
+        const selectedCurrency = document.getElementById('investment-currency-select').value;
+        const investmentTotal = document.getElementById('investment_total_raw').textContent;
+        const profitLossTotal = document.getElementById('profit_loss_total_raw').textContent;
+
+        fetch(`/convert_currency?final_currency=${selectedCurrency}&value_in_usd=${investmentTotal}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('investment_total').textContent = data.converted_amount
+            })
+
+        fetch(`/convert_profit_currency?final_currency=${selectedCurrency}&value_in_usd=${profitLossTotal}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('profit_loss_total').textContent = data.converted_amount
+            })
+    }
+
+    function convertDebtCurrency() {
+        const selectedCurrency = document.getElementById('debt-currency-select').value;
+        const debtTotal = document.getElementById('debt_total_raw').textContent;
+        const interestTotal = document.getElementById('interest_total_raw').textContent;
+
+        fetch(`/convert_currency?final_currency=${selectedCurrency}&value_in_usd=${debtTotal}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('debt_total').textContent = data.converted_amount
+            })
+
+        fetch(`/convert_profit_currency?final_currency=${selectedCurrency}&value_in_usd=${interestTotal}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('interest_total').textContent = data.converted_amount
+            })
+    }
+
+    function convertAssetCurrency() {
+        const selectedCurrency = document.getElementById('asset-currency-select').value
+        const assetTotal = document.getElementById('total_assets_raw').textContent
+        
+        fetch(`/convert_currency?final_currency=${selectedCurrency}&value_in_usd=${assetTotal}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total_assets').textContent = data.converted_amount
+            })
     }
 </script>
 {% endblock %}

@@ -39,6 +39,7 @@ def after_request(response):
 def index():
     user_id = session.get("user_id")
 
+    total_assets = 0
     # Create homepage routes
     if request.method == "GET":
         # Get income-related cash values
@@ -645,6 +646,8 @@ def index():
         # Get total bank in usd
         total_bank_usd = round((bank_usd + bank_sgd_in_usd + bank_thb_in_usd + bank_mmk_in_usd), 2)
 
+        total_assets = total_assets + total_cash_usd + total_bank_usd
+
         # Write database code for homepage investments table
         investment_rows = db.execute (
             "SELECT \
@@ -668,6 +671,8 @@ def index():
         )
 
         new_investment_rows = []
+        investment_total = 0
+        profit_loss_total = 0
         for row in investment_rows:
             quantity = round(float(row['quantity']), 2)
 
@@ -679,6 +684,8 @@ def index():
                 row['original_value'] = market_value
                 row['profit_loss'] = profit_loss
                 row['quantity'] = quantity
+                investment_total = investment_total + market_value
+                profit_loss_total = profit_loss_total + profit_loss
 
                 new_investment_rows.append(row)
 
@@ -690,14 +697,19 @@ def index():
                 row['original_value'] = market_value
                 row['profit_loss'] = profit_loss
                 row['quantity'] = quantity
+                investment_total = investment_total + market_value
+                profit_loss_total = profit_loss_total + profit_loss
 
                 new_investment_rows.append(row)
 
             else:
                 row['profit_loss'] = 0
                 row['quantity'] = quantity
+                investment_total = investment_total + row['original_value']
 
                 new_investment_rows.append(row)
+
+        total_assets = total_assets + investment_total
    
         # Write database code for Debts & Receivables table
         debt_rows = db.execute (
@@ -710,6 +722,8 @@ def index():
         )
 
         new_debt_rows = []
+        debt_total = 0
+        interest_total = 0
         for row in debt_rows:
             original_debt_amount = float(row['amount'])
             interest_rate = float(row['interest_rate'])
@@ -720,18 +734,32 @@ def index():
 
             # Calculate interest
             interest = round((original_debt_amount * interest_rate * months / 100), 2)
+            interest_in_usd = amount_in_usd(row['currency'], interest)
 
             # Find out the total amount to be repaid
             total_debt = round(original_debt_amount + interest, 2)
+            total_debt_usd = amount_in_usd(row['currency'], total_debt)
         
             row['amount'] = total_debt
             row['interest'] = interest
 
+            if row['debt_category'] == 'borrow':
+                debt_total = debt_total - total_debt_usd
+                interest_total = interest_total - interest_in_usd
+
+            elif row['debt_category'] == 'lend':
+                debt_total = debt_total + total_debt_usd
+                interest_total = interest_total + interest_in_usd
+
             new_debt_rows.append(row)
+
+        total_assets = total_assets + debt_total
 
         return render_template("index.html", cash_usd=cash_usd_str, cash_sgd=cash_sgd_str, cash_thb=cash_thb_str, cash_mmk=cash_mmk_str, \
             bank_usd=bank_usd_str, bank_sgd=bank_sgd_str, bank_thb=bank_thb_str, bank_mmk=bank_mmk_str, investment_rows=new_investment_rows, \
-            profit=profit, currency=currency, debt_rows=new_debt_rows, total_cash_usd=total_cash_usd, total_bank_usd=total_bank_usd)
+            profit=profit, currency=currency, debt_rows=new_debt_rows, total_cash_usd=total_cash_usd, total_bank_usd=total_bank_usd, \
+            investment_total=investment_total, profit_loss_total=profit_loss_total, debt_total=debt_total, interest_total=interest_total, \
+            total_assets=total_assets)
 
 
 @app.route("/budgetary", methods=["GET", "POST"])
@@ -1234,3 +1262,24 @@ def convert_currency():
         exchange_rate = forex_rate(final_currency)["rate"]
         converted_amount = round(exchange_rate * float(value_in_usd), 2)
         return jsonify({'converted_amount': currency(converted_amount)})
+    
+
+# Convert usd values for profits or interests into other currencies
+@app.route("/convert_profit_currency")
+def convert_profit_currency():
+    final_currency = request.args.get('final_currency')
+    value_in_usd = float(request.args.get('value_in_usd'))
+
+    if final_currency.upper() == 'USD':
+        converted_amount = round(float(value_in_usd), 2)
+        return jsonify({'converted_amount': profit(converted_amount)})
+    
+    elif final_currency.upper() == 'MMK':
+        exchange_rate = 4970
+        converted_amount = round(exchange_rate * float(value_in_usd), 2)
+        return jsonify({'converted_amount': profit(converted_amount)})
+    
+    else:
+        exchange_rate = forex_rate(final_currency)["rate"]
+        converted_amount = round(exchange_rate * float(value_in_usd), 2)
+        return jsonify({'converted_amount': profit(converted_amount)})

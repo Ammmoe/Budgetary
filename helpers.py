@@ -143,10 +143,10 @@ def forex_rate(symbol):
 
 # Convert other currency values into usd   
 def amount_in_usd(currency, value):
-    if currency == 'usd':
+    if currency.upper() == 'USD':
         return round(float(value), 2)
 
-    elif currency == 'mmk':
+    elif currency.upper() == 'MMK':
         exchange_rate = 4970
         amount_in_usd = (1 / exchange_rate) * float(value)
         return round(float(amount_in_usd), 2)
