@@ -4,211 +4,207 @@
     Homepage
 {% endblock %}
 
-{% block main %}
-<div action="/" method="post">
-    
-    <div class="card border-dark mb-4 col-md-12">
-        <div class="card-header">Total Assets & Liabilities</div>
-        <div class="card-body">
-            <span class="card-title h5">Total Assets & Liabilities in</span>
-            <select name="asset-currency-select" id="asset-currency-select" class="h5" onchange="convertAssetCurrency()">
-                <option value="usd" selected>USD</option>
-                <option value="sgd">SGD</option>
-                <option value="thb">THB</option>
-                <option value="mmk">MMK</option>
-            </select>
-            <div style="display: none;" id="total_assets_raw">{{ total_assets }}</div>
-            <div class="card-text h3" id="total_assets">{{ total_assets | currency }}</div>
-        </div>
+{% block main %}   
+<div class="card border-dark mb-4 col-md-12">
+    <div class="card-header">Total Assets & Liabilities</div>
+    <div class="card-body">
+        <span class="card-title h5">Total Assets & Liabilities in</span>
+        <select name="asset-currency-select" id="asset-currency-select" class="h5" onchange="convertAssetCurrency()">
+            <option value="usd" selected>USD</option>
+            <option value="sgd">SGD</option>
+            <option value="thb">THB</option>
+            <option value="mmk">MMK</option>
+        </select>
+        <div style="display: none;" id="total_assets_raw">{{ total_assets }}</div>
+        <div class="card-text h3" id="total_assets">{{ total_assets | currency }}</div>
     </div>
+</div>
 
-    <div class="card border-dark mb-4 col-md-12">
-        <div class="card-header text-bg-success">Cash & Bank Deposits</div>
-        <div class="card-body">
-            <table class="table">
-                <thead>
-                  <tr class="fw-bold">
-                    <th scope="col"></th>
-                    <th scope="col">Cash</th>
-                    <th scope="col">Bank Deposits</th>
-                  </tr>
-                </thead>
-                <tbody class="table-group-divider">
-                  <tr>
-                    <td scope="row">USD</td>
-                    <td>{{ cash_usd }}</td>
-                    <td>{{ bank_usd }}</td>
-                  </tr>
-                  <tr>
-                    <td scope="row">SGD</td>
-                    <td>{{ cash_sgd }}</td>
-                    <td>{{ bank_sgd }}</td>
-                  </tr>
-                  <tr>
-                    <td scope="row">THB</td>
-                    <td>{{ cash_thb }}</td>
-                    <td>{{ bank_thb }}</td>
-                  </tr>
-                  <tr>
-                    <td scope="row">MMK</td>
-                    <td>{{ cash_mmk }}</td>
-                    <td>{{ bank_mmk }}</td>
-                  </tr>
-                </tbody>
-                <tfoot class="table-group-divider">
-                    <td scope="row">Equivalent Total in
-                        <select name="cash-currency-select" id="cash-currency-select" onchange="convertCashCurrency()">
-                            <option value="usd" selected>USD</option>
-                            <option value="sgd">SGD</option>
-                            <option value="thb">THB</option>
-                            <option value="mmk">MMK</option>
-                        </select>
-                    </td>
-                    <td id="total_cash_raw" style="display: none;">{{ total_cash_usd }}</td>
-                    <td id="total_bank_raw" style="display: none;">{{ total_bank_usd }}</td>
-                    <td id="total_cash">{{ total_cash_usd | currency }}</td>
-                    <td id="total_bank">{{ total_bank_usd | currency }}</td>
-                </tfoot>
-            </table>
-        </div>
+<div class="card border-dark mb-4 col-md-12">
+    <div class="card-header text-bg-success">Cash & Bank Deposits</div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr class="fw-bold">
+                <th scope="col"></th>
+                <th scope="col">Cash</th>
+                <th scope="col">Bank Deposits</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                <tr>
+                <td scope="row">USD</td>
+                <td>{{ cash_usd }}</td>
+                <td>{{ bank_usd }}</td>
+                </tr>
+                <tr>
+                <td scope="row">SGD</td>
+                <td>{{ cash_sgd }}</td>
+                <td>{{ bank_sgd }}</td>
+                </tr>
+                <tr>
+                <td scope="row">THB</td>
+                <td>{{ cash_thb }}</td>
+                <td>{{ bank_thb }}</td>
+                </tr>
+                <tr>
+                <td scope="row">MMK</td>
+                <td>{{ cash_mmk }}</td>
+                <td>{{ bank_mmk }}</td>
+                </tr>
+            </tbody>
+            <tfoot class="table-group-divider">
+                <td scope="row">Equivalent Total in
+                    <select name="cash-currency-select" id="cash-currency-select" onchange="convertCashCurrency()">
+                        <option value="usd" selected>USD</option>
+                        <option value="sgd">SGD</option>
+                        <option value="thb">THB</option>
+                        <option value="mmk">MMK</option>
+                    </select>
+                </td>
+                <td id="total_cash_raw" style="display: none;">{{ total_cash_usd }}</td>
+                <td id="total_bank_raw" style="display: none;">{{ total_bank_usd }}</td>
+                <td id="total_cash">{{ total_cash_usd | currency }}</td>
+                <td id="total_bank">{{ total_bank_usd | currency }}</td>
+            </tfoot>
+        </table>
     </div>
+</div>
 
-    <div class="card border-dark mb-4 col-md-12">
-        <div class="card-header text-bg-warning">Investments</div>
-        <div class="card-body">
-            <table class="table">
-                <thead>
-                    <tr class="fw-bold">
-                        <th scope="col">Type</th>
-                        <th scope="col">Symbol</th>
-                        <th scope="col">Quantity</th>
-                        <th scope="col">Market Value in USD (Profit / Loss)</th>
-                    </tr>
-                </thead>
-                <tbody class="table-group-divider">
-                    {% for row in investment_rows %}
-                    <tr>
-                        <td>{{ row['investment_type'] }}</td>
-                        <td>{{ row['symbol'] }}</td>
-                        <td>{{ row['quantity'] }}</td>
-                        <td>{{ row['original_value'] | currency }} 
-                            <span class="
-                            {% if row['profit_loss'] > 0 %}
-                                text-success
-                            {% elif row['profit_loss'] == 0 %}
-                                text-secondary
-                            {% else %}
-                                text-danger
-                            {% endif %}
-                                ">{{ row['profit_loss'] | profit }}</span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot class="table-group-divider">
-                    <th colspan="2"> </th>
-                    <td scope="row">Equivalent Total in
-                        <select name="investment-currency-select" id="investment-currency-select" onchange="convertInvestmentCurrency()">
-                            <option value="usd" selected>USD</option>
-                            <option value="sgd">SGD</option>
-                            <option value="thb">THB</option>
-                            <option value="mmk">MMK</option>
-                        </select>
-                    </td>
-                    <td id="investment_total_raw" style="display: none;">
-                        {{ investment_total }}
-                    </td>
-                    <td id="profit_loss_total_raw" style="display: none;">
-                        {{ profit_loss_total }}
-                    </td>
-                    <td>
-                        <span id="investment_total">{{ investment_total | currency }} </span> 
-                        <span id="profit_loss_total" class="
-                        {% if profit_loss_total > 0 %}
+<div class="card border-dark mb-4 col-md-12">
+    <div class="card-header text-bg-warning">Investments</div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr class="fw-bold">
+                    <th scope="col">Type</th>
+                    <th scope="col">Symbol</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Market Value in USD (Profit / Loss)</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for row in investment_rows %}
+                <tr>
+                    <td>{{ row['investment_type'] }}</td>
+                    <td>{{ row['symbol'] }}</td>
+                    <td>{{ row['quantity'] }}</td>
+                    <td>{{ row['original_value'] | currency }} 
+                        <span class="
+                        {% if row['profit_loss'] > 0 %}
                             text-success
-                        {% elif profit_loss_total == 0 %}
+                        {% elif row['profit_loss'] == 0 %}
                             text-secondary
                         {% else %}
                             text-danger
-                        {% endif %}">{{ profit_loss_total | profit }}</span>
-                    </td>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-
-    <div class="card border-dark mb-4 col-md-12">
-        <div class="card-header text-bg-danger">Debts & Receivables</div>
-        <div class="card-body">
-            <table class="table">
-                <thead>
-                    <tr class="fw-bold">
-                        <th scope="col">Category</th>
-                        <th scope="col">Debtor or Creditor</th>
-                        <th scope="col">Date (yyyy-mm-dd)</th>
-                        <th scope="col">Interest Rate</th>
-                        <th scope="col">Currency</th>
-                        <th scope="col">Total Amount (Interest)</th>
-                    </tr>
-                </thead>
-                <tbody class="table-group-divider">
-                    {% for row in debt_rows %}
-                    <tr class="
-                    {% if row['debt_category'] == 'borrow' and row['amount'] != 0 %}
-                        text-danger
-                    {% elif row['debt_category'] == 'borrow' and row['amount'] == 0 %}
-                        text-danger text-decoration-line-through
-                    {% elif row['debt_category'] == 'lend' and row['amount'] != 0 %}
-                        text-success
-                    {% elif row['debt_category'] == 'lend' and row['amount'] == 0 %}
-                        text-success text-decoration-line-through
-                    {% endif %}
-                    ">
-                        <td>
-                        {% if row['debt_category'] == 'borrow' %}
-                            payable
-                        {% elif row['debt_category'] == 'lend' %}
-                            receivable
                         {% endif %}
-                        </td>
-                        <td>{{ row['debtor_or_creditor'] }}</td>
-                        <td>{{ row['transaction_date'] }}</td>
-                        <td>{{ row['interest_rate'] }}%</td>
-                        <td>{{ row['currency'] | upper }}</td>
-                        <td>{{ row['amount'] | currency }}
-                            <span>{{ row['interest'] | profit }}</span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot class="table-group-divider">
-                    <th colspan="4"> </th>
-                    <td scope="row">Equivalent Total in
-                        <select name="debt-currency-select" id="debt-currency-select" onchange="convertDebtCurrency()">
-                            <option value="usd" selected>USD</option>
-                            <option value="sgd">SGD</option>
-                            <option value="thb">THB</option>
-                            <option value="mmk">MMK</option>
-                        </select>
+                            ">{{ row['profit_loss'] | profit }}</span>
                     </td>
-                    <td id="debt_total_raw" style="display: none;">{{ debt_total }}</td>
-                    <td id="interest_total_raw" style="display: none;">{{ interest_total }}</td>
-                    <td class="
-                    {% if debt_total > 0 %}
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="table-group-divider">
+                <th colspan="2"> </th>
+                <td scope="row">Equivalent Total in
+                    <select name="investment-currency-select" id="investment-currency-select" onchange="convertInvestmentCurrency()">
+                        <option value="usd" selected>USD</option>
+                        <option value="sgd">SGD</option>
+                        <option value="thb">THB</option>
+                        <option value="mmk">MMK</option>
+                    </select>
+                </td>
+                <td id="investment_total_raw" style="display: none;">
+                    {{ investment_total }}
+                </td>
+                <td id="profit_loss_total_raw" style="display: none;">
+                    {{ profit_loss_total }}
+                </td>
+                <td>
+                    <span id="investment_total">{{ investment_total | currency }} </span> 
+                    <span id="profit_loss_total" class="
+                    {% if profit_loss_total > 0 %}
                         text-success
-                    {% elif debt_total == 0 %}
+                    {% elif profit_loss_total == 0 %}
                         text-secondary
                     {% else %}
                         text-danger
-                    {% endif %}">
-                        <span id="debt_total">{{ debt_total | currency}} </span>
-                        <span id="interest_total">{{ interest_total | profit }}</span>
-                    </td>
-                </tfoot>
-            </table>
-        </div>
+                    {% endif %}">{{ profit_loss_total | profit }}</span>
+                </td>
+            </tfoot>
+        </table>
     </div>
+</div>
 
+<div class="card border-dark mb-4 col-md-12">
+    <div class="card-header text-bg-danger">Debts & Receivables</div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr class="fw-bold">
+                    <th scope="col">Category</th>
+                    <th scope="col">Debtor / Creditor</th>
+                    <th scope="col">Date (yyyy-mm-dd)</th>
+                    <th scope="col">Monthly Interest Rate</th>
+                    <th scope="col">Currency</th>
+                    <th scope="col">Total Amount (Interest)</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for row in debt_rows %}
+                <tr class="
+                {% if row['debt_category'] == 'borrow' and row['amount'] != 0 %}
+                    text-danger
+                {% elif row['debt_category'] == 'borrow' and row['amount'] == 0 %}
+                    text-danger text-decoration-line-through
+                {% elif row['debt_category'] == 'lend' and row['amount'] != 0 %}
+                    text-success
+                {% elif row['debt_category'] == 'lend' and row['amount'] == 0 %}
+                    text-success text-decoration-line-through
+                {% endif %}
+                ">
+                    <td>
+                    {% if row['debt_category'] == 'borrow' %}
+                        payable
+                    {% elif row['debt_category'] == 'lend' %}
+                        receivable
+                    {% endif %}
+                    </td>
+                    <td>{{ row['debtor_or_creditor'] }}</td>
+                    <td>{{ row['transaction_date'] }}</td>
+                    <td>{{ row['interest_rate'] }}%</td>
+                    <td>{{ row['currency'] | upper }}</td>
+                    <td>{{ row['amount'] | currency }}
+                        <span>{{ row['interest'] | profit }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot class="table-group-divider">
+                <th colspan="4"> </th>
+                <td scope="row">Equivalent Total in
+                    <select name="debt-currency-select" id="debt-currency-select" onchange="convertDebtCurrency()">
+                        <option value="usd" selected>USD</option>
+                        <option value="sgd">SGD</option>
+                        <option value="thb">THB</option>
+                        <option value="mmk">MMK</option>
+                    </select>
+                </td>
+                <td id="debt_total_raw" style="display: none;">{{ debt_total }}</td>
+                <td id="interest_total_raw" style="display: none;">{{ interest_total }}</td>
+                <td class="
+                {% if debt_total > 0 %}
+                    text-success
+                {% elif debt_total == 0 %}
+                    text-secondary
+                {% else %}
+                    text-danger
+                {% endif %}">
+                    <span id="debt_total">{{ debt_total | currency}} </span>
+                    <span id="interest_total">{{ interest_total | profit }}</span>
+                </td>
+            </tfoot>
+        </table>
+    </div>
 </div>
 {% endblock %}
 

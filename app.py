@@ -1142,11 +1142,71 @@ def analysis():
     return apology("TO DO", 400)
 
 
-@app.route("/history")
+@app.route("/history", methods=["GET", "POST"])
 @login_required
 def history():
     # Create budgetary logs
-    return apology("TO DO", 400)
+    income_spending_query = """
+        SELECT
+            transactions.transaction_date AS date,
+            'income' AS type,
+            income.income_type AS category,
+            income.comment AS comment,
+            transactions.payment_method AS payment_method,
+            transactions.currency AS currency,
+            transactions.amount AS amount
+        FROM
+            income JOIN transactions ON income.transaction_id = transactions.id
+        {income_where_clause}
+        UNION ALL
+        SELECT
+            transactions.transaction_date AS date,
+            'expense' AS type,
+            spending.spending_type AS category,
+            spending.comment AS comment,
+            transactions.payment_method AS payment_method,
+            transactions.currency AS currency,
+            transactions.amount AS amount
+        FROM
+            spending JOIN transactions ON spending.transaction_id = transactions.id
+        {spending_where_clause}
+        ORDER BY transactions.transaction_date;
+        """
+    
+    income_where_clause = ""
+    spending_where_clause = ""
+
+    if request.method == "GET":
+        income_spending_query = income_spending_query.format(income_where_clause=income_where_clause, spending_where_clause=spending_where_clause)
+        income_spending_rows = db.execute(
+            income_spending_query
+        )
+        
+        return render_template("history.html", income_spending_rows=income_spending_rows, currency=currency)
+
+    else:
+        start_date = request.form.get('start_date')
+        end_date = request.form.get('end_date')
+    
+        if start_date and end_date:
+            income_where_clause = "WHERE transactions.transaction_date BETWEEN ? AND ?"
+            spending_where_clause = "WHERE transactions.transaction_date BETWEEN ? AND ?"
+
+            income_spending_query = income_spending_query.format(income_where_clause=income_where_clause, spending_where_clause=spending_where_clause)
+
+            income_spending_rows = db.execute(
+                income_spending_query, start_date, end_date, start_date, end_date
+            )
+
+            return render_template("history.html", income_spending_rows=income_spending_rows, currency=currency)
+
+        else:
+            income_spending_query = income_spending_query.format(income_where_clause=income_where_clause, spending_where_clause=spending_where_clause)
+            income_spending_rows = db.execute(
+                income_spending_query
+            )
+        
+            return render_template("history.html", income_spending_rows=income_spending_rows, currency=currency)
 
 
 @app.route("/login", methods=["GET", "POST"])

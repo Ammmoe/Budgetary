@@ -1,0 +1,168 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Homepage
+{% endblock %}
+
+{% block main %}    
+<div class="row h5 mb-4 justify-content-center">
+    Filter history by date
+</div>
+<form class="row justify-content-center" action="/history" method="post">
+    <div class="col-md-3 mb-4">
+        <div class="input-group">
+            <span class="input-group-text border-black fw-bold">Start Date</span>
+            <input class="form-control border-black" name="start_date" id="start_date" placeholder="Select start date" type="date">
+        </div>
+    </div>
+    <div class="col-md-3 mb-4">
+        <div class="input-group">
+            <span class="input-group-text border-black fw-bold">End Date</span>
+            <input class="form-control border-black" name="end_date" id="end_date" placeholder="Select end date" type="date">
+        </div>
+    </div>
+    <div class="col-md-1 mb-4 text-start">
+        <button class="btn btn-outline-dark" type="submit">Filter</button>
+    </div>
+</form>
+
+<div class="card border-dark mb-4 col-md-12">
+    <div class="card-header text-bg-success">Incomes & Expenses</div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr class="fw-bold">
+                <th scope="col">Date (yyyy-mm-dd)</th>
+                <th scope="col">Type</th>
+                <th scope="col">Category</th>
+                <th scope="col">Comment</th>
+                <th scope="col">Payment Method</th>
+                <th scope="col">Currency</th>
+                <th scope="col">Amount</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                {% for row in income_spending_rows %}
+                <tr class="
+                    {% if row['type'] == 'income' %}
+                        text-success
+                    {% elif row['type'] == 'expense' %}
+                        text-danger
+                    {% endif %}">
+                    <td scope="row">{{ row['date'] }}</td>
+                    <td>{{ row['type'] }}</td>
+                    <td>{{ row['category'] }}</td>
+                    <td>{{ row['comment'] }}</td>
+                    <td>{{ row['payment_method'] }}</td>
+                    <td>{{ row['currency'] | upper }}</td>
+                    <td>{{ row['amount'] | currency }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card border-dark mb-4 col-md-12">
+    <div class="card-header text-bg-success">Investments</div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr class="fw-bold">
+                <th scope="col">Date (yyyy-mm-dd)</th>
+                <th scope="col">Type</th>
+                <th scope="col">Symbol / Comment</th>
+                <th scope="col">Buy / Sell</th>
+                <th scope="col">Quantity</th>
+                <th scope="col">Payment Method</th>
+                <th scope="col">Currency</th>
+                <th scope="col">Amount</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                <tr class="text-success">
+                    <td scope="row">2024-07-07</td>
+                    <td>cryptocurrency</td>
+                    <td>BTC</td>
+                    <td>buy</td>
+                    <td>0.1</td>
+                    <td>banking</td>
+                    <td>USD</td>
+                    <td>6000</td>
+                </tr>
+                <tr class="text-danger">
+                    <td scope="row">2024-07-07</td>
+                    <td>stock</td>
+                    <td>AAPL</td>
+                    <td>sell</td>
+                    <td>1</td>
+                    <td>banking</td>
+                    <td>USD</td>
+                    <td>130</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card border-dark mb-4 col-md-12">
+    <div class="card-header text-bg-success">Debts & Receivables</div>
+    <div class="card-body">
+        <table class="table">
+            <thead>
+                <tr class="fw-bold">
+                <th scope="col">Date (yyyy-mm-dd)</th>
+                <th scope="col">Category</th>
+                <th scope="col">Debtor / Creditor</th>
+                <th scope="col">Monthly Interest Rate</th>
+                <th scope="col">Payment Method</th>
+                <th scope="col">Currency</th>
+                <th scope="col">Amount</th>
+                </tr>
+            </thead>
+            <tbody class="table-group-divider">
+                <tr class="text-success">
+                    <td scope="row">2024-07-07</td>
+                    <td>lend</td>
+                    <td>Su Su</td>
+                    <td>1%</td>
+                    <td>cash</td>
+                    <td>SGD</td>
+                    <td>3000</td>
+                </tr>
+                <tr class="text-danger">
+                    <td scope="row">2024-07-07</td>
+                    <td>borrow</td>
+                    <td>Su Su - food</td>
+                    <td>1%</td>
+                    <td>bank</td>
+                    <td>SGD</td>
+                    <td>4000</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function convertCashCurrency() {
+        const selectedCurrency = document.getElementById('cash-currency-select').value;
+        const cashAmount = document.getElementById('total_cash_raw').textContent;
+        const bankAmount = document.getElementById('total_bank_raw').textContent;
+
+        fetch(`/convert_currency?final_currency=${selectedCurrency}&value_in_usd=${cashAmount}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total_cash').textContent = data.converted_amount
+            })
+
+        fetch(`/convert_currency?final_currency=${selectedCurrency}&value_in_usd=${bankAmount}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total_bank').textContent = data.converted_amount
+            })
+    }
+</script>
+{% endblock %}
