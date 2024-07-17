@@ -50,3 +50,9 @@ tr.text-danger td {
     color: inherit;
     padding: 3px;
 }
+
+tr.text-primary th,
+tr.text-primary td {
+    color: inherit;
+    padding: 3px;
+}

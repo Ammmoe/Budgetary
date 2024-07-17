@@ -661,13 +661,14 @@ def index():
                 SUM(CASE WHEN investment.buy_or_sell = 'buy' THEN transactions.amount_in_usd ELSE -transactions.amount_in_usd END) AS original_value \
             FROM investment JOIN transactions \
             ON investment.transaction_id = transactions.id \
+            WHERE investment.user_id = ? \
             GROUP BY \
                 investment.investment_type, \
                 CASE \
                     WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
                     WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
                     ELSE investment.symbol_real_estate_type \
-                END"
+                END", user_id
         )
 
         new_investment_rows = []
@@ -718,7 +719,7 @@ def index():
             transactions.amount \
             FROM debt JOIN transactions \
             ON debt.transaction_id = transactions.id \
-            WHERE debt.id IN (SELECT MAX(debt.id) FROM debt GROUP BY debtor_or_creditor)"
+            WHERE debt.user_id = ? and debt.id IN (SELECT MAX(debt.id) FROM debt GROUP BY debtor_or_creditor)", user_id
         )
 
         new_debt_rows = []
@@ -1145,6 +1146,7 @@ def analysis():
 @app.route("/history", methods=["GET", "POST"])
 @login_required
 def history():
+    user_id = session.get("user_id")
     # Create budgetary logs
     income_spending_query = """
         SELECT
@@ -1170,43 +1172,114 @@ def history():
         FROM
             spending JOIN transactions ON spending.transaction_id = transactions.id
         {spending_where_clause}
-        ORDER BY transactions.transaction_date;
+        ORDER BY transactions.transaction_date
         """
     
-    income_where_clause = ""
-    spending_where_clause = ""
+    investment_query = """
+        SELECT
+            transactions.transaction_date AS date,
+            investment.investment_type AS type,
+        CASE
+            WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment
+            WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment
+            ELSE investment.symbol_real_estate_type
+        END AS symbol_comment,
+            investment.buy_or_sell AS buy_sell,
+            investment.quantity,
+            transactions.payment_method,
+            transactions.currency,
+            transactions.amount
+        FROM
+            investment JOIN transactions ON investment.transaction_id = transactions.id
+        {investment_where_clause}
+        ORDER BY transactions.transaction_date
+        """
+    
+    debt_query = """
+        SELECT
+            transactions.transaction_date AS date,
+        debt.debt_category AS category,
+            debt.debtor_or_creditor,
+            debt.interest_rate,
+            transactions.payment_method,
+            transactions.currency,
+            transactions.amount
+        FROM
+            debt JOIN transactions ON debt.transaction_id = transactions.id
+        {debt_where_clause}
+        ORDER BY debt.debtor_or_creditor, transactions.transaction_date
+        """
+    
+    income_where_clause = "WHERE income.user_id = ?"
+    spending_where_clause = "WHERE spending.user_id = ?"
+    investment_where_clause = "WHERE investment.user_id = ?"
+    debt_where_clause = "WHERE debt.user_id = ?"
 
     if request.method == "GET":
         income_spending_query = income_spending_query.format(income_where_clause=income_where_clause, spending_where_clause=spending_where_clause)
         income_spending_rows = db.execute(
-            income_spending_query
+            income_spending_query, user_id, user_id
         )
         
-        return render_template("history.html", income_spending_rows=income_spending_rows, currency=currency)
+        investment_query = investment_query.format(investment_where_clause=investment_where_clause)
+        investment_rows = db.execute(
+            investment_query, user_id
+        )
+
+        debt_query = debt_query.format(debt_where_clause=debt_where_clause)
+        debt_rows = db.execute(
+            debt_query, user_id
+        )
+
+        return render_template("history.html", income_spending_rows=income_spending_rows, investment_rows=investment_rows, \
+            debt_rows=debt_rows, currency=currency)
 
     else:
         start_date = request.form.get('start_date')
         end_date = request.form.get('end_date')
     
         if start_date and end_date:
-            income_where_clause = "WHERE transactions.transaction_date BETWEEN ? AND ?"
-            spending_where_clause = "WHERE transactions.transaction_date BETWEEN ? AND ?"
+            income_where_clause = "WHERE income.user_id = ? and transactions.transaction_date BETWEEN ? AND ?"
+            spending_where_clause = "WHERE spending.user_id = ? and transactions.transaction_date BETWEEN ? AND ?"
+            investment_where_clause = "WHERE investment.user_id = ? and transactions.transaction_date BETWEEN ? AND ?"
+            debt_where_clause = "WHERE debt.user_id = ? and transactions.transaction_date BETWEEN ? AND ?"
 
             income_spending_query = income_spending_query.format(income_where_clause=income_where_clause, spending_where_clause=spending_where_clause)
-
             income_spending_rows = db.execute(
-                income_spending_query, start_date, end_date, start_date, end_date
+                income_spending_query, user_id, start_date, end_date, user_id, start_date, end_date
             )
 
-            return render_template("history.html", income_spending_rows=income_spending_rows, currency=currency)
+            investment_query = investment_query.format(investment_where_clause=investment_where_clause)
+            investment_rows = db.execute(
+                investment_query, user_id, start_date, end_date
+            )
+
+            debt_query = debt_query.format(debt_where_clause=debt_where_clause)
+            debt_rows = db.execute(
+                debt_query, user_id, start_date, end_date
+            )
+
+            return render_template("history.html", income_spending_rows=income_spending_rows, investment_rows=investment_rows, \
+                debt_rows=debt_rows, currency=currency)
 
         else:
             income_spending_query = income_spending_query.format(income_where_clause=income_where_clause, spending_where_clause=spending_where_clause)
             income_spending_rows = db.execute(
-                income_spending_query
+                income_spending_query, user_id, user_id
+            )
+
+            investment_query = investment_query.format(investment_where_clause=investment_where_clause)
+            investment_rows = db.execute(
+                investment_query, user_id
+            )
+
+            debt_query = debt_query.format(debt_where_clause=debt_where_clause)
+            debt_rows = db.execute(
+                debt_query, user_id
             )
         
-            return render_template("history.html", income_spending_rows=income_spending_rows, currency=currency)
+            return render_template("history.html", income_spending_rows=income_spending_rows, investment_rows=investment_rows, \
+                debt_rows=debt_rows, currency=currency)
 
 
 @app.route("/login", methods=["GET", "POST"])

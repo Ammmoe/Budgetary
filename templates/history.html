@@ -80,26 +80,23 @@
                 </tr>
             </thead>
             <tbody class="table-group-divider">
-                <tr class="text-success">
-                    <td scope="row">2024-07-07</td>
-                    <td>cryptocurrency</td>
-                    <td>BTC</td>
-                    <td>buy</td>
-                    <td>0.1</td>
-                    <td>banking</td>
-                    <td>USD</td>
-                    <td>6000</td>
+                {% for row in investment_rows %}
+                <tr class="
+                {% if row['buy_sell'] == 'buy' %}
+                    text-success
+                {% elif row['buy_sell'] == 'sell' %}
+                    text-danger
+                {% endif %}">
+                    <td scope="row">{{ row['date'] }}</td>
+                    <td>{{ row['type'] }}</td>
+                    <td>{{ row['symbol_comment'] }}</td>
+                    <td>{{ row['buy_sell'] }}</td>
+                    <td>{{ row['quantity'] }}</td>
+                    <td>{{ row['payment_method'] }}</td>
+                    <td>{{ row['currency'] | upper }}</td>
+                    <td>{{ row['amount'] | currency }}</td>
                 </tr>
-                <tr class="text-danger">
-                    <td scope="row">2024-07-07</td>
-                    <td>stock</td>
-                    <td>AAPL</td>
-                    <td>sell</td>
-                    <td>1</td>
-                    <td>banking</td>
-                    <td>USD</td>
-                    <td>130</td>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
@@ -121,24 +118,30 @@
                 </tr>
             </thead>
             <tbody class="table-group-divider">
-                <tr class="text-success">
-                    <td scope="row">2024-07-07</td>
-                    <td>lend</td>
-                    <td>Su Su</td>
-                    <td>1%</td>
-                    <td>cash</td>
-                    <td>SGD</td>
-                    <td>3000</td>
+                {% for row in debt_rows %}
+                <tr class="
+                {% if row['category'] == 'borrow' %}
+                    text-danger
+                {% elif row['category'] == 'lend' %}
+                    text-success
+                {% else %}
+                    text-primary
+                {% endif %}">
+                    <td scope="row">{{ row['date'] }}</td>
+                    <td>{{ row['category'] }}</td>
+                    <td>{{ row['debtor_or_creditor'] }}</td>
+                    <td>
+                        {% if row['interest_rate'] == None %}
+                            -  
+                        {% else %}
+                            {{ row['interest_rate'] }}%
+                        {% endif %}
+                    </td>
+                    <td>{{ row['payment_method'] }}</td>
+                    <td>{{ row['currency'] | upper }}</td>
+                    <td>{{ row['amount'] | currency }}</td>
                 </tr>
-                <tr class="text-danger">
-                    <td scope="row">2024-07-07</td>
-                    <td>borrow</td>
-                    <td>Su Su - food</td>
-                    <td>1%</td>
-                    <td>bank</td>
-                    <td>SGD</td>
-                    <td>4000</td>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
