@@ -56,3 +56,34 @@ tr.text-primary td {
     color: inherit;
     padding: 3px;
 }
+
+.financial-stats-container{
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    margin: 0 auto;
+    width: fit-content;
+    padding: 32px 32px;
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+    border-radius: 20px;
+    transition: all 400ms ease;
+}
+
+.donutChartContainer {
+    width: auto;
+    height: auto;
+}
+
+.financial-stats-container:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 16px -7px rgba(0, 0, 0, 0.3);
+}
+
+.financial-stats {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin: 0 auto;
+    width: fit-content;
+    padding: 32px 32px;
+}

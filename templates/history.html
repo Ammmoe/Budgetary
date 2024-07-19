@@ -147,25 +147,3 @@
     </div>
 </div>
 {% endblock %}
-
-{% block scripts %}
-<script>
-    function convertCashCurrency() {
-        const selectedCurrency = document.getElementById('cash-currency-select').value;
-        const cashAmount = document.getElementById('total_cash_raw').textContent;
-        const bankAmount = document.getElementById('total_bank_raw').textContent;
-
-        fetch(`/convert_currency?final_currency=${selectedCurrency}&value_in_usd=${cashAmount}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('total_cash').textContent = data.converted_amount
-            })
-
-        fetch(`/convert_currency?final_currency=${selectedCurrency}&value_in_usd=${bankAmount}`)
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('total_bank').textContent = data.converted_amount
-            })
-    }
-</script>
-{% endblock %}

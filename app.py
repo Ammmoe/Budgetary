@@ -1140,7 +1140,7 @@ def budgetary():
 @login_required
 def analysis():
     # Create analysis routes
-    return apology("TO DO", 400)
+    return render_template("analysis.html")
 
 
 @app.route("/history", methods=["GET", "POST"])

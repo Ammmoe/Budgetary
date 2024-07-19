@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Homepage
+{% endblock %}
+
+{% block main %}
+<div class="financial-stats-container">
+    <div class="h5 text-center">Total Financial Position Breakdown</div>
+    <div class="finalcial-stats">
+        <div class="doughnut-chart-container">
+            <canvas id="doughnut-chart" class="doughnut-chart"></canvas>
+        </div>
+
+        <div class="financial-stat-details text-start">
+            <div>
+                <span>Cash & Bank Deposits: </span>
+                <span class="text-danger">USD 8000</span>
+            </div>
+            <div>
+                <span>Investments: </span>
+                <span class="text-danger">USD 1200000</span>
+            </div>
+            <div>
+                <span>Debts & Receivables: </span>
+                <span class="text-danger">USD -25000</span>
+            </div> 
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const doughnutChart = document.getElementById('doughnut-chart')
+    const doughnutChartData = {
+        labels: ['Cash & Bank Deposits', 'Investments', 'Debts & Receivables'],
+        data: [8000, 1200000, -25000]
+    }
+    new Chart(doughnutChart, {
+        type: 'doughnut',
+        data: {
+        labels: doughnutChartData.labels,
+        datasets: [{
+            label: 'Financial Position',
+            data: doughnutChartData.data,
+            backgroundColor: [
+                'rgb(25, 135, 84)',
+                'rgb(255, 193, 7)',
+                'rgb(220, 53, 69)'
+            ],
+            hoverOffset: 4
+        }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                display: false
+                }
+            },
+            responsive: false,
+            borderWidth: 10,
+            borderRadius: 2,
+            hoverBorderWidth: 0
+        }
+    });
+</script>
+
+
+{% endblock %}
+
+{% block scripts %}
+{% endblock %}
