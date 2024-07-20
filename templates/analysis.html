@@ -1,13 +1,13 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Homepage
+    Analysis
 {% endblock %}
 
 {% block main %}
 <div class="financial-stats-container">
     <div class="h5 text-center">Total Financial Position Breakdown</div>
-    <div class="h5 text-center success-bg-text">USD 1,183,000</div>
+    <div class="h5 text-center success-bg-text" id="total-assets">USD {{ total_assets | currency }}</div>
     <div class="finalcial-stats">
         <div class="doughnut-chart-container">
             <canvas id="doughnut-chart" class="doughnut-chart"></canvas>
@@ -17,17 +17,20 @@
             <div class="legend">
                 <div class="success-color-box"></div>
                 <span>Cash & Bank Deposits:&nbsp;</span>
-                <span class="success-bg-text">USD 8,000</span>
+                <span class="success-bg-text">USD {{ total_cash_bank | currency }}</span>
+                <div id="total-cash-bank" style="display: none;">{{ total_cash_bank }}</div>
             </div>
             <div class="legend">
                 <div class="warning-color-box"></div>
                 <span>Investments:&nbsp;</span>
-                <span class="warning-bg-text">USD 1,200,000</span>
+                <span class="warning-bg-text">USD {{ investment_total | currency }}</span>
+                <div id="investment-total" style="display: none;">{{ investment_total }}</div>
             </div>
             <div class="legend">
                 <div class="danger-color-box"></div>
                 <span>Debts & Receivables:&nbsp;</span>
-                <span class="danger-bg-text">USD -25,000</span>
+                <span class="danger-bg-text">USD {{ debt_total | currency }}</span>
+                <div id="debt-total" style="display: none;">{{ debt_total }}</div>
             </div> 
         </div>
     </div>
@@ -35,17 +38,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const doughnutChart = document.getElementById('doughnut-chart')
+    const doughnutChart = document.getElementById('doughnut-chart');
+    const totalCashBank = Number(document.getElementById('total-cash-bank').innerText) || 0;
+    const investmentTotal = Number(document.getElementById('investment-total').innerText) || 0;
+    const debtTotal = Number(document.getElementById('debt-total').innerText) || 0;
     const doughnutChartData = {
         labels: ['Cash & Bank Deposits', 'Investments', 'Debts & Receivables'],
-        data: [8000, 1200000, -25000]
+        data: [totalCashBank, investmentTotal, debtTotal]
     }
     new Chart(doughnutChart, {
         type: 'doughnut',
         data: {
         labels: doughnutChartData.labels,
         datasets: [{
-            label: 'Financial Position',
+            label: 'Financial Distribution in USD',
             data: doughnutChartData.data,
             backgroundColor: [
                 'rgb(25, 135, 84)',
