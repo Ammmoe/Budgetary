@@ -7,23 +7,27 @@
 {% block main %}
 <div class="financial-stats-container">
     <div class="h5 text-center">Total Financial Position Breakdown</div>
+    <div class="h5 text-center success-bg-text">USD 1,183,000</div>
     <div class="finalcial-stats">
         <div class="doughnut-chart-container">
             <canvas id="doughnut-chart" class="doughnut-chart"></canvas>
         </div>
 
         <div class="financial-stat-details text-start">
-            <div>
-                <span>Cash & Bank Deposits: </span>
-                <span class="text-danger">USD 8000</span>
+            <div class="legend">
+                <div class="success-color-box"></div>
+                <span>Cash & Bank Deposits:&nbsp;</span>
+                <span class="success-bg-text">USD 8,000</span>
             </div>
-            <div>
-                <span>Investments: </span>
-                <span class="text-danger">USD 1200000</span>
+            <div class="legend">
+                <div class="warning-color-box"></div>
+                <span>Investments:&nbsp;</span>
+                <span class="warning-bg-text">USD 1,200,000</span>
             </div>
-            <div>
-                <span>Debts & Receivables: </span>
-                <span class="text-danger">USD -25000</span>
+            <div class="legend">
+                <div class="danger-color-box"></div>
+                <span>Debts & Receivables:&nbsp;</span>
+                <span class="danger-bg-text">USD -25,000</span>
             </div> 
         </div>
     </div>
@@ -58,7 +62,7 @@
                 }
             },
             responsive: false,
-            borderWidth: 10,
+            borderWidth: 3,
             borderRadius: 2,
             hoverBorderWidth: 0
         }

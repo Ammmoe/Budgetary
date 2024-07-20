@@ -66,7 +66,7 @@ tr.text-primary td {
     padding: 32px 32px;
     box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
     border-radius: 20px;
-    transition: all 400ms ease;
+    /* transition: all 400ms ease; */
 }
 
 .donutChartContainer {
@@ -74,10 +74,10 @@ tr.text-primary td {
     height: auto;
 }
 
-.financial-stats-container:hover {
+/* .financial-stats-container:hover {
     transform: scale(1.02);
     box-shadow: 0 4px 16px -7px rgba(0, 0, 0, 0.3);
-}
+} */
 
 .financial-stats {
     display: flex;
@@ -86,4 +86,52 @@ tr.text-primary td {
     margin: 0 auto;
     width: fit-content;
     padding: 32px 32px;
+}
+
+.legend {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+}
+
+.success-color-box {
+    width: 20px;
+    height: 20px;
+    background-color: rgb(25, 135, 84);
+    margin-right: 10px;
+}
+
+.warning-color-box {
+    width: 20px;
+    height: 20px;
+    background-color: rgb(255, 193, 7);
+    margin-right: 10px;
+}
+
+.danger-color-box {
+    width: 20px;
+    height: 20px;
+    background-color: rgb(220, 53, 69);
+    margin-right: 10px;
+}
+
+.success-bg-text {
+    background-color: rgb(25, 135, 84); 
+    color: white; 
+    padding: 0 4px 0 4px; 
+    border-radius: 5px;
+}
+
+.warning-bg-text {
+    background-color: rgb(255, 193, 7); 
+    color: white; 
+    padding: 0 4px 0 4px; 
+    border-radius: 5px;
+}
+
+.danger-bg-text {
+    background-color: rgb(220, 53, 69); 
+    color: white; 
+    padding: 0 4px 0 4px; 
+    border-radius: 5px;
 }
