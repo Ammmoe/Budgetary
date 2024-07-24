@@ -5,36 +5,279 @@
 {% endblock %}
 
 {% block main %}
-<div class="financial-stats-container">
-    <div class="h5 text-center">Total Financial Position Breakdown</div>
-    <div class="h5 text-center success-bg-text" id="total-assets">USD {{ total_assets | currency }}</div>
-    <div class="finalcial-stats">
-        <div class="doughnut-chart-container">
-            <canvas id="doughnut-chart" class="doughnut-chart"></canvas>
+<div class="container-main">
+
+    <div class="container-doughnut-chart">
+
+        <div class="container-topic h5">
+            <span class="container-item-topic">Total Financial Position Breakdown of:</span>
+            <span class="container-item-topic success-bg-topic" id="total-assets">
+                USD {{ total_assets | currency }}
+            </span>
+        </div>
+         
+        <div class="container-body">
+
+            <div class="container-doughnut-canvas">
+                <canvas id="doughnut-chart"></canvas>
+            </div>
+
+            <div class="container-item-legend">
+                <div class="container-item-innerlegends">
+                    <span class="success-color-box"></span>
+                    <span>Cash & Bank Deposits:&nbsp;</span>
+                    <span class="success-bg-text">USD {{ total_cash_bank | currency }}</span>
+                    <div id="total-cash-bank" style="display: none;">{{ total_cash_bank }}</div>
+                </div>
+                <div class="container-item-innerlegends">
+                    <span class="warning-color-box"></span>
+                    <span>Investments:&nbsp;</span>
+                    <span class="warning-bg-text">USD {{ investment_total | currency }}</span>
+                    <div id="investment-total" style="display: none;">{{ investment_total }}</div>
+                </div>
+                <div class="container-item-innerlegends">
+                    <span class="danger-color-box"></span>
+                    <span>Debts & Receivables:&nbsp;</span>
+                    <span class="danger-bg-text">USD {{ debt_total | currency }}</span>
+                    <div id="debt-total" style="display: none;">{{ debt_total }}</div>
+                </div> 
+            </div>
+
+        </div>  
+    </div>
+    
+
+    <div class="container-bar-chart">
+        <div class="h5 container-topic">
+            Inflows vs Outflows Analysis
+        </div> 
+
+        <div class="container-item-filter">
+            <form class="row justify-content-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text border-black fw-bold">From</span>
+                        <input class="form-control border-black" name="start_date" id="start_date" placeholder="Select start date" type="date">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text border-black fw-bold">To</span>
+                        <input class="form-control border-black" name="end_date" id="end_date" placeholder="Select end date" type="date">
+                    </div>
+                </div>
+                <div class="col-md-1 text-start">
+                    <button class="btn btn-outline-dark" type="submit">Filter</button>
+                </div>
+            </form>
         </div>
 
-        <div class="financial-stat-details text-start">
-            <div class="legend">
-                <div class="success-color-box"></div>
-                <span>Cash & Bank Deposits:&nbsp;</span>
-                <span class="success-bg-text">USD {{ total_cash_bank | currency }}</span>
-                <div id="total-cash-bank" style="display: none;">{{ total_cash_bank }}</div>
+        <div class="container-body">
+
+            <div class="container-bar-canvas">
+                <canvas id="stacked-chart"></canvas>
             </div>
-            <div class="legend">
-                <div class="warning-color-box"></div>
-                <span>Investments:&nbsp;</span>
-                <span class="warning-bg-text">USD {{ investment_total | currency }}</span>
-                <div id="investment-total" style="display: none;">{{ investment_total }}</div>
+    
+            <div class="container-item-legend text-start">
+                <div class="container-item-innerlegends">
+                    <span class="success-color-box"></span>
+                    <span>Incomes:&nbsp;</span>
+                    <span class="success-bg-text">USD 5,000</span>
+                    <div id="incomes" style="display: none;">5000</div>
+                </div>
+                <div class="container-item-innerlegends">
+                    <span class="warning-color-box"></span>
+                    <span>Investments:&nbsp;</span>
+                    <span class="success-bg-text">USD 2,000</span>
+                    <div id="investments" style="display: none;">2000</div>
+                </div>
+                <div class="container-item-innerlegends">
+                    <span class="expense-color-box"></span>
+                    <span>Expenses:&nbsp;</span>
+                    <span class="danger-bg-text">USD 3,000</span>
+                    <div id="expenses" style="display: none;">3000</div>
+                </div>
+                <div class="container-item-innerlegends">
+                    <span class="danger-color-box"></span>
+                    <span>Debts & Receivables:&nbsp;</span>
+                    <span class="danger-bg-text">USD 2,000,000</span>
+                    <div id="debts" style="display: none;">2000</div>
+                </div> 
+                <div class="container-item-innerlegends">
+                    <span class="primary-color-box"></span>
+                    <span>Net Balance:&nbsp;</span>
+                    <span class="success-bg-text">USD 2,000</span>
+                    <div id="net-balance" style="display: none;">2000</div>
+                </div> 
             </div>
-            <div class="legend">
-                <div class="danger-color-box"></div>
-                <span>Debts & Receivables:&nbsp;</span>
-                <span class="danger-bg-text">USD {{ debt_total | currency }}</span>
-                <div id="debt-total" style="display: none;">{{ debt_total }}</div>
-            </div> 
+
+        </div>
+    </div>
+
+
+    <div class="container-horizontal-bar-chart">
+        <div class="container-topic h5">
+            <span class="container-item-topic">Inflows Breakdown of:</span>
+            <span class="container-item-topic success-bg-topic" id="inflows">
+                USD 7,000.00
+            </span>
+        </div>
+
+        <div class="container-hbar-body">
+
+            <div class="container-hbar-canvas">
+                <canvas id="inflow-hbar-chart"></canvas>
+            </div>
+    
+            <div class="container-hbar-item-legend text-start">
+                <div class="container-item-innerlegends">
+                    <span class="salary-color-box"></span>
+                    <span>Salary:&nbsp;</span>
+                    <span class="success-bg-text">USD 2,500.00</span>
+                    <div id="salary" style="display: none;">2500</div>
+                </div>
+                <div class="container-item-innerlegends">
+                    <span class="bank-interest-color-box"></span>
+                    <span>Bank Interest:&nbsp;</span>
+                    <span class="success-bg-text">USD 500.00</span>
+                    <div id="bank-interest" style="display: none;">500</div>
+                </div>
+                <div class="container-item-innerlegends">
+                    <span class="other-income-color-box"></span>
+                    <span>Other Incomes:&nbsp;</span>
+                    <span class="success-bg-text">USD 2,000.00</span>
+                    <div id="other-income" style="display: none;">2000</div>
+                </div>
+                <div class="container-item-innerlegends">
+                    <span class="stock-color-box"></span>
+                    <span>Stock (sell):&nbsp;</span>
+                    <span class="success-bg-text">USD 1,000.00</span>
+                    <div id="stock-sell" style="display: none;">2000</div>
+                </div> 
+                <div class="container-item-innerlegends">
+                    <span class="crypto-color-box"></span>
+                    <span>Cryptocurrency (sell):&nbsp;</span>
+                    <span class="success-bg-text">USD 1,000.00</span>
+                    <div id="crypto-sell" style="display: none;">1000</div>
+                </div> 
+                <div class="container-item-innerlegends" style="display: none;">
+                    <span class="real-estate-color-box"></span>
+                    <span>Real Estate (sell):&nbsp;</span>
+                    <span class="success-bg-text">USD 1,000.00</span>
+                    <div id="real-estate-sell" style="display: none;">1000</div>
+                </div> 
+                <div class="container-item-innerlegends" style="display: none;">
+                    <span class="other-investment-color-box"></span>
+                    <span>Other Investments (sell):&nbsp;</span>
+                    <span class="success-bg-text">USD 1,000.00</span>
+                    <div id="other-investment-sell" style="display: none;">1000</div>
+                </div> 
+                <div class="container-item-innerlegends" style="display: none;">
+                    <span class="borrow-color-box"></span>
+                    <span>Borrow:&nbsp;</span>
+                    <span class="success-bg-text">USD 1,000.00</span>
+                    <div id="borrow" style="display: none;">1000</div>
+                </div> 
+                <div class="container-item-innerlegends" style="display: none;">
+                    <span class="receivable-color-box"></span>
+                    <span>Receivable (repay):&nbsp;</span>
+                    <span class="success-bg-text">USD 1,000.00</span>
+                    <div id="receivable" style="display: none;">1000</div>
+                </div> 
+            </div>
+
+        </div>
+    </div>
+
+
+    <div class="container-horizontal-bar-chart">
+        <div class="container-topic h5">
+            <span class="container-item-topic">Outflows Breakdown of:</span>
+            <span class="container-item-topic danger-bg-topic" id="outflows">
+                USD 5,000.00
+            </span>
+        </div>
+
+        <div class="container-hbar-body">
+
+            <div class="container-hbar-canvas">
+                <canvas id="outflow-hbar-chart"></canvas>
+            </div>
+    
+            <div class="container-hbar-item-legend text-start">
+                <div class="container-item-innerlegends">
+                    <span class="food-color-box"></span>
+                    <span>Food:&nbsp;</span>
+                    <span class="danger-bg-text">USD 1,500.00</span>
+                    <div id="food" style="display: none;">1500</div>
+                </div>
+                <div class="container-item-innerlegends">
+                    <span class="transportation-color-box"></span>
+                    <span>Transportation:&nbsp;</span>
+                    <span class="danger-bg-text">USD 500.00</span>
+                    <div id="transportation" style="display: none;">500</div>
+                </div>
+                <div class="container-item-innerlegends" style="display: none;">
+                    <span class="clothing-color-box"></span>
+                    <span>Clothing:&nbsp;</span>
+                    <span class="danger-bg-text">USD 500.00</span>
+                    <div id="clothing" style="display: none;">500</div>
+                </div>
+                <div class="container-item-innerlegends">
+                    <span class="rent-color-box"></span>
+                    <span>Rent:&nbsp;</span>
+                    <span class="danger-bg-text">USD 1,000.00</span>
+                    <div id="rent" style="display: none;">1000</div>
+                </div>
+                <div class="container-item-innerlegends" style="display: none;">
+                    <span class="other-expense-color-box"></span>
+                    <span>Other Expenses:&nbsp;</span>
+                    <span class="danger-bg-text">USD 500.00</span>
+                    <div id="other-expense" style="display: none;">500</div>
+                </div>
+                <div class="container-item-innerlegends" style="display: none;">
+                    <span class="stock-color-box"></span>
+                    <span>Stock (buy):&nbsp;</span>
+                    <span class="danger-bg-text">USD 500.00</span>
+                    <div id="stock-buy" style="display: none;">500</div>
+                </div>
+                <div class="container-item-innerlegends" style="display: none;">
+                    <span class="crypto-color-box"></span>
+                    <span>Cryptocurrency (buy):&nbsp;</span>
+                    <span class="danger-bg-text">USD 500.00</span>
+                    <div id="crypto-buy" style="display: none;">500</div>
+                </div>
+                <div class="container-item-innerlegends" style="display: none;">
+                    <span class="real-estate-color-box"></span>
+                    <span>Real Estate (buy):&nbsp;</span>
+                    <span class="danger-bg-text">USD 500.00</span>
+                    <div id="real-estate-buy" style="display: none;">500</div>
+                </div>
+                <div class="container-item-innerlegends" style="display: none;">
+                    <span class="other-investment-color-box"></span>
+                    <span>Other Investments (buy):&nbsp;</span>
+                    <span class="danger-bg-text">USD 500.00</span>
+                    <div id="other-investment-buy" style="display: none;">500</div>
+                </div>
+                <div class="container-item-innerlegends">
+                    <span class="lend-color-box"></span>
+                    <span>Lend:&nbsp;</span>
+                    <span class="danger-bg-text">USD 1,000.00</span>
+                    <div id="lend" style="display: none;">1000</div>
+                </div> 
+                <div class="container-item-innerlegends">
+                    <span class="debt-color-box"></span>
+                    <span>Debt (repay):&nbsp;</span>
+                    <span class="danger-bg-text">USD 1,000.00</span>
+                    <div id="debt" style="display: none;">1000</div>
+                </div> 
+            </div>
+
         </div>
     </div>
 </div>
+
+    
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -46,12 +289,13 @@
         labels: ['Cash & Bank Deposits', 'Investments', 'Debts & Receivables'],
         data: [totalCashBank, investmentTotal, debtTotal]
     }
+
     new Chart(doughnutChart, {
         type: 'doughnut',
         data: {
         labels: doughnutChartData.labels,
         datasets: [{
-            label: 'Financial Distribution in USD',
+            label: 'Financial Distribution',
             data: doughnutChartData.data,
             backgroundColor: [
                 'rgb(25, 135, 84)',
@@ -64,10 +308,285 @@
         options: {
             plugins: {
                 legend: {
-                display: false
+                    display: false,
+                },
+                tooltip: {
+                    bodyFont: {
+                        size: 13
+                    },
+                    titleFont: {
+                        size: 13
+                    }
                 }
             },
-            responsive: false,
+            responsive: true,
+            maintainAspectRatio: false,
+            borderWidth: 3,
+            borderRadius: 2,
+            hoverBorderWidth: 0
+        }
+    });
+
+
+    const stackedChart = document.getElementById('stacked-chart');
+    const stackedLabels = ['Inflows', 'Outflows', 'Net Balance'];
+    const stackedData = {
+        labels: stackedLabels,
+        datasets: [
+            {
+            label: 'Incomes',
+            data: [5000, 0, 0],
+            backgroundColor: ['rgb(25, 135, 84)'],
+            },
+            {
+            label: 'Expenses',
+            data: [0, 3000, 0],
+            backgroundColor: ['rgb(23, 162, 184)'],
+            },
+            {
+            label: 'Investments',
+            data: [2000, 0, 0],
+            backgroundColor: ['rgb(255, 193, 7)'],
+            },
+            {
+            label: 'Debts & Receivables',
+            data: [0, 2000, 0],
+            backgroundColor: ['rgb(220, 53, 69)'],
+            },
+            {
+            label: 'Net Balance',
+            data: [0, 0, 2000],
+            backgroundColor: ['rgb(0, 123, 255)'],
+            }
+        ]
+    };
+    new Chart(stackedChart, {
+        type: 'bar',
+        data: stackedData,
+        options: {
+            plugins: {
+                legend: {
+                display: false
+                },
+                tooltip: {
+                    bodyFont: {
+                        size: 13
+                    },
+                    titleFont: {
+                        size: 13
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    ticks: {
+                        font: {
+                            size: 14,
+                            color: 'black',
+                            weight: 'bold'
+                        }
+                    }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    suggestedMin: 0, 
+                    suggestedMax: 5000,
+                    ticks: {
+                        callback: function(value) {
+                            return value;
+                        },
+                        font: {
+                            size: 14,
+                            color: 'black',
+                            weight: 'bold'
+                        },
+                        autoSkip: true,
+                        maxTicksLimit: 10
+                    }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+            borderWidth: 3,
+            borderRadius: 2,
+            hoverBorderWidth: 0
+        }
+    });
+
+
+    const inflowChart = document.getElementById('inflow-hbar-chart');
+    const inflowLabels = ['Incomes', 'Investments'];
+    const inflowData = {
+        labels: inflowLabels,
+        datasets: [
+            {
+            label: 'Salary',
+            data: [2500, 0],
+            backgroundColor: ['#FF5733'],
+            },
+            {
+            label: 'Bank Interest',
+            data: [500, 0],
+            backgroundColor: ['#33FF57'],
+            },
+            {
+            label: 'Other Incomes',
+            data: [2000, 0],
+            backgroundColor: ['#3357FF'],
+            },
+            {
+            label: 'Stock (sell)',
+            data: [0, 1000],
+            backgroundColor: ['#FF33A8'],
+            },
+            {
+            label: 'Cryptocurrency (sell)',
+            data: [0, 1000],
+            backgroundColor: ['#33FFF5'],
+            }
+        ]
+    };
+    new Chart(inflowChart, {
+        type: 'bar',
+        data: inflowData,
+        options: {
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                display: false
+                },
+                tooltip: {
+                    bodyFont: {
+                        size: 13
+                    },
+                    titleFont: {
+                        size: 13
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    stacked: true,
+                    ticks: {
+                        font: {
+                            size: 14,
+                            color: 'black',
+                            weight: 'bold'
+                        }
+                    }
+                },
+                x: {
+                    stacked: true,
+                    beginAtZero: true,
+                    suggestedMin: 0, 
+                    suggestedMax: 5000,
+                    ticks: {
+                        callback: function(value) {
+                            return value;
+                        },
+                        font: {
+                            size: 14,
+                            color: 'black',
+                            weight: 'bold'
+                        },
+                        autoSkip: true,
+                        maxTicksLimit: 10
+                    }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
+            borderWidth: 3,
+            borderRadius: 2,
+            hoverBorderWidth: 0
+        }
+    });
+
+
+    const outflowChart = document.getElementById('outflow-hbar-chart');
+    const outflowLabels = ['Expenses', 'Debts & Receivables'];
+    const outflowData = {
+        labels: outflowLabels,
+        datasets: [
+            {
+            label: 'Food',
+            data: [1500, 0],
+            backgroundColor: ['#FF5733'],
+            },
+            {
+            label: 'Transportation',
+            data: [500, 0],
+            backgroundColor: ['#FF9F00'],
+            },
+            {
+            label: 'Rent',
+            data: [1000, 0],
+            backgroundColor: ['#33FF57'],
+            },
+            {
+            label: 'Lend',
+            data: [0, 1000],
+            backgroundColor: ['#FF33E1'],
+            },
+            {
+            label: 'Debt (repay)',
+            data: [0, 1000],
+            backgroundColor: ['#33C7FF'],
+            }
+        ]
+    };
+    new Chart(outflowChart, {
+        type: 'bar',
+        data: outflowData,
+        options: {
+            indexAxis: 'y',
+            plugins: {
+                legend: {
+                display: false
+                },
+                tooltip: {
+                    bodyFont: {
+                        size: 13
+                    },
+                    titleFont: {
+                        size: 13
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    stacked: true,
+                    ticks: {
+                        font: {
+                            size: 14,
+                            color: 'black',
+                            weight: 'bold'
+                        }
+                    }
+                },
+                x: {
+                    stacked: true,
+                    beginAtZero: true,
+                    suggestedMin: 0, 
+                    suggestedMax: 5000,
+                    ticks: {
+                        callback: function(value) {
+                            return value;
+                        },
+                        font: {
+                            size: 14,
+                            color: 'black',
+                            weight: 'bold'
+                        },
+                        autoSkip: true,
+                        maxTicksLimit: 10
+                    }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false,
             borderWidth: 3,
             borderRadius: 2,
             hoverBorderWidth: 0
