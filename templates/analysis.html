@@ -78,37 +78,59 @@
                 <canvas id="stacked-chart"></canvas>
             </div>
     
-            <div class="container-item-legend text-start">
-                <div class="container-item-innerlegends">
-                    <span class="success-color-box"></span>
-                    <span>Incomes:&nbsp;</span>
-                    <span class="success-bg-text">USD 5,000</span>
-                    <div id="incomes" style="display: none;">5000</div>
+            <div class="container-stacked-bar-legend text-start">
+                <div class="container-item-inflows">
+                    <div class="text-start fw-bold">Inflows</div>
+                    <div class="container-item-innerlegends parentElement">
+                        <span class="success-color-box"></span>
+                        <span>Incomes:&nbsp;</span>
+                        <span class="success-bg-text">USD {{ inflow_income | currency }}</span>
+                        <div id="inflow-income" class="checkZero" style="display: none;">{{ inflow_income }}</div>
+                    </div>
+                    <div class="container-item-innerlegends parentElement">
+                        <span class="warning-color-box"></span>
+                        <span>Investments:&nbsp;</span>
+                        <span class="success-bg-text">USD {{ inflow_investment | currency }}</span>
+                        <div id="inflow-investment" class="checkZero" style="display: none;">{{ inflow_investment }}</div>
+                    </div>
+                    <div class="container-item-innerlegends parentElement">
+                        <span class="danger-color-box"></span>
+                        <span>Debts & Receivables:&nbsp;</span>
+                        <span class="success-bg-text">USD {{ inflow_debt | currency}}</span>
+                        <div id="inflow-debt" class="checkZero" style="display: none;">{{ inflow_debt }}</div>
+                    </div>
                 </div>
-                <div class="container-item-innerlegends">
-                    <span class="warning-color-box"></span>
-                    <span>Investments:&nbsp;</span>
-                    <span class="success-bg-text">USD 2,000</span>
-                    <div id="investments" style="display: none;">2000</div>
+                
+                <div class="container-item-outflows">
+                    <div class="text-start fw-bold">Outflows</div>
+                    <div class="container-item-innerlegends parentElement">
+                        <span class="expense-color-box"></span>
+                        <span>Expenses:&nbsp;</span>
+                        <span class="danger-bg-text">USD {{ outflow_expense | currency }}</span>
+                        <div id="outflow-expense" class="checkZero" style="display: none;">{{ outflow_expense }}</div>
+                    </div>
+                    <div class="container-item-innerlegends parentElement">
+                        <span class="warning-color-box"></span>
+                        <span>Investments:&nbsp;</span>
+                        <span class="danger-bg-text">USD {{ outflow_investment | currency }}</span>
+                        <div id="outflow-investment" class="checkZero" style="display: none;">{{ outflow_investment }}</div>
+                    </div>
+                    <div class="container-item-innerlegends parentElement">
+                        <span class="danger-color-box"></span>
+                        <span>Debts & Receivables:&nbsp;</span>
+                        <span class="danger-bg-text">USD {{ outflow_debt | currency }}</span>
+                        <div id="outflow-debt" class="checkZero" style="display: none;">{{ outflow_debt }}</div>
+                    </div> 
                 </div>
-                <div class="container-item-innerlegends">
-                    <span class="expense-color-box"></span>
-                    <span>Expenses:&nbsp;</span>
-                    <span class="danger-bg-text">USD 3,000</span>
-                    <div id="expenses" style="display: none;">3000</div>
+                
+                <div class="container-item-net-balance">
+                    <div class="container-item-innerlegends">
+                        <span class="primary-color-box"></span>
+                        <span>Net Balance:&nbsp;</span>
+                        <span class="success-bg-text">USD {{ net_balance | currency }}</span>
+                        <div id="net-balance" style="display: none;">{{ net_balance }}</div>
+                    </div> 
                 </div>
-                <div class="container-item-innerlegends">
-                    <span class="danger-color-box"></span>
-                    <span>Debts & Receivables:&nbsp;</span>
-                    <span class="danger-bg-text">USD 2,000,000</span>
-                    <div id="debts" style="display: none;">2000</div>
-                </div> 
-                <div class="container-item-innerlegends">
-                    <span class="primary-color-box"></span>
-                    <span>Net Balance:&nbsp;</span>
-                    <span class="success-bg-text">USD 2,000</span>
-                    <div id="net-balance" style="display: none;">2000</div>
-                </div> 
             </div>
 
         </div>
@@ -329,33 +351,50 @@
 
 
     const stackedChart = document.getElementById('stacked-chart');
+    const inflowIncome = Number(document.getElementById('inflow-income').innerText) || 0;
+    const inflowInvestment = Number(document.getElementById('inflow-investment').innerText) || 0;
+    const inflowDebt = Number(document.getElementById('inflow-debt').innerText) || 0;
+    const outflowExpense = Number(document.getElementById('outflow-expense').innerText) || 0;
+    const outflowInvestment = Number(document.getElementById('outflow-investment').innerText) || 0;
+    const outflowDebt = Number(document.getElementById('outflow-debt').innerText) || 0;
+    const netBalance = Number(document.getElementById('net-balance').innerText) || 0;
     const stackedLabels = ['Inflows', 'Outflows', 'Net Balance'];
     const stackedData = {
         labels: stackedLabels,
         datasets: [
             {
             label: 'Incomes',
-            data: [5000, 0, 0],
+            data: [inflowIncome, 0, 0],
             backgroundColor: ['rgb(25, 135, 84)'],
             },
             {
-            label: 'Expenses',
-            data: [0, 3000, 0],
-            backgroundColor: ['rgb(23, 162, 184)'],
-            },
-            {
             label: 'Investments',
-            data: [2000, 0, 0],
+            data: [inflowInvestment, 0, 0],
             backgroundColor: ['rgb(255, 193, 7)'],
             },
             {
             label: 'Debts & Receivables',
-            data: [0, 2000, 0],
+            data: [inflowDebt, 0, 0],
+            backgroundColor: ['rgb(220, 53, 69)'],
+            },
+            {
+            label: 'Expenses',
+            data: [0, outflowExpense, 0],
+            backgroundColor: ['rgb(23, 162, 184)'],
+            },
+            {
+            label: 'Investments',
+            data: [0, outflowInvestment, 0],
+            backgroundColor: ['rgb(255, 193, 7)'],
+            },
+            {
+            label: 'Debts & Receivables',
+            data: [0, outflowDebt, 0],
             backgroundColor: ['rgb(220, 53, 69)'],
             },
             {
             label: 'Net Balance',
-            data: [0, 0, 2000],
+            data: [0, 0, netBalance],
             backgroundColor: ['rgb(0, 123, 255)'],
             }
         ]
@@ -594,8 +633,27 @@
     });
 </script>
 
-
 {% endblock %}
 
 {% block scripts %}
+<script>
+    function hideElementByClass(className) {
+        const elements = document.getElementsByClassName(className);
+
+        for (let element of elements) {
+            const content = element.textContent.trim();
+
+            if (content === '0') {
+                const parentElement = element.closest('.parentElement')
+                
+                
+                if (parentElement) {
+                    parentElement.style.display = 'none';
+                }
+            }
+        }
+    }
+
+    hideElementByClass('checkZero')
+</script>
 {% endblock %}

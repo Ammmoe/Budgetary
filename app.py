@@ -1732,6 +1732,32 @@ def analysis():
 
         total_assets = total_assets + total_cash_usd + total_bank_usd
 
+        # Calculate inflows and outflows for analysis
+        inflow_income = round((income_cash_usd + income_bank_usd + amount_in_usd('sgd', (income_cash_sgd + income_bank_sgd)) + amount_in_usd('thb', (income_cash_thb + income_bank_thb)) + \
+            amount_in_usd('mmk', (income_cash_mmk + income_bank_mmk))), 2)
+        
+        inflow_investment = round((investment_cash_sell_usd + investment_bank_sell_usd + amount_in_usd('sgd', (investment_cash_sell_sgd + investment_bank_sell_sgd)) + \
+            amount_in_usd('thb', (investment_cash_sell_thb + investment_bank_sell_thb)) + amount_in_usd('mmk', (investment_cash_sell_mmk + investment_bank_sell_mmk))), 2)
+        
+        inflow_debt = round((debt_cash_borrow_usd + debt_bank_borrow_usd + debt_cash_lrepay_usd + debt_bank_lrepay_usd + amount_in_usd('sgd', (debt_cash_borrow_sgd + debt_bank_borrow_sgd + \
+            debt_cash_lrepay_sgd + debt_bank_lrepay_sgd)) + amount_in_usd('thb', (debt_cash_borrow_thb + debt_bank_borrow_thb + debt_cash_lrepay_thb + debt_bank_lrepay_thb)) + \
+            amount_in_usd('mmk', (debt_cash_borrow_mmk + debt_bank_borrow_mmk + debt_cash_lrepay_mmk + debt_bank_lrepay_mmk))), 2)
+        
+        outflow_expense = round((spending_cash_usd + spending_bank_usd + amount_in_usd('sgd', (spending_cash_sgd + spending_bank_sgd)) + amount_in_usd('thb', (spending_cash_thb + spending_bank_thb)) + \
+            amount_in_usd('mmk', (spending_cash_mmk + spending_bank_mmk))), 2)
+        
+        outflow_investment = round((investment_cash_buy_usd + investment_bank_buy_usd + amount_in_usd('sgd', (investment_cash_buy_sgd + investment_bank_buy_sgd)) + \
+            amount_in_usd('thb', (investment_cash_buy_thb + investment_bank_buy_thb)) + amount_in_usd('mmk', (investment_cash_buy_mmk + investment_bank_buy_mmk))), 2)
+        
+        outflow_debt = round((debt_cash_lend_usd + debt_bank_lend_usd + debt_cash_brepay_usd + debt_bank_brepay_usd + amount_in_usd('sgd', (debt_cash_lend_sgd + debt_bank_lend_sgd + \
+            debt_cash_brepay_sgd + debt_bank_brepay_sgd)) + amount_in_usd('thb', (debt_cash_lend_thb + debt_bank_lend_thb + debt_cash_brepay_thb + debt_bank_brepay_thb)) + \
+            amount_in_usd('mmk', (debt_cash_lend_mmk + debt_bank_lend_mmk + debt_cash_brepay_mmk + debt_bank_brepay_mmk))), 2)
+        
+        inflows = inflow_income + inflow_investment + inflow_debt
+        outflows = outflow_expense + outflow_investment + outflow_debt
+
+        net_balance = inflows - outflows
+
         # Write database code for homepage investments table
         investment_rows = db.execute (
             "SELECT \
@@ -1840,8 +1866,165 @@ def analysis():
 
         total_assets = total_assets + debt_total
 
+        # Write database code for inflows breakdown
+        # First, get inflow-income data from history
+        inflow_income_rows = db.execute(
+            "SELECT \
+                transactions.transaction_date AS date, \
+            'income' AS type, \
+                income.income_type AS category, \
+                income.comment AS comment, \
+                transactions.payment_method AS payment_method, \
+                transactions.currency AS currency, \
+                transactions.amount AS amount \
+            FROM \
+                income JOIN transactions ON income.transaction_id = transactions.id \
+            WHERE \
+                income.user_id = ?", user_id)
+        
+        # Get amount of each income category in usd
+        salary = 0
+        bank_interest = 0
+        other_income = 0
+
+        for row in inflow_income_rows:
+            # Salary-related rows
+            if row['category'] == 'salary' and row['currency'] == 'usd':
+                salary = salary + round(float(row['amount']), 2)
+
+            elif row['category'] == 'salary' and row['currency'] == 'sgd':
+                salary = salary + amount_in_usd('sgd', row['amount'])
+
+            elif row['category'] == 'salary' and row['currency'] == 'thb':
+                salary = salary + amount_in_usd('thb', row['amount'])
+
+            elif row['category'] == 'salary' and row['currency'] == 'mmk':
+                salary = salary + amount_in_usd('mmk', row['amount'])
+
+            # Bank-interest-related rows
+            if row['category'] == 'bank-interest' and row['currency'] == 'usd':
+                bank_interest = bank_interest + round(float(row['amount']), 2)
+
+            elif row['category'] == 'bank-interest' and row['currency'] == 'sgd':
+                bank_interest = bank_interest + amount_in_usd('sgd', row['amount'])
+
+            elif row['category'] == 'bank-interest' and row['currency'] == 'thb':
+                bank_interest = bank_interest + amount_in_usd('thb', row['amount'])
+
+            elif row['category'] == 'bank-interest' and row['currency'] == 'mmk':
+                bank_interest = bank_interest + amount_in_usd('mmk', row['amount'])
+
+            # Other-income-related rows
+            if row['category'] == 'other-income' and row['currency'] == 'usd':
+                other_income = other_income + round(float(row['amount']), 2)
+
+            elif row['category'] == 'other-income' and row['currency'] == 'sgd':
+                other_income = other_income + amount_in_usd('sgd', row['amount'])
+
+            elif row['category'] == 'other-income' and row['currency'] == 'thb':
+                other_income = other_income + amount_in_usd('thb', row['amount'])
+
+            elif row['category'] == 'other-income' and row['currency'] == 'mmk':
+                other_income = other_income + amount_in_usd('mmk', row['amount'])
+
+        # Write database code for expenses breakdown
+        outflow_expense_rows = db.execute(
+            "SELECT \
+                transactions.transaction_date AS date, \
+            'expense' AS type, \
+                spending.spending_type AS category, \
+                spending.comment AS comment, \
+                transactions.payment_method AS payment_method, \
+                transactions.currency AS currency, \
+                transactions.amount AS amount \
+            FROM \
+                spending JOIN transactions ON spending.transaction_id = transactions.id \
+            WHERE \
+                spending.user_id = ?", user_id)
+        
+
+        # Get amount of each expense category in usd
+        food = 0
+        transportation = 0
+        clothing = 0
+        rent = 0
+        other_expense = 0
+
+        for row in outflow_expense_rows:
+            # Food-related rows
+            if row['category'] == 'food' and row['currency'] == 'usd':
+                food = food + round(float(row['amount']), 2)
+
+            elif row['category'] == 'food' and row['currency'] == 'sgd':
+                food = food + amount_in_usd('sgd', row['amount'])
+
+            elif row['category'] == 'food' and row['currency'] == 'thb':
+                food = food + amount_in_usd('thb', row['amount'])
+
+            elif row['category'] == 'food' and row['currency'] == 'mmk':
+                food = food + amount_in_usd('mmk', row['amount'])
+
+            # Transportation-related rows
+            if row['category'] == 'transportation' and row['currency'] == 'usd':
+                transportation = transportation + round(float(row['amount']), 2)
+
+            elif row['category'] == 'transportation' and row['currency'] == 'sgd':
+                transportation = transportation + amount_in_usd('sgd', row['amount'])
+
+            elif row['category'] == 'transportation' and row['currency'] == 'thb':
+                transportation = transportation + amount_in_usd('thb', row['amount'])
+
+            elif row['category'] == 'transportation' and row['currency'] == 'mmk':
+                transportation = transportation + amount_in_usd('mmk', row['amount'])
+
+            # Clothing-related rows
+            if row['category'] == 'clothing' and row['currency'] == 'usd':
+                clothing = clothing + round(float(row['amount']), 2)
+
+            elif row['category'] == 'clothing' and row['currency'] == 'sgd':
+                clothing = clothing + amount_in_usd('sgd', row['amount'])
+
+            elif row['category'] == 'clothing' and row['currency'] == 'thb':
+                clothing = clothing + amount_in_usd('thb', row['amount'])
+
+            elif row['category'] == 'clothing' and row['currency'] == 'mmk':
+                clothing = clothing + amount_in_usd('mmk', row['amount']) 
+
+            # Rent-related rows
+            if row['category'] == 'rent' and row['currency'] == 'usd':
+                rent = rent + round(float(row['amount']), 2)
+
+            elif row['category'] == 'rent' and row['currency'] == 'sgd':
+                rent = rent + amount_in_usd('sgd', row['amount'])
+
+            elif row['category'] == 'rent' and row['currency'] == 'thb':
+                rent = rent + amount_in_usd('thb', row['amount'])
+
+            elif row['category'] == 'rent' and row['currency'] == 'mmk':
+                rent = rent + amount_in_usd('mmk', row['amount'])
+
+            # Other-expense-related rows
+            if row['category'] == 'other-spending' and row['currency'] == 'usd':
+                other_expense = other_expense + round(float(row['amount']), 2)
+
+            elif row['category'] == 'other-spending' and row['currency'] == 'sgd':
+                other_expense = other_expense + amount_in_usd('sgd', row['amount'])
+
+            elif row['category'] == 'other-spending' and row['currency'] == 'thb':
+                other_expense = other_expense + amount_in_usd('thb', row['amount'])
+
+            elif row['category'] == 'other-spending' and row['currency'] == 'mmk':
+                other_expense = other_expense + amount_in_usd('mmk', row['amount']) 
+
+        print(f"food: {food}")
+        print(f"transportation: {transportation}")
+        print(f"clothing: {clothing}")
+        print(f"rent: {rent}")
+        print(f"other-expense: {other_expense}")
+
         return render_template("analysis.html", total_assets=total_assets, total_cash_bank=total_cash_bank, investment_total=investment_total, \
-            debt_total=debt_total)
+            debt_total=debt_total, inflow_income=inflow_income, inflow_investment=inflow_investment, inflow_debt=inflow_debt, outflow_expense=outflow_expense, \
+            outflow_investment=outflow_investment, outflow_debt=outflow_debt, inflows=inflows, outflows=outflows, net_balance=net_balance)
 
 
 @app.route("/history", methods=["GET", "POST"])

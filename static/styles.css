@@ -167,6 +167,38 @@ tr.text-primary td {
     padding: 12px 12px;
 }
 
+.container-stacked-bar-legend {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    height: 100%;
+    padding: 12px 12px;
+}
+
+.container-item-inflows {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 6px;
+    box-shadow: 0 2px 5px -1px rgba(0, 0, 0, 0.3);
+    border-radius: 7px;
+}
+
+.container-item-outflows {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 6px;
+    box-shadow: 0 2px 5px -1px rgba(0, 0, 0, 0.3);
+    border-radius: 7px;
+}
+
+.container-item-net-balance {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 6px;
+    box-shadow: 0 2px 5px -1px rgba(0, 0, 0, 0.3);
+    border-radius: 7px;
+}
+
 .container-hbar-item-legend {
     display: flex;
     flex-flow: row wrap;
