@@ -5,7 +5,7 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from helpers import apology, login_required, stock_lookup, amount_in_usd, crypto_lookup, profit, currency, days_difference, forex_rate
+from helpers import apology, login_required, stock_lookup, amount_in_usd, crypto_lookup, profit, currency, days_difference, forex_rate, repay_check
 
 
 # Configure application
@@ -306,285 +306,212 @@ def index():
         if investment_bank_sell_mmk == None:
             investment_bank_sell_mmk = 0
 
-        # Get debt-related cash values for 'borrow'
-        debt_cash_borrow_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_borrow_usd FROM transactions WHERE currency = 'usd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_cash_borrow_usd = debt_cash_borrow_usd_q[0]["debt_cash_borrow_usd"]
-        if debt_cash_borrow_usd == None:
-            debt_cash_borrow_usd = 0
+        # Get debt rows that are not repetitive after each repay process
+        debt_rows = db.execute(
+            "WITH ranked AS ( \
+            SELECT \
+                transactions.transaction_date AS date, \
+                debt.id AS debt_id, \
+                debt.user_id AS user_id, \
+                debt.debt_category AS category, \
+                debt.debtor_or_creditor AS debtor_or_creditor, \
+                debt.interest_rate AS interest_rate, \
+                transactions.payment_method AS payment_method, \
+                transactions.currency AS currency, \
+                transactions.amount AS amount, \
+                transactions.amount_in_usd AS amount_in_usd, \
+                ROW_NUMBER() OVER ( \
+                    PARTITION BY \
+                    CASE \
+                        WHEN debt.debt_category IN ('borrow', 'lend') THEN debt.debtor_or_creditor \
+                        WHEN debt.debt_category = 'repay' THEN debt.id \
+                        ELSE NULL \
+                    END \
+                    ORDER BY debt.id ASC) AS row \
+            FROM \
+                debt JOIN transactions ON debt.transaction_id = transactions.id \
+            WHERE \
+                debt.user_id = ?) \
+            SELECT \
+                date, \
+                category, \
+                debtor_or_creditor, \
+                interest_rate, \
+                payment_method, \
+                currency, \
+                amount, \
+                amount_in_usd \
+            FROM \
+                ranked \
+            WHERE \
+                (row = 1 AND category IN ('borrow', 'lend')) \
+                OR category = 'repay' \
+            ORDER BY \
+                debt_id \
+            ASC", user_id)
 
-        debt_cash_borrow_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_borrow_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_cash_borrow_sgd = debt_cash_borrow_sgd_q[0]["debt_cash_borrow_sgd"]
-        if debt_cash_borrow_sgd == None:
-            debt_cash_borrow_sgd = 0
+        # Debt cash usd values
+        debt_cash_borrow_usd = 0
+        debt_cash_lend_usd = 0
+        debt_cash_brepay_usd = 0
+        debt_cash_lrepay_usd = 0
 
-        debt_cash_borrow_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_borrow_thb FROM transactions WHERE currency = 'thb' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_cash_borrow_thb = debt_cash_borrow_thb_q[0]["debt_cash_borrow_thb"]
-        if debt_cash_borrow_thb == None:
-            debt_cash_borrow_thb = 0
-
-        debt_cash_borrow_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_borrow_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_cash_borrow_mmk = debt_cash_borrow_mmk_q[0]["debt_cash_borrow_mmk"]
-        if debt_cash_borrow_mmk == None:
-            debt_cash_borrow_mmk = 0
-
-        # Get debt-related bank values for 'borrow'
-        debt_bank_borrow_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_borrow_usd FROM transactions WHERE currency = 'usd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_bank_borrow_usd = debt_bank_borrow_usd_q[0]["debt_bank_borrow_usd"]
-        if debt_bank_borrow_usd == None:
-            debt_bank_borrow_usd = 0
-
-        debt_bank_borrow_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_borrow_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_bank_borrow_sgd = debt_bank_borrow_sgd_q[0]["debt_bank_borrow_sgd"]
-        if debt_bank_borrow_sgd == None:
-            debt_bank_borrow_sgd = 0
-
-        debt_bank_borrow_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_borrow_thb FROM transactions WHERE currency = 'thb' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_bank_borrow_thb = debt_bank_borrow_thb_q[0]["debt_bank_borrow_thb"]
-        if debt_bank_borrow_thb == None:
-            debt_bank_borrow_thb = 0
-
-        debt_bank_borrow_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_borrow_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_bank_borrow_mmk = debt_bank_borrow_mmk_q[0]["debt_bank_borrow_mmk"]
-        if debt_bank_borrow_mmk == None:
-            debt_bank_borrow_mmk = 0
-
-        # Get debt-related cash values for 'lend'
-        debt_cash_lend_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lend_usd FROM transactions WHERE currency = 'usd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_cash_lend_usd = debt_cash_lend_usd_q[0]["debt_cash_lend_usd"]
-        if debt_cash_lend_usd == None:
-            debt_cash_lend_usd = 0
-
-        debt_cash_lend_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lend_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_cash_lend_sgd = debt_cash_lend_sgd_q[0]["debt_cash_lend_sgd"]
-        if debt_cash_lend_sgd == None:
-            debt_cash_lend_sgd = 0
-
-        debt_cash_lend_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lend_thb FROM transactions WHERE currency = 'thb' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_cash_lend_thb = debt_cash_lend_thb_q[0]["debt_cash_lend_thb"]
-        if debt_cash_lend_thb == None:
-            debt_cash_lend_thb = 0
-
-        debt_cash_lend_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lend_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_cash_lend_mmk = debt_cash_lend_mmk_q[0]["debt_cash_lend_mmk"]
-        if debt_cash_lend_mmk == None:
-            debt_cash_lend_mmk = 0
-
-        # Get debt-related bank values for 'lend'
-        debt_bank_lend_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lend_usd FROM transactions WHERE currency = 'usd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_bank_lend_usd = debt_bank_lend_usd_q[0]["debt_bank_lend_usd"]
-        if debt_bank_lend_usd == None:
-            debt_bank_lend_usd = 0
-
-        debt_bank_lend_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lend_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_bank_lend_sgd = debt_bank_lend_sgd_q[0]["debt_bank_lend_sgd"]
-        if debt_bank_lend_sgd == None:
-            debt_bank_lend_sgd = 0
-
-        debt_bank_lend_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lend_thb FROM transactions WHERE currency = 'thb' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_bank_lend_thb = debt_bank_lend_thb_q[0]["debt_bank_lend_thb"]
-        if debt_bank_lend_thb == None:
-            debt_bank_lend_thb = 0
-
-        debt_bank_lend_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lend_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_bank_lend_mmk = debt_bank_lend_mmk_q[0]["debt_bank_lend_mmk"]
-        if debt_bank_lend_mmk == None:
-            debt_bank_lend_mmk = 0
-
-        # Get debt-related cash values for 'borrow_repay'
-        debt_cash_brepay_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_brepay_usd FROM transactions WHERE currency = 'usd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_cash_brepay_usd = debt_cash_brepay_usd_q[0]["debt_cash_brepay_usd"]
-        if debt_cash_brepay_usd == None:
-            debt_cash_brepay_usd = 0
+        # Debt bank usd values
+        debt_bank_borrow_usd = 0
+        debt_bank_lend_usd = 0
+        debt_bank_brepay_usd = 0
+        debt_bank_lrepay_usd = 0
         
-        debt_cash_brepay_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_brepay_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_cash_brepay_sgd = debt_cash_brepay_sgd_q[0]["debt_cash_brepay_sgd"]
-        if debt_cash_brepay_sgd == None:
-            debt_cash_brepay_sgd = 0
+        # Debt cash sgd values
+        debt_cash_borrow_sgd = 0
+        debt_cash_lend_sgd = 0
+        debt_cash_brepay_sgd = 0
+        debt_cash_lrepay_sgd = 0
 
-        debt_cash_brepay_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_brepay_thb FROM transactions WHERE currency = 'thb' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_cash_brepay_thb = debt_cash_brepay_thb_q[0]["debt_cash_brepay_thb"]
-        if debt_cash_brepay_thb == None:
-            debt_cash_brepay_thb = 0
+        # Debt bank sgd values
+        debt_bank_borrow_sgd = 0
+        debt_bank_lend_sgd = 0
+        debt_bank_brepay_sgd = 0
+        debt_bank_lrepay_sgd = 0
 
-        debt_cash_brepay_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_brepay_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_cash_brepay_mmk = debt_cash_brepay_mmk_q[0]["debt_cash_brepay_mmk"]
-        if debt_cash_brepay_mmk == None:
-            debt_cash_brepay_mmk = 0
+        # Debt cash thb values
+        debt_cash_borrow_thb = 0
+        debt_cash_lend_thb = 0
+        debt_cash_brepay_thb = 0
+        debt_cash_lrepay_thb = 0
 
-        # Get debt-related bank values for 'borrow_repay'
-        debt_bank_brepay_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_brepay_usd FROM transactions WHERE currency = 'usd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_bank_brepay_usd = debt_bank_brepay_usd_q[0]["debt_bank_brepay_usd"]
-        if debt_bank_brepay_usd == None:
-            debt_bank_brepay_usd = 0
+        # Debt bank thb values
+        debt_bank_borrow_thb = 0
+        debt_bank_lend_thb = 0
+        debt_bank_brepay_thb = 0
+        debt_bank_lrepay_thb = 0
         
-        debt_bank_brepay_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_brepay_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_bank_brepay_sgd = debt_bank_brepay_sgd_q[0]["debt_bank_brepay_sgd"]
-        if debt_bank_brepay_sgd == None:
-            debt_bank_brepay_sgd = 0
+        # Debt cash mmk values
+        debt_cash_borrow_mmk = 0
+        debt_cash_lend_mmk = 0
+        debt_cash_brepay_mmk = 0
+        debt_cash_lrepay_mmk = 0
 
-        debt_bank_brepay_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_brepay_thb FROM transactions WHERE currency = 'thb' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_bank_brepay_thb = debt_bank_brepay_thb_q[0]["debt_bank_brepay_thb"]
-        if debt_bank_brepay_thb == None:
-            debt_bank_brepay_thb = 0
+        # Debt bank mmk values
+        debt_bank_borrow_mmk = 0
+        debt_bank_lend_mmk = 0
+        debt_bank_brepay_mmk = 0
+        debt_bank_lrepay_mmk = 0
 
-        debt_bank_brepay_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_brepay_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_bank_brepay_mmk = debt_bank_brepay_mmk_q[0]["debt_bank_brepay_mmk"]
-        if debt_bank_brepay_mmk == None:
-            debt_bank_brepay_mmk = 0
+        for row in debt_rows:
+            # debt_cash_borrow variables
+            if row['category'] == 'borrow' and row['payment_method'] == 'cash':
+                if row['currency'] == 'usd':
+                    debt_cash_borrow_usd = debt_cash_borrow_usd + round(float(row['amount']), 2)
 
-        # Get debt-related cash values for 'lend_repay'
-        debt_cash_lrepay_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lrepay_usd FROM transactions WHERE currency = 'usd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_cash_lrepay_usd = debt_cash_lrepay_usd_q[0]["debt_cash_lrepay_usd"]
-        if debt_cash_lrepay_usd == None:
-            debt_cash_lrepay_usd = 0
-        
-        debt_cash_lrepay_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lrepay_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_cash_lrepay_sgd = debt_cash_lrepay_sgd_q[0]["debt_cash_lrepay_sgd"]
-        if debt_cash_lrepay_sgd == None:
-            debt_cash_lrepay_sgd = 0
+                elif row['currency'] == 'sgd':
+                    debt_cash_borrow_sgd = debt_cash_borrow_sgd + round(float(row['amount']), 2)
 
-        debt_cash_lrepay_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lrepay_thb FROM transactions WHERE currency = 'thb' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_cash_lrepay_thb = debt_cash_lrepay_thb_q[0]["debt_cash_lrepay_thb"]
-        if debt_cash_lrepay_thb == None:
-            debt_cash_lrepay_thb = 0
+                elif row['currency'] == 'thb':
+                    debt_cash_borrow_thb = debt_cash_borrow_thb + round(float(row['amount']), 2)
 
-        debt_cash_lrepay_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lrepay_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_cash_lrepay_mmk = debt_cash_lrepay_mmk_q[0]["debt_cash_lrepay_mmk"]
-        if debt_cash_lrepay_mmk == None:
-            debt_cash_lrepay_mmk = 0
+                elif row['currency'] == 'mmk':
+                    debt_cash_borrow_mmk = debt_cash_borrow_mmk + round(float(row['amount']), 2)
 
-        # Get debt-related bank values for 'lend_repay'
-        debt_bank_lrepay_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lrepay_usd FROM transactions WHERE currency = 'usd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_bank_lrepay_usd = debt_bank_lrepay_usd_q[0]["debt_bank_lrepay_usd"]
-        if debt_bank_lrepay_usd == None:
-            debt_bank_lrepay_usd = 0
-        
-        debt_bank_lrepay_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lrepay_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_bank_lrepay_sgd = debt_bank_lrepay_sgd_q[0]["debt_bank_lrepay_sgd"]
-        if debt_bank_lrepay_sgd == None:
-            debt_bank_lrepay_sgd = 0
+            # debt_bank_borrow variables
+            if row['category'] == 'borrow' and row['payment_method'] == 'banking':
+                if row['currency'] == 'usd':
+                    debt_bank_borrow_usd = debt_bank_borrow_usd + round(float(row['amount']), 2)
 
-        debt_bank_lrepay_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lrepay_thb FROM transactions WHERE currency = 'thb' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_bank_lrepay_thb = debt_bank_lrepay_thb_q[0]["debt_bank_lrepay_thb"]
-        if debt_bank_lrepay_thb == None:
-            debt_bank_lrepay_thb = 0
+                elif row['currency'] == 'sgd':
+                    debt_bank_borrow_sgd = debt_bank_borrow_sgd + round(float(row['amount']), 2)
 
-        debt_bank_lrepay_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lrepay_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_bank_lrepay_mmk = debt_bank_lrepay_mmk_q[0]["debt_bank_lrepay_mmk"]
-        if debt_bank_lrepay_mmk == None:
-            debt_bank_lrepay_mmk = 0
+                elif row['currency'] == 'thb':
+                    debt_bank_borrow_thb = debt_bank_borrow_thb + round(float(row['amount']), 2)
+
+                elif row['currency'] == 'mmk':
+                    debt_bank_borrow_mmk = debt_bank_borrow_mmk + round(float(row['amount']), 2)
+
+            # debt_cash_lend variables
+            if row['category'] == 'lend' and row['payment_method'] == 'cash':
+                if row['currency'] == 'usd':
+                    debt_cash_lend_usd = debt_cash_lend_usd + round(float(row['amount']), 2)
+
+                elif row['currency'] == 'sgd':
+                    debt_cash_lend_sgd = debt_cash_lend_sgd + round(float(row['amount']), 2)
+
+                elif row['currency'] == 'thb':
+                    debt_cash_lend_thb = debt_cash_lend_thb + round(float(row['amount']), 2)
+
+                elif row['currency'] == 'mmk':
+                    debt_cash_lend_mmk = debt_cash_lend_mmk + round(float(row['amount']), 2)
+
+            # debt_bank_lend variables
+            if row['category'] == 'lend' and row['payment_method'] == 'banking':
+                if row['currency'] == 'usd':
+                    debt_bank_lend_usd = debt_bank_lend_usd + round(float(row['amount']), 2)
+
+                elif row['currency'] == 'sgd':
+                    debt_bank_lend_sgd = debt_bank_lend_sgd + round(float(row['amount']), 2)
+
+                elif row['currency'] == 'thb':
+                    debt_bank_lend_thb = debt_bank_lend_thb + round(float(row['amount']), 2)
+
+                elif row['currency'] == 'mmk':
+                    debt_bank_lend_mmk = debt_bank_lend_mmk + round(float(row['amount']), 2)
+
+            # debt repay variables
+            if row['category'] == 'repay':
+                # debt cash lrepay variables
+                if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'lend' and row['payment_method'] == 'cash':
+                    if row['currency'] == 'usd':
+                        debt_cash_lrepay_usd = debt_cash_lrepay_usd + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'sgd':
+                        debt_cash_lrepay_sgd = debt_cash_lrepay_sgd + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'thb':
+                        debt_cash_lrepay_thb = debt_cash_lrepay_thb + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'mmk':
+                        debt_cash_lrepay_mmk = debt_cash_lrepay_mmk + round(float(row['amount']), 2)
+
+                # debt bank lrepay variables
+                if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'lend' and row['payment_method'] == 'banking':
+                    if row['currency'] == 'usd':
+                        debt_bank_lrepay_usd = debt_bank_lrepay_usd + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'sgd':
+                        debt_bank_lrepay_sgd = debt_bank_lrepay_sgd + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'thb':
+                        debt_bank_lrepay_thb = debt_bank_lrepay_thb + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'mmk':
+                        debt_bank_lrepay_mmk = debt_bank_lrepay_mmk + round(float(row['amount']), 2)
+
+                # debt cash brepay variables
+                if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'borrow' and row['payment_method'] == 'cash':
+                    if row['currency'] == 'usd':
+                        debt_cash_brepay_usd = debt_cash_brepay_usd + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'sgd':
+                        debt_cash_brepay_sgd = debt_cash_brepay_sgd + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'thb':
+                        debt_cash_brepay_thb = debt_cash_brepay_thb + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'mmk':
+                        debt_cash_brepay_mmk = debt_cash_brepay_mmk + round(float(row['amount']), 2)
+
+                # debt bank brepay variables
+                if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'borrow' and row['payment_method'] == 'banking':
+                    if row['currency'] == 'usd':
+                        debt_bank_brepay_usd = debt_bank_brepay_usd + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'sgd':
+                        debt_bank_brepay_sgd = debt_bank_brepay_sgd + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'thb':
+                        debt_bank_brepay_thb = debt_bank_brepay_thb + round(float(row['amount']), 2)
+
+                    elif row['currency'] == 'mmk':
+                        debt_bank_brepay_mmk = debt_bank_brepay_mmk + round(float(row['amount']), 2)
 
         cash_usd = income_cash_usd - spending_cash_usd + investment_cash_sell_usd - investment_cash_buy_usd \
             + debt_cash_borrow_usd - debt_cash_lend_usd - debt_cash_brepay_usd + debt_cash_lrepay_usd
@@ -1141,622 +1068,16 @@ def budgetary():
 def analysis():
     user_id = session.get("user_id")
     total_assets = 0
+    total_cash_bank = 0
+    inflow_income = 0
+    inflow_investment = 0
+    inflow_debt = 0
+    outflow_expense = 0
+    outflow_investment = 0
+    outflow_debt = 0
     
     # Create analysis routes
     if request.method == "GET":
-        # Get income-related cash values
-        income_cash_usd_q = db.execute (
-            "SELECT SUM(amount) AS income_cash_usd FROM transactions WHERE payment_method = 'cash' and currency = 'usd' and id IN \
-                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
-        )
-        income_cash_usd = income_cash_usd_q[0]["income_cash_usd"]
-        if income_cash_usd == None:
-            income_cash_usd = 0
-
-        income_cash_sgd_q = db.execute (
-            "SELECT SUM(amount) AS income_cash_sgd FROM transactions WHERE payment_method = 'cash' and currency = 'sgd' and id IN \
-                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
-        )
-        income_cash_sgd = income_cash_sgd_q[0]["income_cash_sgd"]
-        if income_cash_sgd == None:
-            income_cash_sgd = 0
-
-        income_cash_thb_q = db.execute (
-            "SELECT SUM(amount) AS income_cash_thb FROM transactions WHERE payment_method = 'cash' and currency = 'thb' and id IN \
-                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
-        )
-        income_cash_thb = income_cash_thb_q[0]["income_cash_thb"]
-        if income_cash_thb == None:
-            income_cash_thb = 0
-
-        income_cash_mmk_q = db.execute (
-            "SELECT SUM(amount) AS income_cash_mmk FROM transactions WHERE payment_method = 'cash' and currency = 'mmk' and id IN \
-                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
-        )
-        income_cash_mmk = income_cash_mmk_q[0]["income_cash_mmk"]
-        if income_cash_mmk == None:
-            income_cash_mmk = 0
-
-        # Get income-related bank_deposit values
-        income_bank_usd_q = db.execute (
-            "SELECT SUM(amount) AS income_bank_usd FROM transactions WHERE payment_method = 'banking' and currency = 'usd' and id IN \
-                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
-        )
-        income_bank_usd = income_bank_usd_q[0]["income_bank_usd"]
-        if income_bank_usd == None:
-            income_bank_usd = 0
-
-        income_bank_sgd_q = db.execute (
-            "SELECT SUM(amount) AS income_bank_sgd FROM transactions WHERE payment_method = 'banking' and currency = 'sgd' and id IN \
-                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
-        )
-        income_bank_sgd = income_bank_sgd_q[0]["income_bank_sgd"]
-        if income_bank_sgd == None:
-            income_bank_sgd = 0
-
-        income_bank_thb_q = db.execute (
-            "SELECT SUM(amount) AS income_bank_thb FROM transactions WHERE payment_method = 'banking' and currency = 'thb' and id IN \
-                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
-        )
-        income_bank_thb = income_bank_thb_q[0]["income_bank_thb"]
-        if income_bank_thb == None:
-            income_bank_thb = 0
-
-        income_bank_mmk_q = db.execute (
-            "SELECT SUM(amount) AS income_bank_mmk FROM transactions WHERE payment_method = 'banking' and currency = 'mmk' and id IN \
-                (SELECT transaction_id FROM income WHERE user_id = ?)", user_id 
-        )
-        income_bank_mmk = income_bank_mmk_q[0]["income_bank_mmk"]
-        if income_bank_mmk == None:
-            income_bank_mmk = 0
-
-        # Get spending-related cash values
-        spending_cash_usd_q = db.execute (
-            "SELECT SUM(amount) AS spending_cash_usd FROM transactions WHERE payment_method = 'cash' and currency = 'usd' and id IN \
-                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
-        )
-        spending_cash_usd = spending_cash_usd_q[0]["spending_cash_usd"]
-        if spending_cash_usd == None:
-            spending_cash_usd = 0
-
-        spending_cash_sgd_q = db.execute (
-            "SELECT SUM(amount) AS spending_cash_sgd FROM transactions WHERE payment_method = 'cash' and currency = 'sgd' and id IN \
-                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
-        )
-        spending_cash_sgd = spending_cash_sgd_q[0]["spending_cash_sgd"]
-        if spending_cash_sgd == None:
-            spending_cash_sgd = 0
-
-        spending_cash_thb_q = db.execute (
-            "SELECT SUM(amount) AS spending_cash_thb FROM transactions WHERE payment_method = 'cash' and currency = 'thb' and id IN \
-                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
-        )
-        spending_cash_thb = spending_cash_thb_q[0]["spending_cash_thb"]
-        if spending_cash_thb == None:
-            spending_cash_thb = 0
-
-        spending_cash_mmk_q = db.execute (
-            "SELECT SUM(amount) AS spending_cash_mmk FROM transactions WHERE payment_method = 'cash' and currency = 'mmk' and id IN \
-                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
-        )
-        spending_cash_mmk = spending_cash_mmk_q[0]["spending_cash_mmk"]
-        if spending_cash_mmk == None:
-            spending_cash_mmk = 0
-
-        # Get spending-related bank_deposit values
-        spending_bank_usd_q = db.execute (
-            "SELECT SUM(amount) AS spending_bank_usd FROM transactions WHERE payment_method = 'banking' and currency = 'usd' and id IN \
-                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
-        )
-        spending_bank_usd = spending_bank_usd_q[0]["spending_bank_usd"]
-        if spending_bank_usd == None:
-            spending_bank_usd = 0
-
-        spending_bank_sgd_q = db.execute (
-            "SELECT SUM(amount) AS spending_bank_sgd FROM transactions WHERE payment_method = 'banking' and currency = 'sgd' and id IN \
-                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
-        )
-        spending_bank_sgd = spending_bank_sgd_q[0]["spending_bank_sgd"]
-        if spending_bank_sgd == None:
-            spending_bank_sgd = 0
-
-        spending_bank_thb_q = db.execute (
-            "SELECT SUM(amount) AS spending_bank_thb FROM transactions WHERE payment_method = 'banking' and currency = 'thb' and id IN \
-                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
-        )
-        spending_bank_thb = spending_bank_thb_q[0]["spending_bank_thb"]
-        if spending_bank_thb == None:
-            spending_bank_thb = 0
-
-        spending_bank_mmk_q = db.execute (
-            "SELECT SUM(amount) AS spending_bank_mmk FROM transactions WHERE payment_method = 'banking' and currency = 'mmk' and id IN \
-                (SELECT transaction_id FROM spending WHERE user_id = ?)", user_id 
-        )
-        spending_bank_mmk = spending_bank_mmk_q[0]["spending_bank_mmk"]
-        if spending_bank_mmk == None:
-            spending_bank_mmk = 0
-
-        # Get investment-related cash values for buy
-        investment_cash_buy_usd_q = db.execute (
-            "SELECT SUM(amount) AS investment_cash_buy_usd FROM transactions WHERE payment_method = 'cash' and currency = 'usd' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'buy')", user_id
-        )
-        investment_cash_buy_usd = investment_cash_buy_usd_q[0]["investment_cash_buy_usd"]
-        if investment_cash_buy_usd == None:
-            investment_cash_buy_usd = 0
-
-        investment_cash_buy_sgd_q = db.execute (
-            "SELECT SUM(amount) AS investment_cash_buy_sgd FROM transactions WHERE payment_method = 'cash' and currency = 'sgd' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'buy')", user_id
-        )
-        investment_cash_buy_sgd = investment_cash_buy_sgd_q[0]["investment_cash_buy_sgd"]
-        if investment_cash_buy_sgd == None:
-            investment_cash_buy_sgd = 0
-
-        investment_cash_buy_thb_q = db.execute (
-            "SELECT SUM(amount) AS investment_cash_buy_thb FROM transactions WHERE payment_method = 'cash' and currency = 'thb' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'buy')", user_id
-        )
-        investment_cash_buy_thb = investment_cash_buy_thb_q[0]["investment_cash_buy_thb"]
-        if investment_cash_buy_thb == None:
-            investment_cash_buy_thb = 0
-
-        investment_cash_buy_mmk_q = db.execute (
-            "SELECT SUM(amount) AS investment_cash_buy_mmk FROM transactions WHERE payment_method = 'cash' and currency = 'mmk' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'buy')", user_id
-        )
-        investment_cash_buy_mmk = investment_cash_buy_mmk_q[0]["investment_cash_buy_mmk"]
-        if investment_cash_buy_mmk == None:
-            investment_cash_buy_mmk = 0
-
-        # Get investment-related bank values for buy
-        investment_bank_buy_usd_q = db.execute (
-            "SELECT SUM(amount) AS investment_bank_buy_usd FROM transactions WHERE payment_method = 'banking' and currency = 'usd' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'buy')", user_id
-        )
-        investment_bank_buy_usd = investment_bank_buy_usd_q[0]["investment_bank_buy_usd"]
-        if investment_bank_buy_usd == None:
-            investment_bank_buy_usd = 0
-
-        investment_bank_buy_sgd_q = db.execute (
-            "SELECT SUM(amount) AS investment_bank_buy_sgd FROM transactions WHERE payment_method = 'banking' and currency = 'sgd' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'buy')", user_id
-        )
-        investment_bank_buy_sgd = investment_bank_buy_sgd_q[0]["investment_bank_buy_sgd"]
-        if investment_bank_buy_sgd == None:
-            investment_bank_buy_sgd = 0
-
-        investment_bank_buy_thb_q = db.execute (
-            "SELECT SUM(amount) AS investment_bank_buy_thb FROM transactions WHERE payment_method = 'banking' and currency = 'thb' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'buy')", user_id
-        )
-        investment_bank_buy_thb = investment_bank_buy_thb_q[0]["investment_bank_buy_thb"]
-        if investment_bank_buy_thb == None:
-            investment_bank_buy_thb = 0
-
-        investment_bank_buy_mmk_q = db.execute (
-            "SELECT SUM(amount) AS investment_bank_buy_mmk FROM transactions WHERE payment_method = 'banking' and currency = 'mmk' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'buy')", user_id
-        )
-        investment_bank_buy_mmk = investment_bank_buy_mmk_q[0]["investment_bank_buy_mmk"]
-        if investment_bank_buy_mmk == None:
-            investment_bank_buy_mmk = 0
-
-        # Get investment-related cash values for sell
-        investment_cash_sell_usd_q = db.execute (
-            "SELECT SUM(amount) AS investment_cash_sell_usd FROM transactions WHERE payment_method = 'cash' and currency = 'usd' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'sell')", user_id
-        )
-        investment_cash_sell_usd = investment_cash_sell_usd_q[0]["investment_cash_sell_usd"]
-        if investment_cash_sell_usd == None:
-            investment_cash_sell_usd = 0
-
-        investment_cash_sell_sgd_q = db.execute (
-            "SELECT SUM(amount) AS investment_cash_sell_sgd FROM transactions WHERE payment_method = 'cash' and currency = 'sgd' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'sell')", user_id
-        )
-        investment_cash_sell_sgd = investment_cash_sell_sgd_q[0]["investment_cash_sell_sgd"]
-        if investment_cash_sell_sgd == None:
-            investment_cash_sell_sgd = 0
-
-        investment_cash_sell_thb_q = db.execute (
-            "SELECT SUM(amount) AS investment_cash_sell_thb FROM transactions WHERE payment_method = 'cash' and currency = 'thb' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'sell')", user_id
-        )
-        investment_cash_sell_thb = investment_cash_sell_thb_q[0]["investment_cash_sell_thb"]
-        if investment_cash_sell_thb == None:
-            investment_cash_sell_thb = 0
-
-        investment_cash_sell_mmk_q = db.execute (
-            "SELECT SUM(amount) AS investment_cash_sell_mmk FROM transactions WHERE payment_method = 'cash' and currency = 'mmk' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'sell')", user_id
-        )
-        investment_cash_sell_mmk = investment_cash_sell_mmk_q[0]["investment_cash_sell_mmk"]
-        if investment_cash_sell_mmk == None:
-            investment_cash_sell_mmk = 0
-
-        # Get investment-related bank values for sell
-        investment_bank_sell_usd_q = db.execute (
-            "SELECT SUM(amount) AS investment_bank_sell_usd FROM transactions WHERE payment_method = 'banking' and currency = 'usd' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'sell')", user_id
-        )
-        investment_bank_sell_usd = investment_bank_sell_usd_q[0]["investment_bank_sell_usd"]
-        if investment_bank_sell_usd == None:
-            investment_bank_sell_usd = 0
-
-        investment_bank_sell_sgd_q = db.execute (
-            "SELECT SUM(amount) AS investment_bank_sell_sgd FROM transactions WHERE payment_method = 'banking' and currency = 'sgd' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'sell')", user_id
-        )
-        investment_bank_sell_sgd = investment_bank_sell_sgd_q[0]["investment_bank_sell_sgd"]
-        if investment_bank_sell_sgd == None:
-            investment_bank_sell_sgd = 0
-
-        investment_bank_sell_thb_q = db.execute (
-            "SELECT SUM(amount) AS investment_bank_sell_thb FROM transactions WHERE payment_method = 'banking' and currency = 'thb' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'sell')", user_id
-        )
-        investment_bank_sell_thb = investment_bank_sell_thb_q[0]["investment_bank_sell_thb"]
-        if investment_bank_sell_thb == None:
-            investment_bank_sell_thb = 0
-
-        investment_bank_sell_mmk_q = db.execute (
-            "SELECT SUM(amount) AS investment_bank_sell_mmk FROM transactions WHERE payment_method = 'banking' and currency = 'mmk' and id IN \
-                (SELECT transaction_id FROM investment WHERE user_id = ? and buy_or_sell = 'sell')", user_id
-        )
-        investment_bank_sell_mmk = investment_bank_sell_mmk_q[0]["investment_bank_sell_mmk"]
-        if investment_bank_sell_mmk == None:
-            investment_bank_sell_mmk = 0
-
-        # Get debt-related cash values for 'borrow'
-        debt_cash_borrow_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_borrow_usd FROM transactions WHERE currency = 'usd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_cash_borrow_usd = debt_cash_borrow_usd_q[0]["debt_cash_borrow_usd"]
-        if debt_cash_borrow_usd == None:
-            debt_cash_borrow_usd = 0
-
-        debt_cash_borrow_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_borrow_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_cash_borrow_sgd = debt_cash_borrow_sgd_q[0]["debt_cash_borrow_sgd"]
-        if debt_cash_borrow_sgd == None:
-            debt_cash_borrow_sgd = 0
-
-        debt_cash_borrow_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_borrow_thb FROM transactions WHERE currency = 'thb' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_cash_borrow_thb = debt_cash_borrow_thb_q[0]["debt_cash_borrow_thb"]
-        if debt_cash_borrow_thb == None:
-            debt_cash_borrow_thb = 0
-
-        debt_cash_borrow_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_borrow_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_cash_borrow_mmk = debt_cash_borrow_mmk_q[0]["debt_cash_borrow_mmk"]
-        if debt_cash_borrow_mmk == None:
-            debt_cash_borrow_mmk = 0
-
-        # Get debt-related bank values for 'borrow'
-        debt_bank_borrow_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_borrow_usd FROM transactions WHERE currency = 'usd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_bank_borrow_usd = debt_bank_borrow_usd_q[0]["debt_bank_borrow_usd"]
-        if debt_bank_borrow_usd == None:
-            debt_bank_borrow_usd = 0
-
-        debt_bank_borrow_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_borrow_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_bank_borrow_sgd = debt_bank_borrow_sgd_q[0]["debt_bank_borrow_sgd"]
-        if debt_bank_borrow_sgd == None:
-            debt_bank_borrow_sgd = 0
-
-        debt_bank_borrow_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_borrow_thb FROM transactions WHERE currency = 'thb' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_bank_borrow_thb = debt_bank_borrow_thb_q[0]["debt_bank_borrow_thb"]
-        if debt_bank_borrow_thb == None:
-            debt_bank_borrow_thb = 0
-
-        debt_bank_borrow_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_borrow_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'borrow' and user_id = ?)", user_id
-        )
-        debt_bank_borrow_mmk = debt_bank_borrow_mmk_q[0]["debt_bank_borrow_mmk"]
-        if debt_bank_borrow_mmk == None:
-            debt_bank_borrow_mmk = 0
-
-        # Get debt-related cash values for 'lend'
-        debt_cash_lend_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lend_usd FROM transactions WHERE currency = 'usd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_cash_lend_usd = debt_cash_lend_usd_q[0]["debt_cash_lend_usd"]
-        if debt_cash_lend_usd == None:
-            debt_cash_lend_usd = 0
-
-        debt_cash_lend_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lend_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_cash_lend_sgd = debt_cash_lend_sgd_q[0]["debt_cash_lend_sgd"]
-        if debt_cash_lend_sgd == None:
-            debt_cash_lend_sgd = 0
-
-        debt_cash_lend_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lend_thb FROM transactions WHERE currency = 'thb' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_cash_lend_thb = debt_cash_lend_thb_q[0]["debt_cash_lend_thb"]
-        if debt_cash_lend_thb == None:
-            debt_cash_lend_thb = 0
-
-        debt_cash_lend_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lend_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_cash_lend_mmk = debt_cash_lend_mmk_q[0]["debt_cash_lend_mmk"]
-        if debt_cash_lend_mmk == None:
-            debt_cash_lend_mmk = 0
-
-        # Get debt-related bank values for 'lend'
-        debt_bank_lend_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lend_usd FROM transactions WHERE currency = 'usd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_bank_lend_usd = debt_bank_lend_usd_q[0]["debt_bank_lend_usd"]
-        if debt_bank_lend_usd == None:
-            debt_bank_lend_usd = 0
-
-        debt_bank_lend_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lend_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_bank_lend_sgd = debt_bank_lend_sgd_q[0]["debt_bank_lend_sgd"]
-        if debt_bank_lend_sgd == None:
-            debt_bank_lend_sgd = 0
-
-        debt_bank_lend_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lend_thb FROM transactions WHERE currency = 'thb' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_bank_lend_thb = debt_bank_lend_thb_q[0]["debt_bank_lend_thb"]
-        if debt_bank_lend_thb == None:
-            debt_bank_lend_thb = 0
-
-        debt_bank_lend_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lend_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'lend' and user_id = ?)", user_id
-        )
-        debt_bank_lend_mmk = debt_bank_lend_mmk_q[0]["debt_bank_lend_mmk"]
-        if debt_bank_lend_mmk == None:
-            debt_bank_lend_mmk = 0
-
-        # Get debt-related cash values for 'borrow_repay'
-        debt_cash_brepay_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_brepay_usd FROM transactions WHERE currency = 'usd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_cash_brepay_usd = debt_cash_brepay_usd_q[0]["debt_cash_brepay_usd"]
-        if debt_cash_brepay_usd == None:
-            debt_cash_brepay_usd = 0
-        
-        debt_cash_brepay_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_brepay_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_cash_brepay_sgd = debt_cash_brepay_sgd_q[0]["debt_cash_brepay_sgd"]
-        if debt_cash_brepay_sgd == None:
-            debt_cash_brepay_sgd = 0
-
-        debt_cash_brepay_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_brepay_thb FROM transactions WHERE currency = 'thb' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_cash_brepay_thb = debt_cash_brepay_thb_q[0]["debt_cash_brepay_thb"]
-        if debt_cash_brepay_thb == None:
-            debt_cash_brepay_thb = 0
-
-        debt_cash_brepay_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_brepay_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_cash_brepay_mmk = debt_cash_brepay_mmk_q[0]["debt_cash_brepay_mmk"]
-        if debt_cash_brepay_mmk == None:
-            debt_cash_brepay_mmk = 0
-
-        # Get debt-related bank values for 'borrow_repay'
-        debt_bank_brepay_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_brepay_usd FROM transactions WHERE currency = 'usd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_bank_brepay_usd = debt_bank_brepay_usd_q[0]["debt_bank_brepay_usd"]
-        if debt_bank_brepay_usd == None:
-            debt_bank_brepay_usd = 0
-        
-        debt_bank_brepay_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_brepay_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_bank_brepay_sgd = debt_bank_brepay_sgd_q[0]["debt_bank_brepay_sgd"]
-        if debt_bank_brepay_sgd == None:
-            debt_bank_brepay_sgd = 0
-
-        debt_bank_brepay_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_brepay_thb FROM transactions WHERE currency = 'thb' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_bank_brepay_thb = debt_bank_brepay_thb_q[0]["debt_bank_brepay_thb"]
-        if debt_bank_brepay_thb == None:
-            debt_bank_brepay_thb = 0
-
-        debt_bank_brepay_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_brepay_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'borrow' ORDER BY id ASC))", user_id
-        )
-        debt_bank_brepay_mmk = debt_bank_brepay_mmk_q[0]["debt_bank_brepay_mmk"]
-        if debt_bank_brepay_mmk == None:
-            debt_bank_brepay_mmk = 0
-
-        # Get debt-related cash values for 'lend_repay'
-        debt_cash_lrepay_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lrepay_usd FROM transactions WHERE currency = 'usd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_cash_lrepay_usd = debt_cash_lrepay_usd_q[0]["debt_cash_lrepay_usd"]
-        if debt_cash_lrepay_usd == None:
-            debt_cash_lrepay_usd = 0
-        
-        debt_cash_lrepay_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lrepay_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_cash_lrepay_sgd = debt_cash_lrepay_sgd_q[0]["debt_cash_lrepay_sgd"]
-        if debt_cash_lrepay_sgd == None:
-            debt_cash_lrepay_sgd = 0
-
-        debt_cash_lrepay_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lrepay_thb FROM transactions WHERE currency = 'thb' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_cash_lrepay_thb = debt_cash_lrepay_thb_q[0]["debt_cash_lrepay_thb"]
-        if debt_cash_lrepay_thb == None:
-            debt_cash_lrepay_thb = 0
-
-        debt_cash_lrepay_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_cash_lrepay_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'cash' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_cash_lrepay_mmk = debt_cash_lrepay_mmk_q[0]["debt_cash_lrepay_mmk"]
-        if debt_cash_lrepay_mmk == None:
-            debt_cash_lrepay_mmk = 0
-
-        # Get debt-related bank values for 'lend_repay'
-        debt_bank_lrepay_usd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lrepay_usd FROM transactions WHERE currency = 'usd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_bank_lrepay_usd = debt_bank_lrepay_usd_q[0]["debt_bank_lrepay_usd"]
-        if debt_bank_lrepay_usd == None:
-            debt_bank_lrepay_usd = 0
-        
-        debt_bank_lrepay_sgd_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lrepay_sgd FROM transactions WHERE currency = 'sgd' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_bank_lrepay_sgd = debt_bank_lrepay_sgd_q[0]["debt_bank_lrepay_sgd"]
-        if debt_bank_lrepay_sgd == None:
-            debt_bank_lrepay_sgd = 0
-
-        debt_bank_lrepay_thb_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lrepay_thb FROM transactions WHERE currency = 'thb' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_bank_lrepay_thb = debt_bank_lrepay_thb_q[0]["debt_bank_lrepay_thb"]
-        if debt_bank_lrepay_thb == None:
-            debt_bank_lrepay_thb = 0
-
-        debt_bank_lrepay_mmk_q = db.execute (
-            "SELECT SUM(amount) AS debt_bank_lrepay_mmk FROM transactions WHERE currency = 'mmk' and payment_method = 'banking' and id IN \
-                (SELECT transaction_id FROM debt WHERE debt_category = 'repay' and user_id = ? and debtor_or_creditor IN \
-                    (SELECT DISTINCT debtor_or_creditor FROM debt WHERE debt_category = 'lend' ORDER BY id ASC))", user_id
-        )
-        debt_bank_lrepay_mmk = debt_bank_lrepay_mmk_q[0]["debt_bank_lrepay_mmk"]
-        if debt_bank_lrepay_mmk == None:
-            debt_bank_lrepay_mmk = 0
-
-        cash_usd = income_cash_usd - spending_cash_usd + investment_cash_sell_usd - investment_cash_buy_usd \
-            + debt_cash_borrow_usd - debt_cash_lend_usd - debt_cash_brepay_usd + debt_cash_lrepay_usd
-        
-        cash_sgd = income_cash_sgd - spending_cash_sgd + investment_cash_sell_sgd - investment_cash_buy_sgd \
-            + debt_cash_borrow_sgd - debt_cash_lend_sgd - debt_cash_brepay_sgd + debt_cash_lrepay_sgd
-        
-        cash_thb = income_cash_thb - spending_cash_thb + investment_cash_sell_thb - investment_cash_buy_thb \
-            + debt_cash_borrow_thb - debt_cash_lend_thb - debt_cash_brepay_thb + debt_cash_lrepay_thb
-        
-        cash_mmk = income_cash_mmk - spending_cash_mmk + investment_cash_sell_mmk - investment_cash_buy_mmk \
-            + debt_cash_borrow_mmk - debt_cash_lend_mmk - debt_cash_brepay_mmk + debt_cash_lrepay_mmk
-        
-        bank_usd = income_bank_usd - spending_bank_usd + investment_bank_sell_usd - investment_bank_buy_usd \
-            + debt_bank_borrow_usd - debt_bank_lend_usd - debt_bank_brepay_usd + debt_bank_lrepay_usd
-        
-        bank_sgd = income_bank_sgd - spending_bank_sgd + investment_bank_sell_sgd - investment_bank_buy_sgd \
-            + debt_bank_borrow_sgd - debt_bank_lend_sgd - debt_bank_brepay_sgd + debt_bank_lrepay_sgd
-        
-        bank_thb = income_bank_thb - spending_bank_thb + investment_bank_sell_thb - investment_bank_buy_thb \
-            + debt_bank_borrow_thb - debt_bank_lend_thb - debt_bank_brepay_thb + debt_bank_lrepay_thb
-        
-        bank_mmk = income_bank_mmk - spending_bank_mmk + investment_bank_sell_mmk - investment_bank_buy_mmk \
-            + debt_bank_borrow_mmk - debt_bank_lend_mmk - debt_bank_brepay_mmk + debt_bank_lrepay_mmk
-
-        # Change the currency in cash to usd for total amount calculation
-        cash_sgd_in_usd = amount_in_usd('sgd', cash_sgd)
-        cash_thb_in_usd = amount_in_usd('thb', cash_thb)
-        cash_mmk_in_usd = amount_in_usd('mmk', cash_mmk)
-
-        # Change the currency in banking to usd for total amount calculation
-        bank_sgd_in_usd = amount_in_usd('sgd', bank_sgd)
-        bank_thb_in_usd = amount_in_usd('thb', bank_thb)
-        bank_mmk_in_usd = amount_in_usd('mmk', bank_mmk)
-
-        # Get the total cash in usd
-        total_cash_usd = round((cash_usd + cash_sgd_in_usd + cash_thb_in_usd + cash_mmk_in_usd), 2)
-
-        # Get total bank in usd
-        total_bank_usd = round((bank_usd + bank_sgd_in_usd + bank_thb_in_usd + bank_mmk_in_usd), 2)
-
-        total_cash_bank = round((total_cash_usd + total_bank_usd), 2)
-
-        total_assets = total_assets + total_cash_usd + total_bank_usd
-
-        # Calculate inflows and outflows for analysis
-        inflow_income = round((income_cash_usd + income_bank_usd + amount_in_usd('sgd', (income_cash_sgd + income_bank_sgd)) + amount_in_usd('thb', (income_cash_thb + income_bank_thb)) + \
-            amount_in_usd('mmk', (income_cash_mmk + income_bank_mmk))), 2)
-        
-        inflow_investment = round((investment_cash_sell_usd + investment_bank_sell_usd + amount_in_usd('sgd', (investment_cash_sell_sgd + investment_bank_sell_sgd)) + \
-            amount_in_usd('thb', (investment_cash_sell_thb + investment_bank_sell_thb)) + amount_in_usd('mmk', (investment_cash_sell_mmk + investment_bank_sell_mmk))), 2)
-        
-        inflow_debt = round((debt_cash_borrow_usd + debt_bank_borrow_usd + debt_cash_lrepay_usd + debt_bank_lrepay_usd + amount_in_usd('sgd', (debt_cash_borrow_sgd + debt_bank_borrow_sgd + \
-            debt_cash_lrepay_sgd + debt_bank_lrepay_sgd)) + amount_in_usd('thb', (debt_cash_borrow_thb + debt_bank_borrow_thb + debt_cash_lrepay_thb + debt_bank_lrepay_thb)) + \
-            amount_in_usd('mmk', (debt_cash_borrow_mmk + debt_bank_borrow_mmk + debt_cash_lrepay_mmk + debt_bank_lrepay_mmk))), 2)
-        
-        outflow_expense = round((spending_cash_usd + spending_bank_usd + amount_in_usd('sgd', (spending_cash_sgd + spending_bank_sgd)) + amount_in_usd('thb', (spending_cash_thb + spending_bank_thb)) + \
-            amount_in_usd('mmk', (spending_cash_mmk + spending_bank_mmk))), 2)
-        
-        outflow_investment = round((investment_cash_buy_usd + investment_bank_buy_usd + amount_in_usd('sgd', (investment_cash_buy_sgd + investment_bank_buy_sgd)) + \
-            amount_in_usd('thb', (investment_cash_buy_thb + investment_bank_buy_thb)) + amount_in_usd('mmk', (investment_cash_buy_mmk + investment_bank_buy_mmk))), 2)
-        
-        outflow_debt = round((debt_cash_lend_usd + debt_bank_lend_usd + debt_cash_brepay_usd + debt_bank_brepay_usd + amount_in_usd('sgd', (debt_cash_lend_sgd + debt_bank_lend_sgd + \
-            debt_cash_brepay_sgd + debt_bank_brepay_sgd)) + amount_in_usd('thb', (debt_cash_lend_thb + debt_bank_lend_thb + debt_cash_brepay_thb + debt_bank_brepay_thb)) + \
-            amount_in_usd('mmk', (debt_cash_lend_mmk + debt_bank_lend_mmk + debt_cash_brepay_mmk + debt_bank_brepay_mmk))), 2)
-        
-        inflows = inflow_income + inflow_investment + inflow_debt
-        outflows = outflow_expense + outflow_investment + outflow_debt
-
-        net_balance = inflows - outflows
 
         # Write database code for homepage investments table
         investment_rows = db.execute (
@@ -1871,12 +1192,13 @@ def analysis():
         inflow_income_rows = db.execute(
             "SELECT \
                 transactions.transaction_date AS date, \
-            'income' AS type, \
+                'income' AS type, \
                 income.income_type AS category, \
                 income.comment AS comment, \
                 transactions.payment_method AS payment_method, \
                 transactions.currency AS currency, \
-                transactions.amount AS amount \
+                transactions.amount AS amount, \
+                transactions.amount_in_usd AS amount_in_usd \
             FROM \
                 income JOIN transactions ON income.transaction_id = transactions.id \
             WHERE \
@@ -1889,54 +1211,31 @@ def analysis():
 
         for row in inflow_income_rows:
             # Salary-related rows
-            if row['category'] == 'salary' and row['currency'] == 'usd':
-                salary = salary + round(float(row['amount']), 2)
-
-            elif row['category'] == 'salary' and row['currency'] == 'sgd':
-                salary = salary + amount_in_usd('sgd', row['amount'])
-
-            elif row['category'] == 'salary' and row['currency'] == 'thb':
-                salary = salary + amount_in_usd('thb', row['amount'])
-
-            elif row['category'] == 'salary' and row['currency'] == 'mmk':
-                salary = salary + amount_in_usd('mmk', row['amount'])
+            if row['category'] == 'salary':
+                salary = salary + round(float(row['amount_in_usd']), 2)
 
             # Bank-interest-related rows
-            if row['category'] == 'bank-interest' and row['currency'] == 'usd':
-                bank_interest = bank_interest + round(float(row['amount']), 2)
-
-            elif row['category'] == 'bank-interest' and row['currency'] == 'sgd':
-                bank_interest = bank_interest + amount_in_usd('sgd', row['amount'])
-
-            elif row['category'] == 'bank-interest' and row['currency'] == 'thb':
-                bank_interest = bank_interest + amount_in_usd('thb', row['amount'])
-
-            elif row['category'] == 'bank-interest' and row['currency'] == 'mmk':
-                bank_interest = bank_interest + amount_in_usd('mmk', row['amount'])
+            if row['category'] == 'bank-interest':
+                bank_interest = bank_interest + round(float(row['amount_in_usd']), 2)
 
             # Other-income-related rows
-            if row['category'] == 'other-income' and row['currency'] == 'usd':
-                other_income = other_income + round(float(row['amount']), 2)
+            if row['category'] == 'other-income':
+                other_income = other_income + round(float(row['amount_in_usd']), 2)
 
-            elif row['category'] == 'other-income' and row['currency'] == 'sgd':
-                other_income = other_income + amount_in_usd('sgd', row['amount'])
-
-            elif row['category'] == 'other-income' and row['currency'] == 'thb':
-                other_income = other_income + amount_in_usd('thb', row['amount'])
-
-            elif row['category'] == 'other-income' and row['currency'] == 'mmk':
-                other_income = other_income + amount_in_usd('mmk', row['amount'])
+            # Update inflow income
+            inflow_income = inflow_income + round(float(row['amount_in_usd']), 2)
 
         # Write database code for expenses breakdown
         outflow_expense_rows = db.execute(
             "SELECT \
                 transactions.transaction_date AS date, \
-            'expense' AS type, \
+                'expense' AS type, \
                 spending.spending_type AS category, \
                 spending.comment AS comment, \
                 transactions.payment_method AS payment_method, \
                 transactions.currency AS currency, \
-                transactions.amount AS amount \
+                transactions.amount AS amount, \
+                transactions.amount_in_usd AS amount_in_usd \
             FROM \
                 spending JOIN transactions ON spending.transaction_id = transactions.id \
             WHERE \
@@ -1952,79 +1251,185 @@ def analysis():
 
         for row in outflow_expense_rows:
             # Food-related rows
-            if row['category'] == 'food' and row['currency'] == 'usd':
-                food = food + round(float(row['amount']), 2)
-
-            elif row['category'] == 'food' and row['currency'] == 'sgd':
-                food = food + amount_in_usd('sgd', row['amount'])
-
-            elif row['category'] == 'food' and row['currency'] == 'thb':
-                food = food + amount_in_usd('thb', row['amount'])
-
-            elif row['category'] == 'food' and row['currency'] == 'mmk':
-                food = food + amount_in_usd('mmk', row['amount'])
+            if row['category'] == 'food':
+                food = food + round(float(row['amount_in_usd']), 2)
 
             # Transportation-related rows
-            if row['category'] == 'transportation' and row['currency'] == 'usd':
-                transportation = transportation + round(float(row['amount']), 2)
-
-            elif row['category'] == 'transportation' and row['currency'] == 'sgd':
-                transportation = transportation + amount_in_usd('sgd', row['amount'])
-
-            elif row['category'] == 'transportation' and row['currency'] == 'thb':
-                transportation = transportation + amount_in_usd('thb', row['amount'])
-
-            elif row['category'] == 'transportation' and row['currency'] == 'mmk':
-                transportation = transportation + amount_in_usd('mmk', row['amount'])
+            if row['category'] == 'transportation':
+                transportation = transportation + round(float(row['amount_in_usd']), 2)
 
             # Clothing-related rows
-            if row['category'] == 'clothing' and row['currency'] == 'usd':
-                clothing = clothing + round(float(row['amount']), 2)
-
-            elif row['category'] == 'clothing' and row['currency'] == 'sgd':
-                clothing = clothing + amount_in_usd('sgd', row['amount'])
-
-            elif row['category'] == 'clothing' and row['currency'] == 'thb':
-                clothing = clothing + amount_in_usd('thb', row['amount'])
-
-            elif row['category'] == 'clothing' and row['currency'] == 'mmk':
-                clothing = clothing + amount_in_usd('mmk', row['amount']) 
+            if row['category'] == 'clothing':
+                clothing = clothing + round(float(row['amount_in_usd']), 2)
 
             # Rent-related rows
-            if row['category'] == 'rent' and row['currency'] == 'usd':
-                rent = rent + round(float(row['amount']), 2)
-
-            elif row['category'] == 'rent' and row['currency'] == 'sgd':
-                rent = rent + amount_in_usd('sgd', row['amount'])
-
-            elif row['category'] == 'rent' and row['currency'] == 'thb':
-                rent = rent + amount_in_usd('thb', row['amount'])
-
-            elif row['category'] == 'rent' and row['currency'] == 'mmk':
-                rent = rent + amount_in_usd('mmk', row['amount'])
+            if row['category'] == 'rent':
+                rent = rent + round(float(row['amount_in_usd']), 2)
 
             # Other-expense-related rows
-            if row['category'] == 'other-spending' and row['currency'] == 'usd':
-                other_expense = other_expense + round(float(row['amount']), 2)
+            if row['category'] == 'other-spending':
+                other_expense = other_expense + round(float(row['amount_in_usd']), 2)
 
-            elif row['category'] == 'other-spending' and row['currency'] == 'sgd':
-                other_expense = other_expense + amount_in_usd('sgd', row['amount'])
+            # Update outflow expense
+            outflow_expense = outflow_expense + round(float(row['amount_in_usd']), 2)
 
-            elif row['category'] == 'other-spending' and row['currency'] == 'thb':
-                other_expense = other_expense + amount_in_usd('thb', row['amount'])
+        # Write database query for investment breakdown
+        inflow_outflow_investment_rows = db.execute(
+            "SELECT \
+                transactions.transaction_date AS date, \
+                investment.investment_type AS type, \
+            CASE \
+                WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
+                WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
+                ELSE investment.symbol_real_estate_type \
+            END AS symbol_comment, \
+                investment.buy_or_sell AS buy_sell, \
+                investment.quantity, \
+                transactions.payment_method, \
+                transactions.currency, \
+                transactions.amount, \
+                transactions.amount_in_usd \
+            FROM \
+                investment JOIN transactions ON investment.transaction_id = transactions.id \
+            WHERE \
+                investment.user_id = ?", user_id
+        )
+        
+        # Get amount of each inflow investment category in usd
+        stock_sell = 0
+        crypto_sell = 0
+        real_estate_sell = 0
+        other_investment_sell = 0
 
-            elif row['category'] == 'other-spending' and row['currency'] == 'mmk':
-                other_expense = other_expense + amount_in_usd('mmk', row['amount']) 
+        # Get amount of each outflow investment category in usd
+        stock_buy = 0
+        crypto_buy = 0
+        real_estate_buy = 0
+        other_investment_buy = 0
 
-        print(f"food: {food}")
-        print(f"transportation: {transportation}")
-        print(f"clothing: {clothing}")
-        print(f"rent: {rent}")
-        print(f"other-expense: {other_expense}")
+        for row in inflow_outflow_investment_rows:
+            # Inflow variables for selling investments
+            if row['type'] == 'stock' and row['buy_sell'] == 'sell':
+                stock_sell = stock_sell + round(float(row['amount_in_usd']), 2)
+
+            if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'sell':
+                crypto_sell = crypto_sell + round(float(row['amount_in_usd']), 2)
+            
+            if row['type'] == 'real-estate' and row['buy_sell'] == 'sell':
+                real_estate_sell = real_estate_sell + round(float(row['amount_in_usd']), 2)
+
+            if row['type'] == 'other-investment' and row['buy_sell'] == 'sell':
+                other_investment_sell = other_investment_sell + round(float(row['amount_in_usd']), 2)
+
+            # Outflow variables for buying investments
+            if row['type'] == 'stock' and row['buy_sell'] == 'buy':
+                stock_buy = stock_buy + round(float(row['amount_in_usd']), 2)
+
+            if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'buy':
+                crypto_buy = crypto_buy + round(float(row['amount_in_usd']), 2)
+            
+            if row['type'] == 'real-estate' and row['buy_sell'] == 'buy':
+                real_estate_buy = real_estate_buy + round(float(row['amount_in_usd']), 2)
+
+            if row['type'] == 'other-investment' and row['buy_sell'] == 'buy':
+                other_investment_buy = other_investment_buy + round(float(row['amount_in_usd']), 2)
+
+        # Update inflow investment
+        inflow_investment = stock_sell + crypto_sell + real_estate_sell + other_investment_sell
+
+        # Update outflow investment
+        outflow_investment = stock_buy + crypto_buy + real_estate_buy + other_investment_buy
+
+        # Write database query for debt breakdown
+        inflow_outflow_debt_rows = db.execute(
+            "WITH ranked AS ( \
+            SELECT \
+                transactions.transaction_date AS date, \
+                debt.id AS debt_id, \
+                debt.user_id AS user_id, \
+                debt.debt_category AS category, \
+                debt.debtor_or_creditor AS debtor_or_creditor, \
+                debt.interest_rate AS interest_rate, \
+                transactions.payment_method AS payment_method, \
+                transactions.currency AS currency, \
+                transactions.amount AS amount, \
+                transactions.amount_in_usd AS amount_in_usd, \
+                ROW_NUMBER() OVER ( \
+                    PARTITION BY \
+                    CASE \
+                        WHEN debt.debt_category IN ('borrow', 'lend') THEN debt.debtor_or_creditor \
+                        WHEN debt.debt_category = 'repay' THEN debt.id \
+                        ELSE NULL \
+                    END \
+                    ORDER BY debt.id ASC) AS row \
+            FROM \
+                debt JOIN transactions ON debt.transaction_id = transactions.id \
+            WHERE \
+                debt.user_id = ?) \
+            SELECT \
+                date, \
+                category, \
+                debtor_or_creditor, \
+                interest_rate, \
+                payment_method, \
+                currency, \
+                amount, \
+                amount_in_usd \
+            FROM \
+                ranked \
+            WHERE \
+                (row = 1 AND category IN ('borrow', 'lend')) \
+                OR category = 'repay' \
+            ORDER BY \
+                debt_id \
+            ASC", user_id)
+
+        # Get amount of each inflow debt category in usd
+        borrow = 0
+        receivable_repay = 0
+
+        # Get amount of each outflow debt category in usd
+        lend = 0
+        debt_repay = 0
+
+        for row in inflow_outflow_debt_rows:
+            # Inflow variables for debts
+            if row['category'] == 'borrow':
+                borrow = borrow + round(float(row['amount_in_usd']), 2)
+
+            if row['category'] == 'repay':
+                if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'lend':
+                    receivable_repay = receivable_repay + round(float(row['amount_in_usd']), 2)
+
+                elif repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'borrow':
+                    debt_repay = debt_repay + round(float(row['amount_in_usd']), 2)
+
+            if row['category'] == 'lend':
+                lend = lend + round(float(row['amount_in_usd']), 2)
+
+        # Update inflow debt
+        inflow_debt = borrow + receivable_repay
+
+        # Update outflow debt
+        outflow_debt = lend + debt_repay
+
+        # Update inflows and outflows
+        inflows = inflow_income + inflow_investment + inflow_debt
+        outflows = outflow_expense + outflow_investment + outflow_debt
+
+        # Update net balance
+        net_balance = inflows - outflows
+
+        # Update total assets
+        total_assets = total_assets + net_balance
 
         return render_template("analysis.html", total_assets=total_assets, total_cash_bank=total_cash_bank, investment_total=investment_total, \
             debt_total=debt_total, inflow_income=inflow_income, inflow_investment=inflow_investment, inflow_debt=inflow_debt, outflow_expense=outflow_expense, \
-            outflow_investment=outflow_investment, outflow_debt=outflow_debt, inflows=inflows, outflows=outflows, net_balance=net_balance)
+            outflow_investment=outflow_investment, outflow_debt=outflow_debt, inflows=inflows, outflows=outflows, net_balance=net_balance, \
+            salary=salary, bank_interest=bank_interest, other_income=other_income, food=food, transportation=transportation, clothing=clothing, \
+            rent=rent, other_expense=other_expense, stock_sell=stock_sell, crypto_sell=crypto_sell, real_estate_sell=real_estate_sell, \
+            other_investment_sell=other_investment_sell, stock_buy=stock_buy, crypto_buy=crypto_buy, real_estate_buy=real_estate_buy, \
+            other_investment_buy=other_investment_buy, borrow=borrow, receivable_repay=receivable_repay, lend=lend, debt_repay=debt_repay)
 
 
 @app.route("/history", methods=["GET", "POST"])
@@ -2300,3 +1705,255 @@ def convert_profit_currency():
         exchange_rate = forex_rate(final_currency)["rate"]
         converted_amount = round(exchange_rate * float(value_in_usd), 2)
         return jsonify({'converted_amount': profit(converted_amount)})
+    
+
+# Date filter in analysis page
+@app.route("/analysis_filter")
+def analysis_filter():
+    user_id = session.get("user_id")
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+
+    # initialize variables
+    inflow_income = 0
+    outflow_expense = 0
+
+    # Write database code for inflows breakdown
+    # First, get inflow-income data from history
+    inflow_income_rows = db.execute(
+        "SELECT \
+            transactions.transaction_date AS date, \
+            'income' AS type, \
+            income.income_type AS category, \
+            income.comment AS comment, \
+            transactions.payment_method AS payment_method, \
+            transactions.currency AS currency, \
+            transactions.amount AS amount, \
+            transactions.amount_in_usd AS amount_in_usd \
+        FROM \
+            income JOIN transactions ON income.transaction_id = transactions.id \
+        WHERE \
+            income.user_id = ? and transactions.transaction_date BETWEEN ? AND ?", user_id, start_date, end_date)
+    
+    # Get amount of each income category in usd
+    salary = 0
+    bank_interest = 0
+    other_income = 0
+
+    for row in inflow_income_rows:
+        # Salary-related rows
+        if row['category'] == 'salary':
+            salary = salary + round(float(row['amount_in_usd']), 2)
+
+        # Bank-interest-related rows
+        if row['category'] == 'bank-interest':
+            bank_interest = bank_interest + round(float(row['amount_in_usd']), 2)
+
+        # Other-income-related rows
+        if row['category'] == 'other-income':
+            other_income = other_income + round(float(row['amount_in_usd']), 2)
+
+        # Update inflow income
+        inflow_income = inflow_income + round(float(row['amount_in_usd']), 2)
+
+    # Write database code for expenses breakdown
+    outflow_expense_rows = db.execute(
+        "SELECT \
+            transactions.transaction_date AS date, \
+            'expense' AS type, \
+            spending.spending_type AS category, \
+            spending.comment AS comment, \
+            transactions.payment_method AS payment_method, \
+            transactions.currency AS currency, \
+            transactions.amount AS amount, \
+            transactions.amount_in_usd AS amount_in_usd \
+        FROM \
+            spending JOIN transactions ON spending.transaction_id = transactions.id \
+        WHERE \
+            spending.user_id = ? and transactions.transaction_date BETWEEN ? AND ?", user_id, start_date, end_date)
+    
+
+    # Get amount of each expense category in usd
+    food = 0
+    transportation = 0
+    clothing = 0
+    rent = 0
+    other_expense = 0
+
+    for row in outflow_expense_rows:
+        # Food-related rows
+        if row['category'] == 'food':
+            food = food + round(float(row['amount_in_usd']), 2)
+
+        # Transportation-related rows
+        if row['category'] == 'transportation':
+            transportation = transportation + round(float(row['amount_in_usd']), 2)
+
+        # Clothing-related rows
+        if row['category'] == 'clothing':
+            clothing = clothing + round(float(row['amount_in_usd']), 2)
+
+        # Rent-related rows
+        if row['category'] == 'rent':
+            rent = rent + round(float(row['amount_in_usd']), 2)
+
+        # Other-expense-related rows
+        if row['category'] == 'other-spending':
+            other_expense = other_expense + round(float(row['amount_in_usd']), 2)
+
+        # Update outflow expense
+        outflow_expense = outflow_expense + round(float(row['amount_in_usd']), 2)
+
+    # Write database query for investment breakdown
+    inflow_outflow_investment_rows = db.execute(
+        "SELECT \
+            transactions.transaction_date AS date, \
+            investment.investment_type AS type, \
+        CASE \
+            WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
+            WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
+            ELSE investment.symbol_real_estate_type \
+        END AS symbol_comment, \
+            investment.buy_or_sell AS buy_sell, \
+            investment.quantity, \
+            transactions.payment_method, \
+            transactions.currency, \
+            transactions.amount, \
+            transactions.amount_in_usd \
+        FROM \
+            investment JOIN transactions ON investment.transaction_id = transactions.id \
+        WHERE \
+            investment.user_id = ? and transactions.transaction_date BETWEEN ? AND ?", user_id, start_date, end_date
+    )
+    
+    # Get amount of each inflow investment category in usd
+    stock_sell = 0
+    crypto_sell = 0
+    real_estate_sell = 0
+    other_investment_sell = 0
+
+    # Get amount of each outflow investment category in usd
+    stock_buy = 0
+    crypto_buy = 0
+    real_estate_buy = 0
+    other_investment_buy = 0
+
+    for row in inflow_outflow_investment_rows:
+        # Inflow variables for selling investments
+        if row['type'] == 'stock' and row['buy_sell'] == 'sell':
+            stock_sell = stock_sell + round(float(row['amount_in_usd']), 2)
+
+        if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'sell':
+            crypto_sell = crypto_sell + round(float(row['amount_in_usd']), 2)
+        
+        if row['type'] == 'real-estate' and row['buy_sell'] == 'sell':
+            real_estate_sell = real_estate_sell + round(float(row['amount_in_usd']), 2)
+
+        if row['type'] == 'other-investment' and row['buy_sell'] == 'sell':
+            other_investment_sell = other_investment_sell + round(float(row['amount_in_usd']), 2)
+
+        # Outflow variables for buying investments
+        if row['type'] == 'stock' and row['buy_sell'] == 'buy':
+            stock_buy = stock_buy + round(float(row['amount_in_usd']), 2)
+
+        if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'buy':
+            crypto_buy = crypto_buy + round(float(row['amount_in_usd']), 2)
+        
+        if row['type'] == 'real-estate' and row['buy_sell'] == 'buy':
+            real_estate_buy = real_estate_buy + round(float(row['amount_in_usd']), 2)
+
+        if row['type'] == 'other-investment' and row['buy_sell'] == 'buy':
+            other_investment_buy = other_investment_buy + round(float(row['amount_in_usd']), 2)
+
+    # Update inflow investment
+    inflow_investment = stock_sell + crypto_sell + real_estate_sell + other_investment_sell
+
+    # Update outflow investment
+    outflow_investment = stock_buy + crypto_buy + real_estate_buy + other_investment_buy
+
+    # Write database query for debt breakdown
+    inflow_outflow_debt_rows = db.execute(
+        "WITH ranked AS ( \
+        SELECT \
+            transactions.transaction_date AS date, \
+            debt.id AS debt_id, \
+            debt.user_id AS user_id, \
+            debt.debt_category AS category, \
+            debt.debtor_or_creditor AS debtor_or_creditor, \
+            debt.interest_rate AS interest_rate, \
+            transactions.payment_method AS payment_method, \
+            transactions.currency AS currency, \
+            transactions.amount AS amount, \
+            transactions.amount_in_usd AS amount_in_usd, \
+            ROW_NUMBER() OVER ( \
+                PARTITION BY \
+                CASE \
+                    WHEN debt.debt_category IN ('borrow', 'lend') THEN debt.debtor_or_creditor \
+                    WHEN debt.debt_category = 'repay' THEN debt.id \
+                    ELSE NULL \
+                END \
+                ORDER BY debt.id ASC) AS row \
+        FROM \
+            debt JOIN transactions ON debt.transaction_id = transactions.id \
+        WHERE \
+            debt.user_id = ? and transactions.transaction_date BETWEEN ? AND ?) \
+        SELECT \
+            date, \
+            category, \
+            debtor_or_creditor, \
+            interest_rate, \
+            payment_method, \
+            currency, \
+            amount, \
+            amount_in_usd \
+        FROM \
+            ranked \
+        WHERE \
+            (row = 1 AND category IN ('borrow', 'lend')) \
+            OR category = 'repay' \
+        ORDER BY \
+            debt_id \
+        ASC", user_id, start_date, end_date)
+
+    # Get amount of each inflow debt category in usd
+    borrow = 0
+    receivable_repay = 0
+
+    # Get amount of each outflow debt category in usd
+    lend = 0
+    debt_repay = 0
+
+    for row in inflow_outflow_debt_rows:
+        # Inflow variables for debts
+        if row['category'] == 'borrow':
+            borrow = borrow + round(float(row['amount_in_usd']), 2)
+
+        if row['category'] == 'repay':
+            if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'lend':
+                receivable_repay = receivable_repay + round(float(row['amount_in_usd']), 2)
+
+            elif repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'borrow':
+                debt_repay = debt_repay + round(float(row['amount_in_usd']), 2)
+
+        if row['category'] == 'lend':
+            lend = lend + round(float(row['amount_in_usd']), 2)
+
+    # Update inflow debt
+    inflow_debt = borrow + receivable_repay
+
+    # Update outflow debt
+    outflow_debt = lend + debt_repay
+
+    # Update inflows and outflows
+    inflows = inflow_income + inflow_investment + inflow_debt
+    outflows = outflow_expense + outflow_investment + outflow_debt
+
+    # Update net balance
+    net_balance = inflows - outflows
+
+    return jsonify({'inflow_income': inflow_income, 'inflow_investment': inflow_investment, 'inflow_debt': inflow_debt, 'outflow_expense': outflow_expense, \
+        'outflow_investment': outflow_investment, 'outflow_debt': outflow_debt, 'inflows': inflows, 'outflows': outflows, 'net_balance': net_balance, \
+        'salary': salary, 'bank_interest': bank_interest, 'other_income': other_income, 'food': food, 'transportation': transportation, 'clothing': clothing, \
+        'rent': rent, 'other_expense': other_expense, 'stock_sell': stock_sell, 'crypto_sell': crypto_sell, 'real_estate_sell': real_estate_sell, \
+        'other_investment_sell': other_investment_sell, 'stock_buy': stock_buy, 'crypto_buy': crypto_buy, 'real_estate_buy': real_estate_buy, \
+        'other_investment_buy': other_investment_buy, 'borrow': borrow, 'receivable_repay': receivable_repay, 'lend': lend, 'debt_repay': debt_repay})

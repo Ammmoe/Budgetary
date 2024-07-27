@@ -26,8 +26,8 @@
                 <div class="container-item-innerlegends">
                     <span class="success-color-box"></span>
                     <span>Cash & Bank Deposits:&nbsp;</span>
-                    <span class="success-bg-text">USD {{ total_cash_bank | currency }}</span>
-                    <div id="total-cash-bank" style="display: none;">{{ total_cash_bank }}</div>
+                    <span class="success-bg-text">USD {{ net_balance | currency }}</span>
+                    <div id="total-cash-bank" style="display: none;">{{ net_balance }}</div>
                 </div>
                 <div class="container-item-innerlegends">
                     <span class="warning-color-box"></span>
@@ -67,7 +67,7 @@
                     </div>
                 </div>
                 <div class="col-md-1 text-start">
-                    <button class="btn btn-outline-dark" type="submit">Filter</button>
+                    <button class="btn btn-outline-dark" type="button" onclick="analysisFilter()">Filter</button>
                 </div>
             </form>
         </div>
@@ -84,19 +84,19 @@
                     <div class="container-item-innerlegends parentElement">
                         <span class="success-color-box"></span>
                         <span>Incomes:&nbsp;</span>
-                        <span class="success-bg-text">USD {{ inflow_income | currency }}</span>
+                        <span id="formatted-inflow-income"class="success-bg-text">USD {{ inflow_income | currency }}</span>
                         <div id="inflow-income" class="checkZero" style="display: none;">{{ inflow_income }}</div>
                     </div>
                     <div class="container-item-innerlegends parentElement">
                         <span class="warning-color-box"></span>
                         <span>Investments:&nbsp;</span>
-                        <span class="success-bg-text">USD {{ inflow_investment | currency }}</span>
+                        <span id="formatted-inflow-investment" class="success-bg-text">USD {{ inflow_investment | currency }}</span>
                         <div id="inflow-investment" class="checkZero" style="display: none;">{{ inflow_investment }}</div>
                     </div>
                     <div class="container-item-innerlegends parentElement">
                         <span class="danger-color-box"></span>
                         <span>Debts & Receivables:&nbsp;</span>
-                        <span class="success-bg-text">USD {{ inflow_debt | currency}}</span>
+                        <span id="formatted-inflow-debt" class="success-bg-text">USD {{ inflow_debt | currency}}</span>
                         <div id="inflow-debt" class="checkZero" style="display: none;">{{ inflow_debt }}</div>
                     </div>
                 </div>
@@ -106,19 +106,19 @@
                     <div class="container-item-innerlegends parentElement">
                         <span class="expense-color-box"></span>
                         <span>Expenses:&nbsp;</span>
-                        <span class="danger-bg-text">USD {{ outflow_expense | currency }}</span>
+                        <span id="formatted-outflow-expense" class="danger-bg-text">USD {{ outflow_expense | currency }}</span>
                         <div id="outflow-expense" class="checkZero" style="display: none;">{{ outflow_expense }}</div>
                     </div>
                     <div class="container-item-innerlegends parentElement">
                         <span class="warning-color-box"></span>
                         <span>Investments:&nbsp;</span>
-                        <span class="danger-bg-text">USD {{ outflow_investment | currency }}</span>
+                        <span id="formatted-outflow-investment" class="danger-bg-text">USD {{ outflow_investment | currency }}</span>
                         <div id="outflow-investment" class="checkZero" style="display: none;">{{ outflow_investment }}</div>
                     </div>
                     <div class="container-item-innerlegends parentElement">
                         <span class="danger-color-box"></span>
                         <span>Debts & Receivables:&nbsp;</span>
-                        <span class="danger-bg-text">USD {{ outflow_debt | currency }}</span>
+                        <span id="formatted-outflow-debt" class="danger-bg-text">USD {{ outflow_debt | currency }}</span>
                         <div id="outflow-debt" class="checkZero" style="display: none;">{{ outflow_debt }}</div>
                     </div> 
                 </div>
@@ -127,7 +127,13 @@
                     <div class="container-item-innerlegends">
                         <span class="primary-color-box"></span>
                         <span>Net Balance:&nbsp;</span>
-                        <span class="success-bg-text">USD {{ net_balance | currency }}</span>
+                        <span id="formatted-net-balance" class="
+                        {% if net_balance >= 0 %}
+                            success-bg-text
+                        {% else %}
+                            danger-bg-text
+                        {% endif %}
+                            ">USD {{ net_balance | currency }}</span>
                         <div id="net-balance" style="display: none;">{{ net_balance }}</div>
                     </div> 
                 </div>
@@ -141,7 +147,7 @@
         <div class="container-topic h5">
             <span class="container-item-topic">Inflows Breakdown of:</span>
             <span class="container-item-topic success-bg-topic" id="inflows">
-                USD 7,000.00
+                USD {{ inflows | currency }}
             </span>
         </div>
 
@@ -152,59 +158,59 @@
             </div>
     
             <div class="container-hbar-item-legend text-start">
-                <div class="container-item-innerlegends">
+                <div class="container-item-innerlegends parentElement">
                     <span class="salary-color-box"></span>
                     <span>Salary:&nbsp;</span>
-                    <span class="success-bg-text">USD 2,500.00</span>
-                    <div id="salary" style="display: none;">2500</div>
+                    <span id="formatted-salary" class="success-bg-text">USD {{ salary | currency }}</span>
+                    <div id="salary" class="checkZero" style="display: none;">{{ salary }}</div>
                 </div>
-                <div class="container-item-innerlegends">
+                <div class="container-item-innerlegends parentElement">
                     <span class="bank-interest-color-box"></span>
                     <span>Bank Interest:&nbsp;</span>
-                    <span class="success-bg-text">USD 500.00</span>
-                    <div id="bank-interest" style="display: none;">500</div>
+                    <span id="formatted-bank-interest" class="success-bg-text">USD {{ bank_interest | currency }}</span>
+                    <div id="bank-interest" class="checkZero" style="display: none;">{{ bank_interest }}</div>
                 </div>
-                <div class="container-item-innerlegends">
+                <div class="container-item-innerlegends parentElement">
                     <span class="other-income-color-box"></span>
                     <span>Other Incomes:&nbsp;</span>
-                    <span class="success-bg-text">USD 2,000.00</span>
-                    <div id="other-income" style="display: none;">2000</div>
+                    <span id="formatted-other-income" class="success-bg-text">USD {{ other_income | currency }}</span>
+                    <div id="other-income" class="checkZero" style="display: none;">{{ other_income }}</div>
                 </div>
-                <div class="container-item-innerlegends">
+                <div class="container-item-innerlegends parentElement">
                     <span class="stock-color-box"></span>
                     <span>Stock (sell):&nbsp;</span>
-                    <span class="success-bg-text">USD 1,000.00</span>
-                    <div id="stock-sell" style="display: none;">2000</div>
+                    <span id="formatted-stock-sell" class="success-bg-text">USD {{ stock_sell | currency }}</span>
+                    <div id="stock-sell" class="checkZero" style="display: none;">{{ stock_sell }}</div>
                 </div> 
-                <div class="container-item-innerlegends">
+                <div class="container-item-innerlegends parentElement">
                     <span class="crypto-color-box"></span>
                     <span>Cryptocurrency (sell):&nbsp;</span>
-                    <span class="success-bg-text">USD 1,000.00</span>
-                    <div id="crypto-sell" style="display: none;">1000</div>
+                    <span id="formatted-crypto-sell" class="success-bg-text">USD {{ crypto_sell | currency }}</span>
+                    <div id="crypto-sell" class="checkZero" style="display: none;">{{ crypto_sell }}</div>
                 </div> 
-                <div class="container-item-innerlegends" style="display: none;">
+                <div class="container-item-innerlegends parentElement">
                     <span class="real-estate-color-box"></span>
                     <span>Real Estate (sell):&nbsp;</span>
-                    <span class="success-bg-text">USD 1,000.00</span>
-                    <div id="real-estate-sell" style="display: none;">1000</div>
+                    <span id="formatted-real-estate-sell" class="success-bg-text">USD {{ real_estate_sell | currency }}</span>
+                    <div id="real-estate-sell" class="checkZero" style="display: none;">{{ real_estate_sell }}</div>
                 </div> 
-                <div class="container-item-innerlegends" style="display: none;">
+                <div class="container-item-innerlegends parentElement">
                     <span class="other-investment-color-box"></span>
                     <span>Other Investments (sell):&nbsp;</span>
-                    <span class="success-bg-text">USD 1,000.00</span>
-                    <div id="other-investment-sell" style="display: none;">1000</div>
+                    <span id="formatted-other-investment-sell" class="success-bg-text">USD {{ other_investment_sell | currency }}</span>
+                    <div id="other-investment-sell" class="checkZero" style="display: none;">{{ other_investment_sell }}</div>
                 </div> 
-                <div class="container-item-innerlegends" style="display: none;">
+                <div class="container-item-innerlegends parentElement">
                     <span class="borrow-color-box"></span>
                     <span>Borrow:&nbsp;</span>
-                    <span class="success-bg-text">USD 1,000.00</span>
-                    <div id="borrow" style="display: none;">1000</div>
+                    <span id="formatted-borrow" class="success-bg-text">USD {{ borrow | currency }}</span>
+                    <div id="borrow" class="checkZero" style="display: none;">{{ borrow }}</div>
                 </div> 
-                <div class="container-item-innerlegends" style="display: none;">
+                <div class="container-item-innerlegends parentElement">
                     <span class="receivable-color-box"></span>
                     <span>Receivable (repay):&nbsp;</span>
-                    <span class="success-bg-text">USD 1,000.00</span>
-                    <div id="receivable" style="display: none;">1000</div>
+                    <span id="formatted-receivable-repay" class="success-bg-text">USD {{ receivable_repay | currency }}</span>
+                    <div id="receivable-repay" class="checkZero" style="display: none;">{{ receivable_repay }}</div>
                 </div> 
             </div>
 
@@ -216,7 +222,7 @@
         <div class="container-topic h5">
             <span class="container-item-topic">Outflows Breakdown of:</span>
             <span class="container-item-topic danger-bg-topic" id="outflows">
-                USD 5,000.00
+                USD {{ outflows | currency }}
             </span>
         </div>
 
@@ -227,71 +233,71 @@
             </div>
     
             <div class="container-hbar-item-legend text-start">
-                <div class="container-item-innerlegends">
+                <div class="container-item-innerlegends parentElement">
                     <span class="food-color-box"></span>
                     <span>Food:&nbsp;</span>
-                    <span class="danger-bg-text">USD 1,500.00</span>
-                    <div id="food" style="display: none;">1500</div>
+                    <span id="formatted-food" class="danger-bg-text">USD {{ food | currency }}</span>
+                    <div id="food" class="checkZero" style="display: none;">{{ food }}</div>
                 </div>
-                <div class="container-item-innerlegends">
+                <div class="container-item-innerlegends parentElement">
                     <span class="transportation-color-box"></span>
                     <span>Transportation:&nbsp;</span>
-                    <span class="danger-bg-text">USD 500.00</span>
-                    <div id="transportation" style="display: none;">500</div>
+                    <span id="formatted-transportation" class="danger-bg-text">USD {{ transportation | currency }}</span>
+                    <div id="transportation" class="checkZero" style="display: none;">{{ transportation }}</div>
                 </div>
-                <div class="container-item-innerlegends" style="display: none;">
+                <div class="container-item-innerlegends parentElement">
                     <span class="clothing-color-box"></span>
                     <span>Clothing:&nbsp;</span>
-                    <span class="danger-bg-text">USD 500.00</span>
-                    <div id="clothing" style="display: none;">500</div>
+                    <span id="formatted-clothing" class="danger-bg-text">USD {{ clothing | currency }}</span>
+                    <div id="clothing" class="checkZero" style="display: none;">{{ clothing }}</div>
                 </div>
-                <div class="container-item-innerlegends">
+                <div class="container-item-innerlegends parentElement">
                     <span class="rent-color-box"></span>
                     <span>Rent:&nbsp;</span>
-                    <span class="danger-bg-text">USD 1,000.00</span>
-                    <div id="rent" style="display: none;">1000</div>
+                    <span id="formatted-rent" class="danger-bg-text">USD {{ rent | currency }}</span>
+                    <div id="rent" class="checkZero" style="display: none;">{{ rent }}</div>
                 </div>
-                <div class="container-item-innerlegends" style="display: none;">
+                <div class="container-item-innerlegends parentElement">
                     <span class="other-expense-color-box"></span>
                     <span>Other Expenses:&nbsp;</span>
-                    <span class="danger-bg-text">USD 500.00</span>
-                    <div id="other-expense" style="display: none;">500</div>
+                    <span id="formatted-other-expense" class="danger-bg-text">USD {{ other_expense | currency }}</span>
+                    <div id="other-expense" class="checkZero" style="display: none;">{{ other_expense }}</div>
                 </div>
-                <div class="container-item-innerlegends" style="display: none;">
+                <div class="container-item-innerlegends parentElement">
                     <span class="stock-color-box"></span>
                     <span>Stock (buy):&nbsp;</span>
-                    <span class="danger-bg-text">USD 500.00</span>
-                    <div id="stock-buy" style="display: none;">500</div>
+                    <span id="formatted-stock-buy" class="danger-bg-text">USD {{ stock_buy | currency }}</span>
+                    <div id="stock-buy" class="checkZero" style="display: none;">{{ stock_buy }}</div>
                 </div>
-                <div class="container-item-innerlegends" style="display: none;">
+                <div class="container-item-innerlegends parentElement">
                     <span class="crypto-color-box"></span>
                     <span>Cryptocurrency (buy):&nbsp;</span>
-                    <span class="danger-bg-text">USD 500.00</span>
-                    <div id="crypto-buy" style="display: none;">500</div>
+                    <span id="formatted-crypto-buy" class="danger-bg-text">USD {{ crypto_buy | currency }}</span>
+                    <div id="crypto-buy" class="checkZero" style="display: none;">{{ crypto_buy }}</div>
                 </div>
-                <div class="container-item-innerlegends" style="display: none;">
+                <div class="container-item-innerlegends parentElement">
                     <span class="real-estate-color-box"></span>
                     <span>Real Estate (buy):&nbsp;</span>
-                    <span class="danger-bg-text">USD 500.00</span>
-                    <div id="real-estate-buy" style="display: none;">500</div>
+                    <span id="formatted-real-estate-buy" class="danger-bg-text">USD {{ real_estate_buy | currency }}</span>
+                    <div id="real-estate-buy" class="checkZero" style="display: none;">{{ real_estate_buy }}</div>
                 </div>
-                <div class="container-item-innerlegends" style="display: none;">
+                <div class="container-item-innerlegends parentElement">
                     <span class="other-investment-color-box"></span>
                     <span>Other Investments (buy):&nbsp;</span>
-                    <span class="danger-bg-text">USD 500.00</span>
-                    <div id="other-investment-buy" style="display: none;">500</div>
+                    <span id="formatted-other-investment-buy" class="danger-bg-text">USD {{ other_investment_buy | currency }}</span>
+                    <div id="other-investment-buy" class="checkZero" style="display: none;">{{ other_investment_buy }}</div>
                 </div>
-                <div class="container-item-innerlegends">
+                <div class="container-item-innerlegends parentElement">
                     <span class="lend-color-box"></span>
                     <span>Lend:&nbsp;</span>
-                    <span class="danger-bg-text">USD 1,000.00</span>
-                    <div id="lend" style="display: none;">1000</div>
+                    <span id="formatted-lend" class="danger-bg-text">USD {{ lend | currency }}</span>
+                    <div id="lend" class="checkZero" style="display: none;">{{ lend }}</div>
                 </div> 
-                <div class="container-item-innerlegends">
+                <div class="container-item-innerlegends parentElement">
                     <span class="debt-color-box"></span>
                     <span>Debt (repay):&nbsp;</span>
-                    <span class="danger-bg-text">USD 1,000.00</span>
-                    <div id="debt" style="display: none;">1000</div>
+                    <span id="formatted-debt-repay" class="danger-bg-text">USD {{ debt_repay | currency }}</span>
+                    <div id="debt-repay" class="checkZero" style="display: none;">{{ debt_repay }}</div>
                 </div> 
             </div>
 
@@ -456,34 +462,63 @@
 
 
     const inflowChart = document.getElementById('inflow-hbar-chart');
-    const inflowLabels = ['Incomes', 'Investments'];
+    const salary = Number(document.getElementById('salary').innerText) || 0;
+    const bankInterest = Number(document.getElementById('bank-interest').innerText) || 0;
+    const otherIncome = Number(document.getElementById('other-income').innerText) || 0;
+    const stockSell = Number(document.getElementById('stock-sell').innerText) || 0;
+    const cryptoSell = Number(document.getElementById('crypto-sell').innerText) || 0;
+    const realEstateSell = Number(document.getElementById('real-estate-sell').innerText) || 0;
+    const otherInvestmentSell = Number(document.getElementById('other-investment-sell').innerText) || 0;
+    const borrow= Number(document.getElementById('borrow').innerText) || 0;
+    const receivableRepay = Number(document.getElementById('receivable-repay').innerText) || 0;
+    const inflowLabels = ['Incomes', 'Investments', 'Debts & Receivables'];
     const inflowData = {
         labels: inflowLabels,
         datasets: [
             {
             label: 'Salary',
-            data: [2500, 0],
+            data: [salary, 0, 0],
             backgroundColor: ['#FF5733'],
             },
             {
             label: 'Bank Interest',
-            data: [500, 0],
+            data: [bankInterest, 0, 0],
             backgroundColor: ['#33FF57'],
             },
             {
             label: 'Other Incomes',
-            data: [2000, 0],
+            data: [otherIncome, 0, 0],
             backgroundColor: ['#3357FF'],
             },
             {
             label: 'Stock (sell)',
-            data: [0, 1000],
+            data: [0, stockSell, 0],
             backgroundColor: ['#FF33A8'],
             },
             {
             label: 'Cryptocurrency (sell)',
-            data: [0, 1000],
+            data: [0, cryptoSell, 0],
             backgroundColor: ['#33FFF5'],
+            },
+            {
+            label: 'Real Estate (sell)',
+            data: [0, realEstateSell, 0],
+            backgroundColor: ['#FFA533'],
+            },
+            {
+            label: 'Other Investment (sell)',
+            data: [0, otherInvestmentSell, 0],
+            backgroundColor: ['#8D33FF'],
+            },
+            {
+            label: 'Borrow',
+            data: [0, 0, borrow],
+            backgroundColor: ['#FF3380'],
+            },
+            {
+            label: 'Receivable (repay)',
+            data: [0, 0, receivableRepay],
+            backgroundColor: ['#33FF99'],
             }
         ]
     };
@@ -545,33 +580,74 @@
 
 
     const outflowChart = document.getElementById('outflow-hbar-chart');
-    const outflowLabels = ['Expenses', 'Debts & Receivables'];
+    const food = Number(document.getElementById('food').innerText) || 0;
+    const transportation = Number(document.getElementById('transportation').innerText) || 0;
+    const clothing = Number(document.getElementById('clothing').innerText) || 0;
+    const rent = Number(document.getElementById('rent').innerText) || 0;
+    const otherExpense = Number(document.getElementById('other-expense').innerText) || 0;
+    const stockBuy = Number(document.getElementById('stock-buy').innerText) || 0;
+    const cryptoBuy = Number(document.getElementById('crypto-buy').innerText) || 0;
+    const realEstateBuy = Number(document.getElementById('real-estate-buy').innerText) || 0;
+    const otherInvestmentBuy = Number(document.getElementById('other-investment-buy').innerText) || 0;
+    const lend = Number(document.getElementById('lend').innerText) || 0;
+    const debtRepay = Number(document.getElementById('debt-repay').innerText) || 0;
+    const outflowLabels = ['Expenses', 'Investments', 'Debts & Receivables'];
     const outflowData = {
         labels: outflowLabels,
         datasets: [
             {
             label: 'Food',
-            data: [1500, 0],
+            data: [food, 0, 0],
             backgroundColor: ['#FF5733'],
             },
             {
             label: 'Transportation',
-            data: [500, 0],
+            data: [transportation, 0, 0],
             backgroundColor: ['#FF9F00'],
             },
             {
+            label: 'Clothing',
+            data: [clothing, 0, 0],
+            backgroundColor: ['#5733FF'],
+            },
+            {
             label: 'Rent',
-            data: [1000, 0],
+            data: [rent, 0, 0],
             backgroundColor: ['#33FF57'],
             },
             {
+            label: 'Other Expenses',
+            data: [otherExpense, 0, 0],
+            backgroundColor: ['#3357FF'],
+            },
+            {
+            label: 'Stock (buy)',
+            data: [0, stockBuy, 0],
+            backgroundColor: ['#FF33A8'],
+            },
+            {
+            label: 'Cryptocurrency (buy)',
+            data: [0, cryptoBuy, 0],
+            backgroundColor: ['#33FFF5'],
+            },
+            {
+            label: 'Real Estate (buy)',
+            data: [0, realEstateBuy, 0],
+            backgroundColor: ['#FFA533'],
+            },
+            {
+            label: 'Other Investments (buy)',
+            data: [0, otherInvestmentBuy, 0],
+            backgroundColor: ['#8D33FF'],
+            },
+            {
             label: 'Lend',
-            data: [0, 1000],
+            data: [0, 0, lend],
             backgroundColor: ['#FF33E1'],
             },
             {
             label: 'Debt (repay)',
-            data: [0, 1000],
+            data: [0, 0, debtRepay],
             backgroundColor: ['#33C7FF'],
             }
         ]
@@ -655,5 +731,106 @@
     }
 
     hideElementByClass('checkZero')
+</script>
+
+<script>
+    function analysisFilter() {
+        const startDate = document.getElementById('start_date').value;
+        const endDate = document.getElementById('end_date').value;
+
+        fetch(`/analysis_filter?start_date=${startDate}&end_date=${endDate}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('inflow-income').textContent = data.inflow_income
+                document.getElementById('formatted-inflow-income').textContent = data.inflow_income
+
+                document.getElementById('inflow-investment').textContent = data.inflow_investment
+                document.getElementById('formatted-inflow-investment').textContent = data.inflow_investment
+
+                document.getElementById('inflow-debt').textContent = data.inflow_debt
+                document.getElementById('formatted-inflow-debt').textContent = data.inflow_debt
+
+                document.getElementById('outflow-expense').textContent = data.outflow_expense
+                document.getElementById('formatted-outflow-expense').textContent = data.outflow_expense
+
+                document.getElementById('outflow-investment').textContent = data.outflow_investment
+                document.getElementById('formatted-outflow-investment').textContent = data.outflow_investment
+
+                document.getElementById('outflow-debt').textContent = data.outflow_debt
+                document.getElementById('formatted-outflow-debt').textContent = data.outflow_debt
+
+                document.getElementById('net-balance').textContent = data.net_balance
+                document.getElementById('formatted-net-balance').textContent = data.net_balance
+
+                document.getElementById('inflows').textContent = data.inflows
+
+                document.getElementById('salary').textContent = data.salary
+                document.getElementById('formatted-salary').textContent = data.salary
+
+                document.getElementById('bank-interest').textContent = data.bank_interest
+                document.getElementById('formatted-bank-interest').textContent = data.bank_interest
+
+                document.getElementById('other-income').textContent = data.other_income
+                document.getElementById('formatted-other-income').textContent = data.other_income
+
+                document.getElementById('stock-sell').textContent = data.stock_sell
+                document.getElementById('formatted-stock-sell').textContent = data.stock_sell
+
+                document.getElementById('crypto-sell').textContent = data.crypto_sell
+                document.getElementById('formatted-crypto-sell').textContent = data.crypto_sell
+
+                document.getElementById('real-estate-sell').textContent = data.real_estate_sell
+                document.getElementById('formatted-real-estate-sell').textContent = data.real_estate_sell
+
+                document.getElementById('other-investment-sell').textContent = data.other_investment_sell
+                document.getElementById('formatted-other-investment-sell').textContent = data.other_investment_sell
+            
+                document.getElementById('borrow').textContent = data.borrow
+                document.getElementById('formatted-borrow').textContent = data.borrow
+
+                document.getElementById('receivable-repay').textContent = data.receivable_repay
+                document.getElementById('formatted-receivable-repay').textContent = data.receivable_repay
+
+                document.getElementById('outflows').textContent = data.outflows
+                
+                document.getElementById('food').textContent = data.food
+                document.getElementById('formatted-food').textContent = data.food
+
+                document.getElementById('transportation').textContent = data.transportation
+                document.getElementById('formatted-transportation').textContent = data.transportation
+
+                document.getElementById('clothing').textContent = data.clothing
+                document.getElementById('formatted-clothing').textContent = data.clothing
+
+                document.getElementById('rent').textContent = data.rent
+                document.getElementById('formatted-rent').textContent = data.rent
+
+                document.getElementById('other-expense').textContent = data.other_expense
+                document.getElementById('formatted-other-expense').textContent = data.other_expense
+
+                document.getElementById('stock-buy').textContent = data.stock_buy
+                document.getElementById('formatted-stock-buy').textContent = data.stock_buy
+
+                document.getElementById('crypto-buy').textContent = data.crypto_buy
+                document.getElementById('formatted-crypto-buy').textContent = data.crypto_buy
+
+                document.getElementById('real-estate-buy').textContent = data.real_estate_buy
+                document.getElementById('formatted-real-estate-buy').textContent = data.real_estate_buy
+
+                document.getElementById('other-investment-buy').textContent = data.other_investment_buy
+                document.getElementById('formatted-other-investment-buy').textContent = data.other_investment_buy
+
+                document.getElementById('lend').textContent = data.lend
+                document.getElementById('formatted-lend').textContent = data.lend
+
+                document.getElementById('debt-repay').textContent = data.debt_repay
+                document.getElementById('formatted-debt-repay').textContent = data.debt_repay
+
+                hideElementByClass('checkZero');
+                stackedChart.update();
+                inflowChart.update();
+                outflowChart.update();
+            })
+    }
 </script>
 {% endblock %}

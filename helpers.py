@@ -8,6 +8,7 @@ import requests
 
 from flask import redirect, render_template, request, session
 from functools import wraps
+from cs50 import SQL
 
 
 # Consider excluding this module!
@@ -185,3 +186,19 @@ def days_difference(past_date_str, date_format='%Y-%m-%d'):
 
     difference = today - past_date
     return difference.days
+
+
+# function to check if the repayment is made to user or made by user
+def repay_check(debtor_or_creditor):
+    # Configure CS50 Library to use SQLite database
+    db = SQL("sqlite:///budgetary.db")
+
+    user_id = session.get("user_id")
+
+    # check the first id of debtor_or_creditor in database
+    debt_category = db.execute(
+        "SELECT debt_category FROM debt WHERE debtor_or_creditor = ? and user_id = ? ORDER BY id LIMIT 1",
+        debtor_or_creditor, user_id
+    )
+
+    return debt_category
