@@ -1714,14 +1714,16 @@ def analysis_filter():
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
 
-    # initialize variables
-    inflow_income = 0
-    outflow_expense = 0
+    # Initialize query lists
+    inflow_income_rows = []
+    outflow_expense_rows = []
+    inflow_outflow_investment_rows = []
+    inflow_outflow_debt_rows = []
 
     # Write database code for inflows breakdown
     # First, get inflow-income data from history
-    inflow_income_rows = db.execute(
-        "SELECT \
+    inflow_income_rows_query = """
+        SELECT \
             transactions.transaction_date AS date, \
             'income' AS type, \
             income.income_type AS category, \
@@ -1733,7 +1735,141 @@ def analysis_filter():
         FROM \
             income JOIN transactions ON income.transaction_id = transactions.id \
         WHERE \
-            income.user_id = ? and transactions.transaction_date BETWEEN ? AND ?", user_id, start_date, end_date)
+            income.user_id = ? {where_clause} """
+    
+    # Write database code for expenses breakdown
+    outflow_expense_rows_query = """
+        SELECT \
+            transactions.transaction_date AS date, \
+            'expense' AS type, \
+            spending.spending_type AS category, \
+            spending.comment AS comment, \
+            transactions.payment_method AS payment_method, \
+            transactions.currency AS currency, \
+            transactions.amount AS amount, \
+            transactions.amount_in_usd AS amount_in_usd \
+        FROM \
+            spending JOIN transactions ON spending.transaction_id = transactions.id \
+        WHERE \
+            spending.user_id = ? {where_clause} """
+
+    # Write database query for investment breakdown
+    inflow_outflow_investment_rows_query = """
+        SELECT \
+            transactions.transaction_date AS date, \
+            investment.investment_type AS type, \
+        CASE \
+            WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
+            WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
+            ELSE investment.symbol_real_estate_type \
+        END AS symbol_comment, \
+            investment.buy_or_sell AS buy_sell, \
+            investment.quantity, \
+            transactions.payment_method, \
+            transactions.currency, \
+            transactions.amount, \
+            transactions.amount_in_usd \
+        FROM \
+            investment JOIN transactions ON investment.transaction_id = transactions.id \
+        WHERE \
+            investment.user_id = ? {where_clause} """
+    
+    
+    # Write database query for debt breakdown
+    inflow_outflow_debt_rows_query = """
+        WITH ranked AS ( \
+        SELECT \
+            transactions.transaction_date AS date, \
+            debt.id AS debt_id, \
+            debt.user_id AS user_id, \
+            debt.debt_category AS category, \
+            debt.debtor_or_creditor AS debtor_or_creditor, \
+            debt.interest_rate AS interest_rate, \
+            transactions.payment_method AS payment_method, \
+            transactions.currency AS currency, \
+            transactions.amount AS amount, \
+            transactions.amount_in_usd AS amount_in_usd, \
+            ROW_NUMBER() OVER ( \
+                PARTITION BY \
+                CASE \
+                    WHEN debt.debt_category IN ('borrow', 'lend') THEN debt.debtor_or_creditor \
+                    WHEN debt.debt_category = 'repay' THEN debt.id \
+                    ELSE NULL \
+                END \
+                ORDER BY debt.id ASC) AS row \
+        FROM \
+            debt JOIN transactions ON debt.transaction_id = transactions.id \
+        WHERE \
+            debt.user_id = ? {where_clause}) \
+        SELECT \
+            date, \
+            category, \
+            debtor_or_creditor, \
+            interest_rate, \
+            payment_method, \
+            currency, \
+            amount, \
+            amount_in_usd \
+        FROM \
+            ranked \
+        WHERE \
+            (row = 1 AND category IN ('borrow', 'lend')) \
+            OR category = 'repay' \
+        ORDER BY \
+            debt_id \
+        ASC """
+
+    if start_date and end_date:
+        # Format where clause for query
+        where_clause = "and transactions.transaction_date BETWEEN ? AND ?"
+
+        inflow_income_rows_query = inflow_income_rows_query.format(where_clause=where_clause)
+        inflow_income_rows = db.execute(
+            inflow_income_rows_query, user_id, start_date, end_date
+        )
+
+        outflow_expense_rows_query = outflow_expense_rows_query.format(where_clause=where_clause)
+        outflow_expense_rows = db.execute(
+            outflow_expense_rows_query, user_id, start_date, end_date
+        )
+
+        inflow_outflow_investment_rows_query = inflow_outflow_investment_rows_query.format(where_clause=where_clause)
+        inflow_outflow_investment_rows = db.execute(
+            inflow_outflow_investment_rows_query, user_id, start_date, end_date
+        )
+
+        inflow_outflow_debt_rows_query = inflow_outflow_debt_rows_query.format(where_clause=where_clause)
+        inflow_outflow_debt_rows = db.execute(
+            inflow_outflow_debt_rows_query, user_id, start_date, end_date
+        )
+
+    else:
+        # Format where clause for query
+        where_clause = ""
+
+        inflow_income_rows_query = inflow_income_rows_query.format(where_clause=where_clause)
+        inflow_income_rows = db.execute(
+            inflow_income_rows_query, user_id
+        )
+
+        outflow_expense_rows_query = outflow_expense_rows_query.format(where_clause=where_clause)
+        outflow_expense_rows = db.execute(
+            outflow_expense_rows_query, user_id
+        )
+
+        inflow_outflow_investment_rows_query = inflow_outflow_investment_rows_query.format(where_clause=where_clause)
+        inflow_outflow_investment_rows = db.execute(
+            inflow_outflow_investment_rows_query, user_id
+        )
+
+        inflow_outflow_debt_rows_query = inflow_outflow_debt_rows_query.format(where_clause=where_clause)
+        inflow_outflow_debt_rows = db.execute(
+            inflow_outflow_debt_rows_query, user_id
+        )
+
+    # initialize variables
+    inflow_income = 0
+    outflow_expense = 0
     
     # Get amount of each income category in usd
     salary = 0
@@ -1754,24 +1890,7 @@ def analysis_filter():
             other_income = other_income + round(float(row['amount_in_usd']), 2)
 
         # Update inflow income
-        inflow_income = inflow_income + round(float(row['amount_in_usd']), 2)
-
-    # Write database code for expenses breakdown
-    outflow_expense_rows = db.execute(
-        "SELECT \
-            transactions.transaction_date AS date, \
-            'expense' AS type, \
-            spending.spending_type AS category, \
-            spending.comment AS comment, \
-            transactions.payment_method AS payment_method, \
-            transactions.currency AS currency, \
-            transactions.amount AS amount, \
-            transactions.amount_in_usd AS amount_in_usd \
-        FROM \
-            spending JOIN transactions ON spending.transaction_id = transactions.id \
-        WHERE \
-            spending.user_id = ? and transactions.transaction_date BETWEEN ? AND ?", user_id, start_date, end_date)
-    
+        inflow_income = inflow_income + round(float(row['amount_in_usd']), 2)  
 
     # Get amount of each expense category in usd
     food = 0
@@ -1803,28 +1922,6 @@ def analysis_filter():
 
         # Update outflow expense
         outflow_expense = outflow_expense + round(float(row['amount_in_usd']), 2)
-
-    # Write database query for investment breakdown
-    inflow_outflow_investment_rows = db.execute(
-        "SELECT \
-            transactions.transaction_date AS date, \
-            investment.investment_type AS type, \
-        CASE \
-            WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
-            WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
-            ELSE investment.symbol_real_estate_type \
-        END AS symbol_comment, \
-            investment.buy_or_sell AS buy_sell, \
-            investment.quantity, \
-            transactions.payment_method, \
-            transactions.currency, \
-            transactions.amount, \
-            transactions.amount_in_usd \
-        FROM \
-            investment JOIN transactions ON investment.transaction_id = transactions.id \
-        WHERE \
-            investment.user_id = ? and transactions.transaction_date BETWEEN ? AND ?", user_id, start_date, end_date
-    )
     
     # Get amount of each inflow investment category in usd
     stock_sell = 0
@@ -1870,50 +1967,6 @@ def analysis_filter():
 
     # Update outflow investment
     outflow_investment = stock_buy + crypto_buy + real_estate_buy + other_investment_buy
-
-    # Write database query for debt breakdown
-    inflow_outflow_debt_rows = db.execute(
-        "WITH ranked AS ( \
-        SELECT \
-            transactions.transaction_date AS date, \
-            debt.id AS debt_id, \
-            debt.user_id AS user_id, \
-            debt.debt_category AS category, \
-            debt.debtor_or_creditor AS debtor_or_creditor, \
-            debt.interest_rate AS interest_rate, \
-            transactions.payment_method AS payment_method, \
-            transactions.currency AS currency, \
-            transactions.amount AS amount, \
-            transactions.amount_in_usd AS amount_in_usd, \
-            ROW_NUMBER() OVER ( \
-                PARTITION BY \
-                CASE \
-                    WHEN debt.debt_category IN ('borrow', 'lend') THEN debt.debtor_or_creditor \
-                    WHEN debt.debt_category = 'repay' THEN debt.id \
-                    ELSE NULL \
-                END \
-                ORDER BY debt.id ASC) AS row \
-        FROM \
-            debt JOIN transactions ON debt.transaction_id = transactions.id \
-        WHERE \
-            debt.user_id = ? and transactions.transaction_date BETWEEN ? AND ?) \
-        SELECT \
-            date, \
-            category, \
-            debtor_or_creditor, \
-            interest_rate, \
-            payment_method, \
-            currency, \
-            amount, \
-            amount_in_usd \
-        FROM \
-            ranked \
-        WHERE \
-            (row = 1 AND category IN ('borrow', 'lend')) \
-            OR category = 'repay' \
-        ORDER BY \
-            debt_id \
-        ASC", user_id, start_date, end_date)
 
     # Get amount of each inflow debt category in usd
     borrow = 0
