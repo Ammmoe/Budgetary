@@ -344,19 +344,33 @@ tr.text-primary td {
 .success-bg-topic {
     background-color: rgb(25, 135, 84); 
     color: white; 
-    padding: 4px; 
-    border-radius: 5px;
+    padding: 4px 8px; 
+    border-radius: 10px;
+}
+
+.secondary-bg-topic {
+    background-color: rgb(108, 117, 125); 
+    color: white; 
+    padding: 4px 8px; 
+    border-radius: 10px;
 }
 
 .danger-bg-topic {
     background-color: rgb(220, 53, 69); 
     color: white; 
-    padding: 4px; 
-    border-radius: 5px;
+    padding: 4px 8px; 
+    border-radius: 10px;
 }
 
 .success-bg-text {
     background-color: rgb(25, 135, 84); 
+    color: white; 
+    padding: 0 4px 0 4px; 
+    border-radius: 5px;
+}
+
+.secondary-bg-text {
+    background-color: rgb(108, 117, 125); 
     color: white; 
     padding: 0 4px 0 4px; 
     border-radius: 5px;
@@ -374,4 +388,43 @@ tr.text-primary td {
     color: white; 
     padding: 0 4px 0 4px; 
     border-radius: 5px;
+}
+
+/* Table design */
+.custom-table td {
+    padding-left: 40px;
+    padding-right: 40px;
+    text-align: right;
+}
+
+.custom-table td[scope="row"] {
+    text-align: center;
+}
+
+.custom-debt-table tr {
+    min-height: 40px;
+}
+
+tr {
+    height: 40px;
+    vertical-align: middle;
+}
+
+.custom-debt-table td {
+    text-align: right;
+}
+
+.custom-debt-table td[scope="row"] {
+    text-align: center;
+}
+
+/* Scrollable container */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Shadows to card box */
+.card-custom {
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
 }

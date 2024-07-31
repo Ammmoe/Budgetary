@@ -162,13 +162,13 @@ def amount_in_usd(currency, value):
 def profit(value):
     """ Format currency value to be used in homepage """
     if value > 0:
-        return f"(+{value:,.2f})"
+        return f"+{value:,.2f}"
     
     if value == 0:
-        return f"(+0.00)"
+        return f"+0.00"
     
     if value < 0:
-        return f"({value:,.2f})"
+        return f"{value:,.2f}"
     
 
 # function to show the amount of currency in comma separated financial terms
