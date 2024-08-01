@@ -2,6 +2,8 @@
 nav .navbar-brand
 {
     font-size: xx-large;
+    align-items: center;
+    display: flex;
 }
 
 /* Colors for brand */
@@ -20,6 +22,15 @@ nav .navbar-brand .yellow
 nav .navbar-brand .green
 {
     color: #2e944b;
+}
+
+body {
+    background: url('finance21.jpg');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    /* backdrop-filter: blur(5px); */
+    /* background-color: rgb(70, 130, 180); */
 }
 
 .section {
@@ -42,19 +53,25 @@ h1 {
 tr.text-success th,
 tr.text-success td {
     color: inherit;
-    padding: 3px;
+    /* padding: 3px; */
 }
 
 tr.text-danger th,
 tr.text-danger td {
     color: inherit;
-    padding: 3px;
+    /* padding: 3px; */
 }
 
 tr.text-primary th,
 tr.text-primary td {
     color: inherit;
-    padding: 3px;
+    /* padding: 3px; */
+}
+
+tr.text-secondary th,
+tr.text-secondary td {
+    color: inherit;
+    /* padding: 3px; */
 }
 
 .container-main {
@@ -76,6 +93,8 @@ tr.text-primary td {
     height: 500px;
     width: 900px;
     justify-content: space-evenly;
+    background-color: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(7px);
 }
 
 .container-bar-chart {
@@ -88,6 +107,8 @@ tr.text-primary td {
     height: 625px;
     width: 900px;
     justify-content: space-evenly;
+    background-color: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(7px);
 }
 
 .container-horizontal-bar-chart {
@@ -100,6 +121,8 @@ tr.text-primary td {
     height: 625px;
     width: 900px;
     justify-content: space-evenly;
+    background-color: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(7px);
 }
 
 .container-item-filter {
@@ -342,8 +365,10 @@ tr.text-primary td {
 }
 
 .success-bg-topic {
-    background-color: rgb(25, 135, 84); 
-    color: white; 
+    /* background-color: rgb(25, 135, 84); 
+    color: white; */
+    background-color: #86E49D;
+    color: #006B21;  
     padding: 4px 8px; 
     border-radius: 10px;
 }
@@ -356,17 +381,25 @@ tr.text-primary td {
 }
 
 .danger-bg-topic {
-    background-color: rgb(220, 53, 69); 
-    color: white; 
+    /* background-color: rgb(220, 53, 69); 
+    color: white; */
+    background-color: #D893A3; 
+    color: #B30021; 
     padding: 4px 8px; 
     border-radius: 10px;
 }
 
 .success-bg-text {
-    background-color: rgb(25, 135, 84); 
-    color: white; 
+    /* background-color: rgb(25, 135, 84);  */
+    background-color: #86E49D;
+    color: #006B21; 
     padding: 0 4px 0 4px; 
     border-radius: 5px;
+}
+
+.text-bg-success {
+    background-color: #86E49D !important;
+    color: #006B21 !important; 
 }
 
 .secondary-bg-text {
@@ -376,6 +409,11 @@ tr.text-primary td {
     border-radius: 5px;
 }
 
+/* .text-bg-secondary {
+    background-color: white !important; 
+    color: black !important;
+} */
+
 .warning-bg-text {
     background-color: rgb(255, 193, 7); 
     color: white; 
@@ -383,11 +421,22 @@ tr.text-primary td {
     border-radius: 5px;
 }
 
+.text-bg-warning {
+    background-color: #ebc474 !important; 
+}
+
 .danger-bg-text {
-    background-color: rgb(220, 53, 69); 
-    color: white; 
+    /* background-color: rgb(220, 53, 69);  */
+    background-color: #D893A3; 
+    color: #B30021; 
     padding: 0 4px 0 4px; 
     border-radius: 5px;
+}
+
+.text-bg-danger {
+    /* background-color: rgb(220, 53, 69);  */
+    background-color: #D893A3 !important; 
+    color: #B30021 !important; 
 }
 
 /* Table design */
@@ -401,21 +450,24 @@ tr.text-primary td {
     text-align: center;
 }
 
-.custom-debt-table tr {
-    min-height: 40px;
-}
-
 tr {
     height: 40px;
     vertical-align: middle;
 }
 
 .custom-debt-table td {
+    padding-left: 40px;
+    padding-right: 40px;
     text-align: right;
 }
 
 .custom-debt-table td[scope="row"] {
     text-align: center;
+}
+
+.custom-table-history td {
+    padding-left: 30px;
+    padding-right: 30px;
 }
 
 /* Scrollable container */
@@ -427,4 +479,47 @@ tr {
 /* Shadows to card box */
 .card-custom {
     box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(7px);
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* .table-striped>tbody>tr:nth-child(odd)>td, 
+.table-striped>tbody>tr:nth-child(odd)>th {
+   background-color: rgba(255, 255, 255, 0.6);
+   backdrop-filter: blur(7px);
+} */
+
+.ga-maamli-regular {
+    font-family: "Ga Maamli", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
+.card-custom-budgetary {
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(7px);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 30px 15px;
+}
+
+.card-custom-history {
+    /* padding: 12px 0; */
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(7px);
+    background-color: rgba(255, 255, 255, 0.9);
+    /* display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: auto; */
+}
+
+.history-flex-container {
+    flex: 0 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 8px 10px 15px;
+    width: auto;
 }

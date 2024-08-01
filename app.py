@@ -1487,7 +1487,7 @@ def history():
     debt_query = """
         SELECT
             transactions.transaction_date AS date,
-        debt.debt_category AS category,
+            debt.debt_category AS category,
             debt.debtor_or_creditor,
             debt.interest_rate,
             transactions.payment_method,
@@ -1520,6 +1520,14 @@ def history():
             debt_query, user_id
         )
 
+        for row in debt_rows:
+                if row['category'] == 'repay':
+                    if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'lend':
+                        row['category'] = 'lrepay'
+
+                    elif repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'borrow':
+                        row['category'] = 'brepay'
+
         return render_template("history.html", income_spending_rows=income_spending_rows, investment_rows=investment_rows, \
             debt_rows=debt_rows, currency=currency)
 
@@ -1548,6 +1556,14 @@ def history():
                 debt_query, user_id, start_date, end_date
             )
 
+            for row in debt_rows:
+                if row['category'] == 'repay':
+                    if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'lend':
+                        row['category'] = 'lrepay'
+
+                    elif repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'borrow':
+                        row['category'] = 'brepay'
+
             return render_template("history.html", income_spending_rows=income_spending_rows, investment_rows=investment_rows, \
                 debt_rows=debt_rows, currency=currency, start_date=start_date, end_date=end_date)
 
@@ -1566,6 +1582,14 @@ def history():
             debt_rows = db.execute(
                 debt_query, user_id
             )
+
+            for row in debt_rows:
+                if row['category'] == 'repay':
+                    if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'lend':
+                        row['category'] = 'lrepay'
+
+                    elif repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'borrow':
+                        row['category'] = 'brepay'
         
             return render_template("history.html", income_spending_rows=income_spending_rows, investment_rows=investment_rows, \
                 debt_rows=debt_rows, currency=currency)

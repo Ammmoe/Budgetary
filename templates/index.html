@@ -8,7 +8,7 @@
 <div class="row">
     <div class="col-md-4 mb-4 d-flex">
         <div class="card card-custom flex-fill">
-            <div class="card-header">Total Assets & Liabilities</div>
+            <div class="card-header text-bg-secondary">Total Assets & Liabilities</div>
             <div class="card-body">
                 <span class="card-title h5">Total Assets & Liabilities in</span>
                 <select name="asset-currency-select" id="asset-currency-select" class="h5" onchange="convertAssetCurrency()">
@@ -36,39 +36,39 @@
         <div class="card card-custom">
             <div class="card-header text-bg-success">Cash & Bank Deposits</div>
             <div class="card-body table-responsive p-3">
-                <table class="table table-striped custom-table">
+                <table class="table table-striped custom-table table-hover">
                     <thead>
                         <tr class="fw-bold">
-                        <th scope="col"></th>
-                        <th scope="col">Cash</th>
-                        <th scope="col">Bank Deposits</th>
-                        <th scope="col"></th>
+                            <th scope="col"></th>
+                            <th scope="col">Cash</th>
+                            <th scope="col">Bank Deposits</th>
+                            <!-- <th scope="col"></th> -->
                         </tr>
                     </thead>
                     <tbody class="table-group-divider">
                         <tr>
-                        <td scope="row">USD</td>
-                        <td>{{ cash_usd }}</td>
-                        <td>{{ bank_usd }}</td>
-                        <td></td>
+                            <td scope="row">USD</td>
+                            <td>{{ cash_usd }}</td>
+                            <td>{{ bank_usd }}</td>
+                            <!-- <td></td> -->
                         </tr>
                         <tr>
-                        <td scope="row">SGD</td>
-                        <td>{{ cash_sgd }}</td>
-                        <td>{{ bank_sgd }}</td>
-                        <td></td>
+                            <td scope="row">SGD</td>
+                            <td>{{ cash_sgd }}</td>
+                            <td>{{ bank_sgd }}</td>
+                            <!-- <td></td> -->
                         </tr>
                         <tr>
-                        <td scope="row">THB</td>
-                        <td>{{ cash_thb }}</td>
-                        <td>{{ bank_thb }}</td>
-                        <td></td>
+                            <td scope="row">THB</td>
+                            <td>{{ cash_thb }}</td>
+                            <td>{{ bank_thb }}</td>
+                            <!-- <td></td> -->
                         </tr>
                         <tr>
-                        <td scope="row">MMK</td>
-                        <td>{{ cash_mmk }}</td>
-                        <td>{{ bank_mmk }}</td>
-                        <td></td>
+                            <td scope="row">MMK</td>
+                            <td>{{ cash_mmk }}</td>
+                            <td>{{ bank_mmk }}</td>
+                            <!-- <td></td> -->
                         </tr>
                     </tbody>
                     <tfoot class="table-group-divider">
@@ -84,7 +84,7 @@
                         <span id="total_bank_raw" style="display: none;">{{ total_bank_usd }}</span>
                         <td id="total_cash">{{ total_cash_usd | currency }}</td>
                         <td id="total_bank">{{ total_bank_usd | currency }}</td>
-                        <td></td>
+                        <!-- <td></td> -->
                     </tfoot>
                 </table>
             </div>
@@ -93,12 +93,12 @@
 </div>   
 
 <div class="card card-custom mb-4 col-md-12">
-    <div class="card-header text-bg-warning text-white">Investments</div>
-    <div class="card-body table-responsive">
-        <table class="table table-striped custom-table">
+    <div class="card-header text-bg-warning">Investments</div>
+    <div class="card-body table-responsive opacity-80">
+        <table class="table table-striped custom-table table-hover">
             <thead>
                 <tr class="fw-bold">
-                    <th scope="col">Type</th>
+                    <th scope="col">Category</th>
                     <th scope="col">Symbol</th>
                     <th scope="col">Quantity</th>
                     <th scope="col">Market Value (in USD)</th>
@@ -108,7 +108,17 @@
             <tbody class="table-group-divider">
                 {% for row in investment_rows %}
                 <tr>
-                    <td scope="row">{{ row['investment_type'] }}</td>
+                    <td scope="row">
+                        {% if row['investment_type'] == 'stock' %}
+                            Stock
+                        {% elif row['investment_type'] == 'cryptocurrency' %} 
+                            Cryptocurrency
+                        {% elif row['investment_type'] == 'real-estate' %}
+                            Real Estate
+                        {% else %}
+                            Other Investment
+                        {% endif %}
+                    </td>
                     <td scope="row">{{ row['symbol'] }}</td>
                     <td scope="row">{{ row['quantity'] }}</td>
                     <td>{{ row['original_value'] | currency }}</td>
@@ -164,10 +174,10 @@
 <div class="card card-custom mb-4 col-md-12">
     <div class="card-header text-bg-danger">Debts & Receivables</div>
     <div class="card-body table-responsive">
-        <table class="table table-striped custom-table">
+        <table class="table table-striped custom-debt-table table-hover">
             <thead>
                 <tr class="fw-bold">
-                    <!-- <th scope="col">Category</th> -->
+                    <th scope="col">Category</th>
                     <th scope="col">Debtor / Creditor</th>
                     <th scope="col">Date (yyyy-mm-dd)</th>
                     <th scope="col">Interest Rate</th>
@@ -179,7 +189,7 @@
             </thead>
             <tbody class="table-group-divider">
                 {% for row in debt_rows %}
-                <tr class="
+                <!-- <tr class="
                 {% if row['debt_category'] == 'borrow' and row['amount'] != 0 %}
                     text-danger
                 {% elif row['debt_category'] == 'borrow' and row['amount'] == 0 %}
@@ -188,26 +198,46 @@
                     text-success
                 {% elif row['debt_category'] == 'lend' and row['amount'] == 0 %}
                     text-success text-decoration-line-through
+                {% endif %}"> -->
+                <tr class="
+                {% if row['debt_category'] == 'borrow' and row['amount'] == 0 %}
+                    text-decoration-line-through
+                {% elif row['debt_category'] == 'lend' and row['amount'] == 0 %}
+                    text-decoration-line-through
                 {% endif %}">
-                    <!-- <td scope="row">
+                    <td scope="row">
+                        <!-- <span class="
+                        {% if row['debt_category'] == 'borrow' %}
+                            danger-bg-text
+                        {% elif row['debt_category'] == 'lend' %}
+                            success-bg-text
+                        {% endif %}"> -->
                         <span>
                             {% if row['debt_category'] == 'borrow' %}
-                                payable
+                                Payable
                             {% elif row['debt_category'] == 'lend' %}
-                                receivable
+                                Receivable
                             {% endif %}
                         </span> 
-                    </td> -->
-                    <td scope="row">{{ row['debtor_or_creditor'] }}</td>
+                    </td>
+                    <td scope="row" class="text-start">{{ row['debtor_or_creditor'] }}</td>
                     <td scope="row">{{ row['transaction_date'] }}</td>
                     <td scope="row">{{ row['interest_rate'] }}%</td>
                     <td scope="row">{{ row['currency'] | upper }}</td>
-                    <td>{{ row['amount'] | currency }}</td>
                     <td>
                         <span class="
-                            {% if row['debt_category'] == 'borrow' and row['amount'] != 0 %}
+                            {% if row['debt_category'] == 'borrow' %}
                                 danger-bg-text
-                            {% elif row['debt_category'] == 'lend' and row['amount'] != 0 %}
+                            {% elif row['debt_category'] == 'lend' %}
+                                success-bg-text
+                            {% endif %}">{{ row['amount'] | currency }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="
+                            {% if row['debt_category'] == 'borrow' %}
+                                danger-bg-text
+                            {% elif row['debt_category'] == 'lend' %}
                                 success-bg-text
                             {% endif %}">{{ row['interest'] | profit }}
                         </span>
@@ -218,7 +248,7 @@
             </tbody>
             <tfoot class="table-group-divider">
                 <!-- <th colspan="4"> </th> -->
-                <td colspan="4">Equivalent Total in
+                <td colspan="5">Equivalent Total in
                     <select name="debt-currency-select" id="debt-currency-select" onchange="convertDebtCurrency()">
                         <option value="usd" selected>USD</option>
                         <option value="sgd">SGD</option>
