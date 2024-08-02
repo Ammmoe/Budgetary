@@ -646,7 +646,7 @@ def index():
             transactions.amount \
             FROM debt JOIN transactions \
             ON debt.transaction_id = transactions.id \
-            WHERE debt.user_id = ? and debt.id IN (SELECT MAX(debt.id) FROM debt GROUP BY debtor_or_creditor)", user_id
+            WHERE debt.id IN (SELECT MAX(debt.id) FROM debt WHERE debt.user_id = ? GROUP BY debtor_or_creditor)", user_id
         )
 
         new_debt_rows = []
@@ -1150,7 +1150,7 @@ def analysis():
             transactions.amount \
             FROM debt JOIN transactions \
             ON debt.transaction_id = transactions.id \
-            WHERE debt.user_id = ? and debt.id IN (SELECT MAX(debt.id) FROM debt GROUP BY debtor_or_creditor)", user_id
+            WHERE debt.id IN (SELECT MAX(debt.id) FROM debt WHERE debt.user_id = ? GROUP BY debtor_or_creditor)", user_id
         )
 
         new_debt_rows = []
@@ -2104,3 +2104,27 @@ def analysis_filter():
         'rent': rent, 'other_expense': other_expense, 'stock_sell': stock_sell, 'crypto_sell': crypto_sell, 'real_estate_sell': real_estate_sell, \
         'other_investment_sell': other_investment_sell, 'stock_buy': stock_buy, 'crypto_buy': crypto_buy, 'real_estate_buy': real_estate_buy, \
         'other_investment_buy': other_investment_buy, 'borrow': borrow, 'receivable_repay': receivable_repay, 'lend': lend, 'debt_repay': debt_repay})
+
+
+# delete repaid debts from database
+@app.route("/delete_debt", methods=["POST"])
+def delete_debt():
+    user_id = session.get("user_id")
+    data = request.get_json()
+    debtor_or_creditor = data.get('debtor_or_creditor')
+
+    transaction_ids = db.execute(
+        "SELECT transaction_id FROM debt WHERE user_id = ? and debtor_or_creditor = ?", user_id, debtor_or_creditor
+    )
+
+    db.execute(
+        "DELETE FROM debt WHERE user_id = ? and debtor_or_creditor = ?", user_id, debtor_or_creditor
+    )
+
+    for transaction_id in transaction_ids:
+        db.execute(
+            "DELETE FROM transactions WHERE id = ?", transaction_id['transaction_id']
+        )
+
+    return jsonify({'status': 'success'})
+

@@ -184,7 +184,7 @@
                     <th scope="col">Currency</th>
                     <th scope="col">Total Amount</th>
                     <th scope="col">Interest</th>
-                    <!-- <th scope="col"></th> -->
+                    <th scope="col"></th>
                 </tr>
             </thead>
             <tbody class="table-group-divider">
@@ -220,7 +220,7 @@
                             {% endif %}
                         </span> 
                     </td>
-                    <td scope="row" class="text-start">{{ row['debtor_or_creditor'] }}</td>
+                    <td scope="row">{{ row['debtor_or_creditor'] }}</td>
                     <td scope="row">{{ row['transaction_date'] }}</td>
                     <td scope="row">{{ row['interest_rate'] }}%</td>
                     <td scope="row">{{ row['currency'] | upper }}</td>
@@ -242,7 +242,11 @@
                             {% endif %}">{{ row['interest'] | profit }}
                         </span>
                     </td>
-                    <!-- <td></td> -->
+                    <td class="narrow-width">
+                        {% if row['amount'] == 0 %}
+                            <i class="bi bi-trash btn" value="{{ row['debtor_or_creditor'] }}" onclick="deleteDebt(event)" type="button" style="color: rgb(220, 53, 69);"></i>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -280,7 +284,7 @@
                         {% endif %}">{{ interest_total | profit }}
                     </span>
                 </td>
-                <!-- <td></td> -->
+                <td></td>
             </tfoot>
         </table>
     </div>
@@ -352,6 +356,28 @@
             .then(data => {
                 document.getElementById('total_assets').textContent = data.converted_amount
             })
+    }
+
+    function deleteDebt() {
+        const debtor_or_creditor = event.target.getAttribute('value');
+
+        fetch('/delete_debt', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ debtor_or_creditor: debtor_or_creditor }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Data deleted successfully');
+                window.location.reload();
+            }
+            else {
+                console.log('Data deletion error');
+            }
+        })
     }
 </script>
 {% endblock %}

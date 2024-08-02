@@ -24,13 +24,23 @@ nav .navbar-brand .green
     color: #2e944b;
 }
 
+/* html {
+    height: 100%;
+} */
+
 body {
     background: url('finance21.jpg');
     background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
     /* backdrop-filter: blur(5px); */
-    /* background-color: rgb(70, 130, 180); */
+    /* background-color: #ffffff; */
+    /* height: 100%;
+    margin: 0; */
+    background-repeat: no-repeat;
+    background-size: cover;
+    /* background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-image: linear-gradient(-225deg, #FFFEFF 0%, #D7FFFE 100%); */
+    /* background-image: linear-gradient(-225deg, #5D9FFF 0%, #B8DCFF 48%, #6BBBFF 100%); */
 }
 
 .section {
@@ -456,9 +466,16 @@ tr {
 }
 
 .custom-debt-table td {
-    padding-left: 40px;
-    padding-right: 40px;
+    /* padding-left: 30px;
+    padding-right: 20px; */
     text-align: right;
+}
+
+.custom-debt-table .narrow-width {
+    padding: 0;
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
 }
 
 .custom-debt-table td[scope="row"] {
@@ -500,6 +517,17 @@ tr {
     backdrop-filter: blur(7px);
     background-color: rgba(255, 255, 255, 0.9);
     padding: 30px 15px;
+}
+
+.card-custom-register,
+.card-custom-login,
+.card-custom-change-password {
+    box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(7px);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 30px 15px;
+    max-width: 250px;
+    margin: 0 auto;
 }
 
 .card-custom-history {
