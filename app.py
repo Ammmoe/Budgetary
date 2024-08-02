@@ -2114,17 +2114,54 @@ def delete_debt():
     debtor_or_creditor = data.get('debtor_or_creditor')
 
     transaction_ids = db.execute(
-        "SELECT transaction_id FROM debt WHERE user_id = ? and debtor_or_creditor = ?", user_id, debtor_or_creditor
+        "SELECT transaction_id, debt_category FROM debt WHERE user_id = ? and debtor_or_creditor = ?", user_id, debtor_or_creditor
     )
+
+    main_transaction_id = repay_check(debtor_or_creditor)[0]['transaction_id']
+    main_debt_category = repay_check(debtor_or_creditor)[0]['debt_category']
 
     db.execute(
         "DELETE FROM debt WHERE user_id = ? and debtor_or_creditor = ?", user_id, debtor_or_creditor
     )
 
     for transaction_id in transaction_ids:
-        db.execute(
-            "DELETE FROM transactions WHERE id = ?", transaction_id['transaction_id']
-        )
+        if transaction_id['debt_category'] == 'borrow' and transaction_id['transaction_id'] == main_transaction_id:
+            comment = f"Borrow - {debtor_or_creditor}"
+            db.execute(
+                "INSERT INTO income (user_id, transaction_id, income_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-income', comment
+            )
+
+        elif transaction_id['debt_category'] == 'borrow' and transaction_id['transaction_id'] != main_transaction_id:
+            db.execute(
+                "DELETE FROM transactions WHERE id = ?", transaction_id['transaction_id']
+            )
+
+        if transaction_id['debt_category'] == 'lend' and transaction_id['transaction_id'] == main_transaction_id:
+            comment = f"Lend - {debtor_or_creditor}"
+            db.execute(
+                "INSERT INTO spending (user_id, transaction_id, spending_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-spending', comment
+            )
+
+        elif transaction_id['debt_category'] == 'lend' and transaction_id['transaction_id'] != main_transaction_id:
+            db.execute(
+                "DELETE FROM transactions WHERE id = ?", transaction_id['transaction_id']
+            )
+
+        if transaction_id['debt_category'] == 'repay':
+            if main_debt_category == 'lend':
+                comment = f"Lend Repay - {debtor_or_creditor}"
+                db.execute(
+                "INSERT INTO income (user_id, transaction_id, income_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-income', comment
+                )
+
+            if main_debt_category == 'borrow':
+                comment = f"Borrow Repay - {debtor_or_creditor}"
+                db.execute(
+                "INSERT INTO spending (user_id, transaction_id, spending_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-spending', comment
+                )
 
     return jsonify({'status': 'success'})
-

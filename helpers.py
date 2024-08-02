@@ -197,7 +197,7 @@ def repay_check(debtor_or_creditor):
 
     # check the first id of debtor_or_creditor in database
     debt_category = db.execute(
-        "SELECT debt_category FROM debt WHERE debtor_or_creditor = ? and user_id = ? ORDER BY id LIMIT 1",
+        "SELECT debt_category, transaction_id FROM debt WHERE debtor_or_creditor = ? and user_id = ? ORDER BY id LIMIT 1",
         debtor_or_creditor, user_id
     )
 
