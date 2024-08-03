@@ -1637,6 +1637,14 @@ def login():
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
 
+        # Check if the user already has set up currencies to use
+        preferred_currencies = db.execute(
+            "SELECT * FROM user_currencies WHERE user_id = ?", session["user_id"]
+        )
+
+        if not preferred_currencies:
+            return redirect(url_for('currency'))
+
         # Redirect user to home page
         return redirect("/")
 
@@ -2165,3 +2173,44 @@ def delete_debt():
                 )
 
     return jsonify({'status': 'success'})
+
+
+# Currency route
+@app.route("/currency", methods=["GET", "POST"])
+def currency():
+    user_id = session.get("user_id")
+
+    # Get available currencies from the database
+    currencies = db.execute(
+        "SELECT * FROM currencies"
+    )
+
+    # Get a list of previously selected currencies
+    previous_currencies = db.execute(
+        "SELECT currency_code FROM user_currencies WHERE user_id = ?", user_id
+    )
+    
+    # Change the previously selected currencies into a list
+    previous_currencies_list = [row['currency_code'] for row in previous_currencies]
+
+    # Get a list of user selected currencies
+    selected_currencies = request.form.getlist('currency')
+
+    if request.method == 'POST':    
+        # Update selected currencies to database user_currencies
+        # Delete previously selected currencies
+        db.execute(
+            "DELETE FROM user_currencies WHERE user_id = ?", user_id
+        )
+
+        # Add selected currencies
+        for currency in selected_currencies:
+            db.execute(
+                "INSERT INTO user_currencies (user_id, currency_code) VALUES (?, ?)", user_id, currency
+            )
+
+        flash('Preferred currencies successfully updated!', 'alert-success')
+
+        return render_template("currency.html", currencies=currencies, previous_currencies=selected_currencies)
+    
+    return render_template("currency.html", currencies=currencies, previous_currencies=previous_currencies_list)

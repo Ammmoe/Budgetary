@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Currency
+{% endblock %}
+
+{% block main %}
+<div class="card currency-container">
+    <div class="h5 text-center pb-3">
+        Please Select Currencies to Use
+    </div>
+    <form action="/currency" method="post">
+        <table class="table table-hover">
+            <tbody>
+                {% for currency in currencies %}
+                    <tr>
+                        <td class="px-3">
+                            <input type="checkbox" name="currency" value="{{ currency['currency_code'] }}"
+                            {% if currency['currency_code'] in previous_currencies %}
+                                checked
+                            {% endif %}>
+                        </td>
+                        <td class="px-3">
+                            {{ currency['currency_code'] }}
+                        </td>
+                        <td class="px-3 text-start">
+                            {{ currency['currency'] }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button class="btn btn-secondary" type="submit">Submit</button>
+    </form>
+</div>
+{% endblock %}

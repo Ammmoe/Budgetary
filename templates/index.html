@@ -189,16 +189,6 @@
             </thead>
             <tbody class="table-group-divider">
                 {% for row in debt_rows %}
-                <!-- <tr class="
-                {% if row['debt_category'] == 'borrow' and row['amount'] != 0 %}
-                    text-danger
-                {% elif row['debt_category'] == 'borrow' and row['amount'] == 0 %}
-                    text-danger text-decoration-line-through
-                {% elif row['debt_category'] == 'lend' and row['amount'] != 0 %}
-                    text-success
-                {% elif row['debt_category'] == 'lend' and row['amount'] == 0 %}
-                    text-success text-decoration-line-through
-                {% endif %}"> -->
                 <tr class="
                 {% if row['debt_category'] == 'borrow' and row['amount'] == 0 %}
                     text-decoration-line-through
@@ -206,15 +196,9 @@
                     text-decoration-line-through
                 {% endif %}">
                     <td scope="row">
-                        <!-- <span class="
-                        {% if row['debt_category'] == 'borrow' %}
-                            danger-bg-text
-                        {% elif row['debt_category'] == 'lend' %}
-                            success-bg-text
-                        {% endif %}"> -->
                         <span>
                             {% if row['debt_category'] == 'borrow' %}
-                                Payable
+                                Debt
                             {% elif row['debt_category'] == 'lend' %}
                                 Receivable
                             {% endif %}
