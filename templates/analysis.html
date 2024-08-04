@@ -11,7 +11,14 @@
 
         <div class="container-topic h5">
             <span class="container-item-topic">Total Financial Position Breakdown of:</span>
-            <span class="container-item-topic success-bg-topic" id="total-assets">
+            <span class="container-item-topic 
+                {% if total_assets > 0 %}
+                    success-bg-topic
+                {% elif total_assets == 0 %}
+                    secondary-bg-topic
+                {% else %}
+                    danger-bg-topic
+                {% endif %}" id="total-assets">
                 USD {{ total_assets | currency }}
             </span>
         </div>
@@ -128,8 +135,10 @@
                         <span class="primary-color-box"></span>
                         <span>Net Balance:&nbsp;</span>
                         <span id="formatted-net-balance" class="
-                        {% if net_balance >= 0 %}
+                        {% if net_balance > 0 %}
                             success-bg-text
+                        {% elif net_balance == 0 %}
+                            secondary-bg-text
                         {% else %}
                             danger-bg-text
                         {% endif %}

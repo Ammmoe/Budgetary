@@ -13,9 +13,11 @@
                 <span class="card-title h5">Total Assets & Liabilities in</span>
                 <select name="asset-currency-select" id="asset-currency-select" class="h5" onchange="convertAssetCurrency()">
                     <option value="usd" selected>USD</option>
-                    <option value="sgd">SGD</option>
-                    <option value="thb">THB</option>
-                    <option value="mmk">MMK</option>
+                    {% for currency_v in currencies %}
+                        {% if currency_v != 'usd' %}
+                        <option value="{{ currency_v }}">{{ currency_v | upper }}</option>
+                        {% endif %}
+                    {% endfor %}
                 </select>
                 <div style="display: none;" id="total_assets_raw">{{ total_assets }}</div>
                 <div class="d-flex flex-column justify-content-center" style="height: 70%; padding: 12px 12px; align-items: center;">
@@ -42,49 +44,37 @@
                             <th scope="col"></th>
                             <th scope="col">Cash</th>
                             <th scope="col">Bank Deposits</th>
-                            <!-- <th scope="col"></th> -->
                         </tr>
                     </thead>
                     <tbody class="table-group-divider">
-                        <tr>
+                        <!-- <tr>
                             <td scope="row">USD</td>
-                            <td>{{ cash_usd }}</td>
-                            <td>{{ bank_usd }}</td>
-                            <!-- <td></td> -->
-                        </tr>
-                        <tr>
-                            <td scope="row">SGD</td>
-                            <td>{{ cash_sgd }}</td>
-                            <td>{{ bank_sgd }}</td>
-                            <!-- <td></td> -->
-                        </tr>
-                        <tr>
-                            <td scope="row">THB</td>
-                            <td>{{ cash_thb }}</td>
-                            <td>{{ bank_thb }}</td>
-                            <!-- <td></td> -->
-                        </tr>
-                        <tr>
-                            <td scope="row">MMK</td>
-                            <td>{{ cash_mmk }}</td>
-                            <td>{{ bank_mmk }}</td>
-                            <!-- <td></td> -->
-                        </tr>
+                            <td>{{ cash['usd'] }}</td>
+                            <td>{{ bank['usd'] }}</td>
+                        </tr> -->
+                        {% for currency_v in currencies %}
+                            <tr>
+                                <td scope="row">{{ currency_v | upper }}</td>
+                                <td>{{ cash[currency_v] }}</td>
+                                <td>{{ bank[currency_v] }}</td>
+                            </tr>
+                        {% endfor %}
                     </tbody>
                     <tfoot class="table-group-divider">
                         <td scope="row">Equivalent Total in
                             <select name="cash-currency-select" id="cash-currency-select" onchange="convertCashCurrency()">
                                 <option value="usd" selected>USD</option>
-                                <option value="sgd">SGD</option>
-                                <option value="thb">THB</option>
-                                <option value="mmk">MMK</option>
+                                {% for currency_v in currencies %}
+                                    {% if currency_v != 'usd' %}
+                                    <option value="{{ currency_v }}">{{ currency_v | upper }}</option>
+                                    {% endif %}
+                                {% endfor %}    
                             </select>
                         </td>
                         <span id="total_cash_raw" style="display: none;">{{ total_cash_usd }}</span>
                         <span id="total_bank_raw" style="display: none;">{{ total_bank_usd }}</span>
                         <td id="total_cash">{{ total_cash_usd | currency }}</td>
                         <td id="total_bank">{{ total_bank_usd | currency }}</td>
-                        <!-- <td></td> -->
                     </tfoot>
                 </table>
             </div>
@@ -137,13 +127,14 @@
                 {% endfor %}
             </tbody>
             <tfoot class="table-group-divider">
-                <!-- <th colspan="2"> </th> -->
                 <td colspan="3">Equivalent Total in
                     <select name="investment-currency-select" id="investment-currency-select" onchange="convertInvestmentCurrency()">
                         <option value="usd" selected>USD</option>
-                        <option value="sgd">SGD</option>
-                        <option value="thb">THB</option>
-                        <option value="mmk">MMK</option>
+                        {% for currency_v in currencies %}
+                            {% if currency_v != 'usd' %}
+                            <option value="{{ currency_v }}">{{ currency_v | upper }}</option>
+                            {% endif %}
+                        {% endfor %}
                     </select>
                 </td>
                 <span id="investment_total_raw" style="display: none;">
@@ -235,13 +226,14 @@
                 {% endfor %}
             </tbody>
             <tfoot class="table-group-divider">
-                <!-- <th colspan="4"> </th> -->
                 <td colspan="5">Equivalent Total in
                     <select name="debt-currency-select" id="debt-currency-select" onchange="convertDebtCurrency()">
                         <option value="usd" selected>USD</option>
-                        <option value="sgd">SGD</option>
-                        <option value="thb">THB</option>
-                        <option value="mmk">MMK</option>
+                        {% for currency_v in currencies %}
+                            {% if currency_v != 'usd' %}
+                            <option value="{{ currency_v }}">{{ currency_v | upper }}</option>
+                            {% endif %}
+                        {% endfor %}
                     </select>
                 </td>
                 <span id="debt_total_raw" style="display: none;">{{ debt_total }}</span>
