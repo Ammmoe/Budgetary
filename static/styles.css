@@ -489,6 +489,13 @@ tr {
     max-width: 30px;
 }
 
+.investment-narrow-width {
+    padding: 0 !important;
+    /* width: 17px !important;
+    min-width: 17px !important;
+    max-width: 17px !important; */
+}
+
 .custom-debt-table td[scope="row"] {
     text-align: center;
 }

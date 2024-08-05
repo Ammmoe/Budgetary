@@ -17,9 +17,9 @@
     
                 <div class="col-md-8 mb-4">
                     <div class="input-group">
-                        <span class="input-group-text fw-bold">Budgetary Type</span>
+                        <span class="input-group-text fw-bold">Budget Category</span>
                         <select name="budgetary-type" id="budgetary-type" class="form-select" onchange="displayForm(this.value)">
-                            <option selected disabled>Select budgetary type</option>
+                            <option selected disabled>Select budget category</option>
                             <option value="income">Income</option>
                             <option value="spending">Expense</option>
                             <option value="investment">Investment</option>
@@ -45,7 +45,7 @@
                     </div>
         
                     <div class="col-md-6 mb-4">
-                        <input autofocus class="form-control" name="incomeOther" placeholder="For other income, please specify.." type="text">
+                        <input autofocus class="form-control" name="incomeOther" placeholder="Please specify or add comment here.." type="text">
                     </div> 
                 </div>
             </div>
@@ -68,7 +68,7 @@
                     </div>
         
                     <div class="col-md-6 mb-4">
-                        <input autofocus class="form-control" name="spendingOther" placeholder="For other expense, please specify.." type="text">
+                        <input autofocus class="form-control" name="spendingOther" placeholder="Please specify or add comment here.." type="text">
                     </div>
                 </div>
             </div>
@@ -79,7 +79,7 @@
                     <div class="col-md-6 mb-4">
                         <div class="input-group">
                             <span class="input-group-text fw-bold">Investment Type</span>
-                            <select name="investment-type" id="investment-type" class="form-select" onchange="displayInvestment(this.value)">
+                            <select name="investment-type" id="investment-type" class="form-select" onchange="displayInvestment(this.value); setInvestmentQuantity(this.value);">
                                 <option selected disabled>Select investment type</option>
                                 <option value="stock">Stock</option>
                                 <option value="cryptocurrency">Cryptocurrency</option>
@@ -90,7 +90,7 @@
                     </div>
         
                     <div class="col-md-6 mb-4">
-                        <input autofocus class="form-control" name="investmentOther" placeholder="For other investment, please specify.." type="text">
+                        <input autofocus class="form-control" name="investmentOther" placeholder="Please specify or add comment here.." type="text">
                     </div>
                 </div>
         
@@ -109,28 +109,6 @@
                         <div class="input-group">
                             <span class="input-group-text fw-bold">Crypto Symbol</span>
                             <input class="form-control" name="cryptoSymbol" placeholder="Input crypto symbol.." type="text">
-                        </div>
-                    </div>
-                </div>
-                
-                <div id="real-estate" style="display:none;">
-                    <div class="row">
-                        <div class="col-md-6 mb-4">
-                            <div class="input-group">
-                                <span class="input-group-text fw-bold">Real Estate</span>
-                                <select name="realEstate" id="realEstate" class="form-select">
-                                    <option selected disabled>Select real estate</option>
-                                    <option value="residential">Residential</option>
-                                    <option value="land">Land</option>
-                                    <option value="industrial">Industrial</option>
-                                    <option value="otherRealEstate">Other</option>
-                                </select>
-                            </div>
-                        </div>
-            
-                        <!-- Specify if other real estate is chosen -->
-                        <div class="col-md-6 mb-4">
-                            <input class="form-control" name="realEstateOther" placeholder="For other real estate, please specify.." type="text">
                         </div>
                     </div>
                 </div>
@@ -154,7 +132,8 @@
                             <div class="input-group">
                                 <!-- Specify the amount of items -->
                                 <label for="quantityOfItems" class="input-group-text fw-bold">Quantity</label>
-                                <input class="form-control" name="quantityOfItems" id="quantityOfItems" placeholder="Quantity of Shares, Crypto, or Real Estate.." type="number" step="0.000001">
+                                <input class="form-control" name="quantityOfItems" id="quantityOfItems" placeholder="Quantity of shares, cryptocurrencies, etc.." type="number" step="0.000001">
+                                <input type="hidden" id="hiddenQuantity" name="quantityOfItems">
                             </div>
                         </div>
                     </div>
@@ -214,10 +193,11 @@
                         <!-- To dynamically generate currency symbols -->
                         <span class="input-group-text fw-bold" style="flex-grow: 0.1;">Amount</span>
                         <select name="currency" id="currency" class="form-select" style="flex-grow: 0.15;">
-                            <option value="usd" selected>USD</option>
-                            <option value="sgd">SGD</option>
-                            <option value="thb">THB</option>
-                            <option value="mmk">MMK</option>
+                            {% for currency_v in currencies %}
+                                <option value="{{ currency_v }}" {% if loop.index0 == 0 %}selected{% endif %}>
+                                    {{ currency_v | upper }}
+                                </option>
+                            {% endfor %}
                         </select>
                         <input type="number" name="amount" id="amount" class="form-control" style="flex-grow: 1;" placeholder="Input amount" step="0.0001">
                     </div>
@@ -252,10 +232,12 @@
         function displayInvestment(value) {
             document.getElementById('stock').style.display = "none";
             document.getElementById('cryptocurrency').style.display = "none";
-            document.getElementById('real-estate').style.display = "none";
             
             document.getElementById('radio').style.display = "block";
-            document.getElementById(value).style.display = "block";
+            
+            if (value === 'stock' || value === 'cryptocurrency') {
+                document.getElementById(value).style.display = "block";
+            }
         }
 
 
@@ -268,5 +250,27 @@
                 document.getElementById('interestRate').disabled = false;
             }
         }
+
+
+        function setInvestmentQuantity(value) {
+            const quantity = document.getElementById('quantityOfItems');
+            const hiddenQuantity = document.getElementById('hiddenQuantity');
+            if (value === 'real-estate' || value === 'other-investment') {
+                quantity.value = 1;
+                hiddenQuantity.value = 1;
+                quantity.disabled = true;
+            }
+
+            else {
+                quantity.disabled = false;
+                quantity.value = '';
+            }
+        }
+
+        document.getElementById('form').addEventListener('submit', function() {
+            const quantity = document.getElementById('quantityOfItems');
+            const hiddenQuantity = document.getElementById('hiddenQuantity');
+            hiddenQuantity.value = quantity.value;
+        });
     </script>
 {% endblock %}

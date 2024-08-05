@@ -290,9 +290,8 @@ def index():
             "SELECT \
                 investment.investment_type, \
                 CASE \
-                    WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
-                    WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
-                    ELSE investment.symbol_real_estate_type \
+                    WHEN investment.investment_type IN ('other-investment', 'real-estate') THEN investment.comment \
+                    ELSE investment.symbol \
                 END AS symbol, \
                 SUM(CASE WHEN investment.buy_or_sell = 'buy' THEN investment.quantity ELSE -investment.quantity END) AS quantity, \
                 SUM(CASE WHEN investment.buy_or_sell = 'buy' THEN transactions.amount_in_usd ELSE -transactions.amount_in_usd END) AS original_value \
@@ -302,9 +301,8 @@ def index():
             GROUP BY \
                 investment.investment_type, \
                 CASE \
-                    WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
-                    WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
-                    ELSE investment.symbol_real_estate_type \
+                    WHEN investment.investment_type IN ('other-investment', 'real-estate') THEN investment.comment \
+                    ELSE investment.symbol \
                 END", user_id
         )
 
@@ -367,12 +365,34 @@ def index():
 
             # For other types of investments...
             else:
-                row['profit_loss'] = 0
-                row['quantity'] = quantity
-                investment_total = investment_total + row['original_value']
+                # if quantity == 1, market_value is original_value and profit / loss is 0
+                if quantity == 1:
+                    market_value = round(float(row['original_value']), 2)
+                    profit_loss = 0
 
-                # Append to new_investment_rows
-                new_investment_rows.append(row)
+                    row['original_value'] = market_value
+                    row['profit_loss'] = profit_loss
+
+                    # Update investment_total and profit_loss_total
+                    investment_total = investment_total + market_value
+                    profit_loss_total = profit_loss_total + profit_loss
+
+                    # Append to new_investment_rows
+                    new_investment_rows.append(row)
+
+                # if quantity == 0, market_value is 0 and profit / loss is row['original_value']
+                elif quantity == 0:
+                    profit_loss = (-1) * round(float(row['original_value']), 2)
+
+                    row['original_value'] = 0
+                    row['profit_loss'] = profit_loss
+
+                    # Update investment_total and profit_loss_total
+                    investment_total = investment_total + row['original_value']
+                    profit_loss_total = profit_loss_total + profit_loss
+
+                    # Append to new_investment_rows
+                    new_investment_rows.append(row)
 
         # Update total_assets
         total_assets = total_assets + investment_total
@@ -426,10 +446,6 @@ def index():
         # Update total_assets
         total_assets = total_assets + debt_total
 
-        print(f"original_currencies: {original_currencies}")
-        print(f"currencies: {currencies}")
-        print(f"used_currencies: {used_currencies}")
-
         return render_template("index.html", cash=cash_str, bank=bank_str, investment_rows=new_investment_rows, profit=profit, \
             currencies=original_currencies, currency=currency, debt_rows=new_debt_rows, total_cash_usd=total_cash_usd, total_bank_usd=total_bank_usd, \
             investment_total=investment_total, profit_loss_total=profit_loss_total, debt_total=debt_total, interest_total=interest_total, \
@@ -439,18 +455,44 @@ def index():
 @app.route("/budgetary", methods=["GET", "POST"])
 @login_required
 def budgetary():
+    # Get the user id
+    user_id = session.get("user_id")
+
+    # Retrieve the list of currencies
+    # Convert to lowercase because in transactions database, currencies are in lowercase
+    currencies_q = db.execute(
+        "SELECT currency_code FROM user_currencies WHERE user_id = ?", user_id
+    )
+
+    # user selected currencies will be valid currencies
+    valid_currencies = [row['currency_code'].lower() for row in currencies_q]
+
     if request.method == "POST":
+
+        # Retrieve the specified text of real estate with a status of 'buy'.
+        specified_real_estates_q = db.execute(
+            "SELECT comment FROM investment WHERE investment_type = 'real-estate' and buy_or_sell = 'buy' and user_id = ?", user_id
+        )
+
+        # Extract a list of valid_specified_real_estates
+        valid_specified_real_estates = [row['comment'] for row in specified_real_estates_q]
+
+        # Retrieve the specified text of other investments with a status of 'buy'.
+        specified_other_investments_q = db.execute(
+            "SELECT comment FROM investment WHERE investment_type = 'other-investment' and buy_or_sell = 'buy' and user_id = ?", user_id
+        )
+
+        # Extract a list of valid_specified_other_investments
+        valid_specified_other_investments = [row['comment'] for row in specified_other_investments_q]
 
         # Valid options for server side error handling
         valid_budgetary_types = ['income', 'spending', 'investment', 'debt']
         valid_income_types = ['salary', 'bank-interest', 'other-income']
         valid_spending_types = ['food', 'transportation', 'clothing', 'rent', 'other-spending']
         valid_investment_types = ['stock', 'cryptocurrency', 'real-estate', 'other-investment']
-        valid_real_estates = ['residential', 'land', 'industrial', 'otherRealEstate']
         valid_buy_sell_types = ['buy', 'sell']
         valid_debt_categories = ['borrow', 'lend', 'repay']
         valid_payment_methods = ['cash', 'banking']
-        valid_currencies = ['usd', 'sgd', 'thb', 'mmk']
 
         # Get user input elements
         date = request.form.get('date')
@@ -463,8 +505,6 @@ def budgetary():
         other_investment = request.form.get('investmentOther')
         stock_symbol = request.form.get('stockSymbol')
         crypto_symbol = request.form.get('cryptoSymbol')
-        real_estate = request.form.get('realEstate')
-        other_real_estate = request.form.get('realEstateOther')
         buy_sell = request.form.get('buyOrSell')
         quantity = request.form.get('quantityOfItems')
         debtor_creditor = request.form.get('debtor')
@@ -474,6 +514,10 @@ def budgetary():
         currency = request.form.get('currency')
         amount = request.form.get('amount')
 
+        print(f"budgetary_type: {budgetary_type}")
+        print(f"investment_type: {investment_type}")
+        print(f"quantity: {quantity}")
+
         # Error handling at server side
         if date == '':
             flash('Please input date!', 'alert-danger')
@@ -481,7 +525,6 @@ def budgetary():
         
         if budgetary_type not in valid_budgetary_types:
             msg = flash('Please choose budgetary type!', 'alert-danger')
-            print(f"Flash message: {msg}")
             return redirect(url_for('budgetary'))
         
         if budgetary_type == 'income' and income_type not in valid_income_types:
@@ -512,17 +555,37 @@ def budgetary():
             flash('Invalid cryptocurrency symbol!', 'alert-danger')
             return redirect(url_for('budgetary'))
         
-        if budgetary_type == 'investment' and investment_type == 'real-estate' and real_estate not in valid_real_estates:
-            flash('Please choose real estate!', 'alert-danger')
+        if budgetary_type == 'investment' and investment_type == 'real-estate' and other_investment == '':
+            flash('Please specify real estate!', 'alert-danger')
             return redirect(url_for('budgetary'))
         
-        if budgetary_type == 'investment' and investment_type == 'real-estate' and real_estate == 'otherRealEstate' and other_real_estate == '':
-            flash('Please specify other real estate!', 'alert-danger')
+        if budgetary_type == 'investment' and investment_type == 'real-estate' and float(quantity) != 1:
+            flash("Only a quantity of 1 can be chosen for this type of investment!", 'alert-danger')
             return redirect(url_for('budgetary'))
+        
+        if budgetary_type == 'investment' and investment_type == 'real-estate' and buy_sell == 'sell' and other_investment not in valid_specified_real_estates:
+            flash('Please choose a previously bought real estate!', 'alert-danger')
+            return(redirect(url_for('budgetary')))
+        
+        if budgetary_type == 'investment' and investment_type == 'real-estate' and buy_sell == 'buy' and other_investment in valid_specified_real_estates:
+            flash('Please choose a different name from previously specified real estates!', 'alert-danger')
+            return(redirect(url_for('budgetary')))
         
         if budgetary_type == 'investment' and investment_type == 'other-investment' and other_investment == '':
             flash('Please specify other investment!', 'alert-danger')
             return redirect(url_for('budgetary'))
+        
+        if budgetary_type == 'investment' and investment_type == 'other-investment' and float(quantity) != 1:
+            flash("Only a quantity of 1 can be chosen for this type of investment!", 'alert-danger')
+            return redirect(url_for('budgetary'))
+        
+        if budgetary_type == 'investment' and investment_type == 'other-investment' and buy_sell == 'sell' and other_investment not in valid_specified_other_investments:
+            flash('Please choose a previously bought other investment!', 'alert-danger')
+            return(redirect(url_for('budgetary')))
+        
+        if budgetary_type == 'investment' and investment_type == 'other-investment' and buy_sell == 'buy' and other_investment in valid_specified_other_investments:
+            flash('Please choose a different name from previously specified other investments!', 'alert-danger')
+            return(redirect(url_for('budgetary')))
         
         if budgetary_type == 'investment' and investment_type in valid_investment_types and buy_sell not in valid_buy_sell_types:
             flash('Please select buy or sell!', 'alert-danger')
@@ -564,9 +627,6 @@ def budgetary():
         
         # Convert the transaction amount to usd
         usd_amount = amount_in_usd(currency, amount)
-
-        # Get the user id
-        user_id = session.get("user_id")
 
         # Update database for income category
         if budgetary_type == 'income':         
@@ -632,7 +692,7 @@ def budgetary():
             if investment_type == 'stock':
                 # Update investment table
                 db.execute(
-                    "INSERT INTO investment (user_id, transaction_id, investment_type, investment_comment, symbol_real_estate_type, buy_or_sell, quantity) \
+                    "INSERT INTO investment (user_id, transaction_id, investment_type, comment, symbol, buy_or_sell, quantity) \
                     VALUES (?, ?, ?, ?, ?, ?, ?)",
                     user_id, transaction_id, investment_type, other_investment, stock_symbol.upper(), buy_sell, quantity
                 )
@@ -643,7 +703,7 @@ def budgetary():
             elif investment_type == 'cryptocurrency': 
                 # Update investment table
                 db.execute(
-                    "INSERT INTO investment (user_id, transaction_id, investment_type, investment_comment, symbol_real_estate_type, buy_or_sell, quantity) \
+                    "INSERT INTO investment (user_id, transaction_id, investment_type, comment, symbol, buy_or_sell, quantity) \
                     VALUES (?, ?, ?, ?, ?, ?, ?)",
                     user_id, transaction_id, investment_type, other_investment, crypto_symbol.upper(), buy_sell, quantity
                 )
@@ -654,9 +714,9 @@ def budgetary():
             elif investment_type == 'real-estate':
                 # Update investment table
                 db.execute(
-                    "INSERT INTO investment (user_id, transaction_id, investment_type, investment_comment, symbol_real_estate_type, real_estate_comment, buy_or_sell, quantity) \
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    user_id, transaction_id, investment_type, other_investment, real_estate, other_real_estate, buy_sell, quantity
+                    "INSERT INTO investment (user_id, transaction_id, investment_type, comment, buy_or_sell, quantity) \
+                    VALUES (?, ?, ?, ?, ?, ?)",
+                    user_id, transaction_id, investment_type, other_investment, buy_sell, quantity
                 )
                 flash('Success!', 'alert-success')
                 return redirect(url_for('budgetary'))
@@ -665,7 +725,7 @@ def budgetary():
             elif investment_type == 'other-investment':
                 # Update investment table
                 db.execute(
-                    "INSERT INTO investment (user_id, transaction_id, investment_type, investment_comment, buy_or_sell, quantity) \
+                    "INSERT INTO investment (user_id, transaction_id, investment_type, comment, buy_or_sell, quantity) \
                     VALUES (?, ?, ?, ?, ?, ?)",
                     user_id, transaction_id, investment_type, other_investment, buy_sell, quantity
                 )
@@ -717,25 +777,25 @@ def budgetary():
                 # Day difference between today and the day where debt is first borrowed.
                 day_diff = db.execute(
                     "SELECT ROUND (julianday('now') - julianday(transaction_date)) \
-                    AS day_diff FROM transactions WHERE id = ( \
+                    AS day_diff FROM transactions WHERE user_id = ? and id = ( \
                     SELECT transaction_id FROM debt WHERE debtor_or_creditor = ? ORDER BY id DESC)",
-                    debtor_creditor
+                    user_id, debtor_creditor
                 )
 
                 original_interest = db.execute(
-                    "SELECT interest_rate FROM debt WHERE debtor_or_creditor = ? ORDER BY id DESC",
-                    debtor_creditor
+                    "SELECT interest_rate FROM debt WHERE user_id = ? and debtor_or_creditor = ? ORDER BY id DESC",
+                    user_id, debtor_creditor
                 )
 
                 original_debt = db.execute(
-                    "SELECT payment_method, currency, amount FROM transactions WHERE id = ( \
+                    "SELECT payment_method, currency, amount FROM transactions WHERE user_id = ? and id = ( \
                     SELECT transaction_id FROM debt WHERE debtor_or_creditor = ? ORDER BY id DESC)",
-                    debtor_creditor
+                    user_id, debtor_creditor
                 )
 
                 original_category = db.execute(
-                    "SELECT debt_category FROM debt WHERE debtor_or_creditor = ? ORDER BY id DESC",
-                    debtor_creditor
+                    "SELECT debt_category FROM debt WHERE user_id = ? and debtor_or_creditor = ? ORDER BY id DESC",
+                    user_id, debtor_creditor
                 )
                 
                 day_diff_value = day_diff[0]['day_diff']
@@ -806,7 +866,7 @@ def budgetary():
                 flash('Success!', 'alert-success')
                 return redirect(url_for('budgetary'))
                 
-    return render_template("budgetary.html")
+    return render_template("budgetary.html", currencies=valid_currencies)
 
 
 @app.route("/analysis", methods=["GET", "POST"])
@@ -830,9 +890,8 @@ def analysis():
             "SELECT \
                 investment.investment_type, \
                 CASE \
-                    WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
-                    WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
-                    ELSE investment.symbol_real_estate_type \
+                    WHEN investment.investment_type IN ('other-investment', 'real-estate') THEN investment.comment \
+                    ELSE investment.symbol \
                 END AS symbol, \
                 SUM(CASE WHEN investment.buy_or_sell = 'buy' THEN investment.quantity ELSE -investment.quantity END) AS quantity, \
                 SUM(CASE WHEN investment.buy_or_sell = 'buy' THEN transactions.amount_in_usd ELSE -transactions.amount_in_usd END) AS original_value \
@@ -842,50 +901,98 @@ def analysis():
             GROUP BY \
                 investment.investment_type, \
                 CASE \
-                    WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
-                    WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
-                    ELSE investment.symbol_real_estate_type \
+                    WHEN investment.investment_type IN ('other-investment', 'real-estate') THEN investment.comment \
+                    ELSE investment.symbol \
                 END", user_id
         )
 
+        # Initialize a list for new investment rows which includes original value and profits by today's market rate
         new_investment_rows = []
         investment_total = 0
         profit_loss_total = 0
-        for row in investment_rows:
-            quantity = round(float(row['quantity']), 2)
 
+        for row in investment_rows:
+            # Get quantity of investment
+            quantity = round(float(row['quantity']), 4)
+
+            # Get stock today's stock market value and append new_investment_rows
             if row['investment_type'] == 'stock':
+                # Get stock price from Yahoo API
                 stock_quote = stock_lookup(row['symbol'])
                 stock_price = stock_quote['price']
+
+                # Calculate market value of existing stock
                 market_value = round(stock_price * quantity, 2)
+
+                # Calculate profit / loss of the existing stock
                 profit_loss = round(market_value - float(row['original_value']), 2)
+
+                # Swap the original values with market values for appending new_investment_rows
                 row['original_value'] = market_value
                 row['profit_loss'] = profit_loss
                 row['quantity'] = quantity
+
+                # Update investment_total and profit_loss_total
                 investment_total = investment_total + market_value
                 profit_loss_total = profit_loss_total + profit_loss
 
+                # Append to new_investment_rows
                 new_investment_rows.append(row)
 
+            # Get stock today's crypto market value and append new_investment_rows
             elif row['investment_type'] == 'cryptocurrency':
+                # Get crypto price from Binance API
                 crypto_quote = crypto_lookup(row['symbol'])
                 crypto_price = crypto_quote['price']
+
+                # Calculate market value of existing cryptocurrency
                 market_value = round(crypto_price * quantity, 2)
+
+                # Calcualte profit / loss of existing cryptocurrency
                 profit_loss = round(market_value - float(row['original_value']), 2)
+
+                # Swap the original values with market values for appending new_investment_rows
                 row['original_value'] = market_value
                 row['profit_loss'] = profit_loss
                 row['quantity'] = quantity
+
+                # Update investment_total and profit_loss_total
                 investment_total = investment_total + market_value
                 profit_loss_total = profit_loss_total + profit_loss
 
+                # Append to new_investment_rows
                 new_investment_rows.append(row)
 
+            # For other types of investments...
             else:
-                row['profit_loss'] = 0
-                row['quantity'] = quantity
-                investment_total = investment_total + row['original_value']
+                # if quantity == 1, market_value is original_value and profit / loss is 0
+                if quantity == 1:
+                    market_value = round(float(row['original_value']), 2)
+                    profit_loss = 0
 
-                new_investment_rows.append(row)
+                    row['original_value'] = market_value
+                    row['profit_loss'] = profit_loss
+
+                    # Update investment_total and profit_loss_total
+                    investment_total = investment_total + market_value
+                    profit_loss_total = profit_loss_total + profit_loss
+
+                    # Append to new_investment_rows
+                    new_investment_rows.append(row)
+
+                # if quantity == 0, market_value is 0 and profit / loss is row['original_value']
+                elif quantity == 0:
+                    profit_loss = (-1) * round(float(row['original_value']), 2)
+
+                    row['original_value'] = 0
+                    row['profit_loss'] = profit_loss
+
+                    # Update investment_total and profit_loss_total
+                    investment_total = investment_total + row['original_value']
+                    profit_loss_total = profit_loss_total + profit_loss
+
+                    # Append to new_investment_rows
+                    new_investment_rows.append(row)
 
         total_assets = total_assets + investment_total
    
@@ -899,9 +1006,11 @@ def analysis():
             WHERE debt.id IN (SELECT MAX(debt.id) FROM debt WHERE debt.user_id = ? GROUP BY debtor_or_creditor)", user_id
         )
 
+        # Initialize the list for new_debt_rows which will be displayed in homepage
         new_debt_rows = []
         debt_total = 0
         interest_total = 0
+
         for row in debt_rows:
             original_debt_amount = float(row['amount'])
             interest_rate = float(row['interest_rate'])
@@ -918,6 +1027,7 @@ def analysis():
             total_debt = round(original_debt_amount + interest, 2)
             total_debt_usd = amount_in_usd(row['currency'], total_debt)
         
+            # Update total debt and interest values for new_debt_rows
             row['amount'] = total_debt
             row['interest'] = interest
 
@@ -929,6 +1039,7 @@ def analysis():
                 debt_total = debt_total + total_debt_usd
                 interest_total = interest_total + interest_in_usd
 
+            # Append new_debt_rows
             new_debt_rows.append(row)
 
         total_assets = total_assets + debt_total
@@ -986,7 +1097,6 @@ def analysis():
                 spending JOIN transactions ON spending.transaction_id = transactions.id \
             WHERE \
                 spending.user_id = ?", user_id)
-        
 
         # Get amount of each expense category in usd
         food = 0
@@ -1025,9 +1135,8 @@ def analysis():
                 transactions.transaction_date AS date, \
                 investment.investment_type AS type, \
             CASE \
-                WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
-                WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
-                ELSE investment.symbol_real_estate_type \
+                WHEN investment.investment_type IN ('other-investment', 'real-estate') THEN investment.comment \
+                ELSE investment.symbol\
             END AS symbol_comment, \
                 investment.buy_or_sell AS buy_sell, \
                 investment.quantity, \
@@ -1215,9 +1324,8 @@ def history():
             transactions.transaction_date AS date,
             investment.investment_type AS type,
         CASE
-            WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment
-            WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment
-            ELSE investment.symbol_real_estate_type
+            WHEN investment.investment_type IN ('other-investment', 'real-estate') THEN investment.comment
+            ELSE investment.symbol
         END AS symbol_comment,
             investment.buy_or_sell AS buy_sell,
             investment.quantity,

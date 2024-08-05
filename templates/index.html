@@ -93,6 +93,7 @@
                     <th scope="col">Quantity</th>
                     <th scope="col">Market Value (in USD)</th>
                     <th scope="col">Profit / Loss (in USD)</th>
+                    <th scope="col" style="width: 30px;"></th>
                 </tr>
             </thead>
             <tbody class="table-group-divider">
@@ -123,6 +124,11 @@
                             {% endif %}">{{ row['profit_loss'] | profit }}
                         </span>
                     </td> 
+                    <td class="investment-narrow-width" style="width: 30px;">
+                        {% if row['quantity'] == 0 %}
+                            <i class="bi bi-trash btn" value="{{ row['symbol'] }}" onclick="deleteInvestment(event)" type="button" style="color: rgb(220, 53, 69);"></i>
+                        {% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -157,6 +163,7 @@
                         {% endif %}">{{ profit_loss_total | profit }}
                     </span>
                 </td> 
+                <td></td>
             </tfoot>
         </table>
     </div>
