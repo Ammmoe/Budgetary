@@ -55,7 +55,13 @@
                     {% endif %}">
                     <td scope="row">{{ row['date'] }}</td>
                     <td>{{ row['type'] }}</td>
-                    <td>{{ row['category'] }}</td>
+                    <td>
+                        {% if row['category'] == 'other-spending' %}
+                            other-expense
+                        {% else %}
+                            {{ row['category'] }}
+                        {% endif %}
+                    </td>
                     <td class="text-start">{{ row['comment'] }}</td>
                     <td>{{ row['payment_method'] }}</td>
                     <td>{{ row['currency'] | upper }}</td>
@@ -137,7 +143,7 @@
                             {{ row['category'] }}
                         {% endif %}
                     </td>
-                    <td class="text-start">{{ row['debtor_or_creditor'] }}</td>
+                    <td>{{ row['debtor_or_creditor'] }}</td>
                     <td>
                         {% if row['interest_rate'] == None %}
                             -  

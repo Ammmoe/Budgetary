@@ -23,6 +23,9 @@ Session(app)
 
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///budgetary.db")
+
+# Set MMK exchange rate here
+MMK_EXCHANGE_RATE = 5480
     
 
 @app.after_request
@@ -264,8 +267,17 @@ def index():
             bank_str[currency_v] = f"{bank[currency_v]:,.2f}"
 
             # Change the currency in cash and bank to usd for total amount calculation
-            cash_in_usd[currency_v] = amount_in_usd(currency_v, cash[currency_v])
-            bank_in_usd[currency_v] = amount_in_usd(currency_v, bank[currency_v])
+            if cash[currency_v] == 0:
+                cash_in_usd[currency_v] = 0
+
+            else:
+                cash_in_usd[currency_v] = amount_in_usd(currency_v, cash[currency_v])
+
+            if bank[currency_v] == 0:
+                bank_in_usd[currency_v] = 0
+
+            else:
+                bank_in_usd[currency_v] = amount_in_usd(currency_v, bank[currency_v])
 
             # Get the total cash in usd
             total_cash_usd = total_cash_usd + round(cash_in_usd[currency_v] , 2)
@@ -881,6 +893,15 @@ def analysis():
     outflow_expense = 0
     outflow_investment = 0
     outflow_debt = 0
+
+    # Retrieve the list of currencies
+    # Convert to lowercase because in transactions database, currencies are in lowercase
+    currencies_q = db.execute(
+        "SELECT currency_code FROM user_currencies WHERE user_id = ?", user_id
+    )
+
+    # original_currencies will be passed to index.html
+    currencies = [row['currency_code'].lower() for row in currencies_q]
     
     # Create analysis routes
     if request.method == "GET":
@@ -1278,7 +1299,7 @@ def analysis():
         # Update total assets
         total_assets = total_assets + net_balance
 
-        return render_template("analysis.html", total_assets=total_assets, total_cash_bank=total_cash_bank, investment_total=investment_total, \
+        return render_template("analysis.html", currencies=currencies, total_assets=total_assets, total_cash_bank=total_cash_bank, investment_total=investment_total, \
             debt_total=debt_total, inflow_income=inflow_income, inflow_investment=inflow_investment, inflow_debt=inflow_debt, outflow_expense=outflow_expense, \
             outflow_investment=outflow_investment, outflow_debt=outflow_debt, inflows=inflows, outflows=outflows, net_balance=net_balance, \
             salary=salary, bank_interest=bank_interest, other_income=other_income, food=food, transportation=transportation, clothing=clothing, \
@@ -1633,8 +1654,7 @@ def convert_currency():
         return jsonify({'converted_amount': currency(converted_amount)})
     
     elif final_currency == 'MMK':
-        exchange_rate = 4970
-        converted_amount = round(exchange_rate * float(value_in_usd), 2)
+        converted_amount = round(MMK_EXCHANGE_RATE * float(value_in_usd), 2)
         return jsonify({'converted_amount': currency(converted_amount)})
     
     else:
@@ -1654,8 +1674,7 @@ def convert_profit_currency():
         return jsonify({'converted_amount': profit(converted_amount)})
     
     elif final_currency.upper() == 'MMK':
-        exchange_rate = 4970
-        converted_amount = round(exchange_rate * float(value_in_usd), 2)
+        converted_amount = round(MMK_EXCHANGE_RATE * float(value_in_usd), 2)
         return jsonify({'converted_amount': profit(converted_amount)})
     
     else:
@@ -1670,6 +1689,10 @@ def analysis_filter():
     user_id = session.get("user_id")
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
+    selected_currency = request.args.get("selected_currency")
+    total_assets = request.args.get("total_assets")
+    investment_total = request.args.get("investment_total")
+    debt_total = request.args.get("debt_total")
 
     # Initialize query lists
     inflow_income_rows = []
@@ -1716,9 +1739,8 @@ def analysis_filter():
             transactions.transaction_date AS date, \
             investment.investment_type AS type, \
         CASE \
-            WHEN investment.investment_type = 'other-investment' THEN investment.investment_comment \
-            WHEN investment.symbol_real_estate_type = 'otherRealEstate' THEN investment.real_estate_comment \
-            ELSE investment.symbol_real_estate_type \
+            WHEN investment.investment_type IN ('other-investment', 'real-estate') THEN investment.comment \
+            ELSE investment.symbol \
         END AS symbol_comment, \
             investment.buy_or_sell AS buy_sell, \
             investment.quantity, \
@@ -1961,12 +1983,90 @@ def analysis_filter():
     # Update net balance
     net_balance = inflows - outflows
 
+    if selected_currency == 'usd':
+        total_assets = round(float(total_assets), 2)
+        investment_total = round(float(investment_total), 2)
+        debt_total = round(float(debt_total), 2)
+    
+    elif selected_currency == 'mmk':
+        total_assets = round(MMK_EXCHANGE_RATE * float(total_assets), 2)
+        investment_total = round(MMK_EXCHANGE_RATE * float(investment_total), 2)
+        debt_total = round(MMK_EXCHANGE_RATE * float(debt_total), 2)
+
+        inflow_income = round(MMK_EXCHANGE_RATE * float(inflow_income), 2)
+        inflow_investment = round(MMK_EXCHANGE_RATE * float(inflow_investment), 2)
+        inflow_debt = round(MMK_EXCHANGE_RATE * float(inflow_debt), 2)
+        outflow_expense = round(MMK_EXCHANGE_RATE * float(outflow_expense), 2)
+        outflow_investment = round(MMK_EXCHANGE_RATE * float(outflow_investment), 2)
+        outflow_debt = round(MMK_EXCHANGE_RATE * float(outflow_debt), 2)
+        inflows = round(MMK_EXCHANGE_RATE * float(inflows), 2)
+        outflows = round(MMK_EXCHANGE_RATE * float(outflows), 2)
+        net_balance = round(MMK_EXCHANGE_RATE * float(net_balance), 2)
+        salary = round(MMK_EXCHANGE_RATE * float(salary), 2)
+        bank_interest = round(MMK_EXCHANGE_RATE * float(bank_interest), 2)
+        other_income = round(MMK_EXCHANGE_RATE * float(other_income), 2)
+        food = round(MMK_EXCHANGE_RATE * float(food), 2)
+        transportation = round(MMK_EXCHANGE_RATE * float(transportation), 2)
+        clothing = round(MMK_EXCHANGE_RATE * float(clothing), 2)
+        rent = round(MMK_EXCHANGE_RATE * float(rent), 2)
+        other_expense = round(MMK_EXCHANGE_RATE * float(other_expense), 2)
+        stock_sell = round(MMK_EXCHANGE_RATE * float(stock_sell), 2)
+        crypto_sell = round(MMK_EXCHANGE_RATE * float(crypto_sell), 2)
+        real_estate_sell = round(MMK_EXCHANGE_RATE * float(real_estate_sell), 2)
+        other_investment_sell = round(MMK_EXCHANGE_RATE * float(other_investment_sell), 2)
+        stock_buy = round(MMK_EXCHANGE_RATE * float(stock_buy), 2)
+        crypto_buy = round(MMK_EXCHANGE_RATE * float(crypto_buy), 2)
+        real_estate_buy = round(MMK_EXCHANGE_RATE * float(real_estate_buy), 2)
+        other_investment_buy = round(MMK_EXCHANGE_RATE * float(other_investment_buy), 2)
+        borrow = round(MMK_EXCHANGE_RATE * float(borrow), 2)
+        receivable_repay = round(MMK_EXCHANGE_RATE * float(receivable_repay), 2)
+        lend = round(MMK_EXCHANGE_RATE * float(lend), 2)
+        debt_repay = round(MMK_EXCHANGE_RATE * float(debt_repay), 2)        
+    
+    else:
+        exchange_rate = forex_rate(selected_currency)["rate"]
+
+        total_assets = round(exchange_rate * float(total_assets), 2)
+        investment_total = round(exchange_rate * float(investment_total), 2)
+        debt_total = round(exchange_rate * float(debt_total), 2)
+
+        inflow_income = round(exchange_rate * float(inflow_income), 2)
+        inflow_investment = round(exchange_rate * float(inflow_investment), 2)
+        inflow_debt = round(exchange_rate * float(inflow_debt), 2)
+        outflow_expense = round(exchange_rate * float(outflow_expense), 2)
+        outflow_investment = round(exchange_rate * float(outflow_investment), 2)
+        outflow_debt = round(exchange_rate * float(outflow_debt), 2)
+        inflows = round(exchange_rate * float(inflows), 2)
+        outflows = round(exchange_rate * float(outflows), 2)
+        net_balance = round(exchange_rate * float(net_balance), 2)
+        salary = round(exchange_rate * float(salary), 2)
+        bank_interest = round(exchange_rate * float(bank_interest), 2)
+        other_income = round(exchange_rate * float(other_income), 2)
+        food = round(exchange_rate * float(food), 2)
+        transportation = round(exchange_rate * float(transportation), 2)
+        clothing = round(exchange_rate * float(clothing), 2)
+        rent = round(exchange_rate * float(rent), 2)
+        other_expense = round(exchange_rate * float(other_expense), 2)
+        stock_sell = round(exchange_rate * float(stock_sell), 2)
+        crypto_sell = round(exchange_rate * float(crypto_sell), 2)
+        real_estate_sell = round(exchange_rate * float(real_estate_sell), 2)
+        other_investment_sell = round(exchange_rate * float(other_investment_sell), 2)
+        stock_buy = round(exchange_rate * float(stock_buy), 2)
+        crypto_buy = round(exchange_rate * float(crypto_buy), 2)
+        real_estate_buy = round(exchange_rate * float(real_estate_buy), 2)
+        other_investment_buy = round(exchange_rate * float(other_investment_buy), 2)
+        borrow = round(exchange_rate * float(borrow), 2)
+        receivable_repay = round(exchange_rate * float(receivable_repay), 2)
+        lend = round(exchange_rate * float(lend), 2)
+        debt_repay = round(exchange_rate * float(debt_repay), 2)
+
     return jsonify({'inflow_income': inflow_income, 'inflow_investment': inflow_investment, 'inflow_debt': inflow_debt, 'outflow_expense': outflow_expense, \
         'outflow_investment': outflow_investment, 'outflow_debt': outflow_debt, 'inflows': inflows, 'outflows': outflows, 'net_balance': net_balance, \
         'salary': salary, 'bank_interest': bank_interest, 'other_income': other_income, 'food': food, 'transportation': transportation, 'clothing': clothing, \
         'rent': rent, 'other_expense': other_expense, 'stock_sell': stock_sell, 'crypto_sell': crypto_sell, 'real_estate_sell': real_estate_sell, \
         'other_investment_sell': other_investment_sell, 'stock_buy': stock_buy, 'crypto_buy': crypto_buy, 'real_estate_buy': real_estate_buy, \
-        'other_investment_buy': other_investment_buy, 'borrow': borrow, 'receivable_repay': receivable_repay, 'lend': lend, 'debt_repay': debt_repay})
+        'other_investment_buy': other_investment_buy, 'borrow': borrow, 'receivable_repay': receivable_repay, 'lend': lend, 'debt_repay': debt_repay, \
+        'total_assets': total_assets, 'investment_total': investment_total, 'debt_total': debt_total})
 
 
 # delete repaid debts from database
@@ -1976,55 +2076,185 @@ def delete_debt():
     data = request.get_json()
     debtor_or_creditor = data.get('debtor_or_creditor')
 
+    # Get the transition_ids for the specific debtor_or_creditor
     transaction_ids = db.execute(
         "SELECT transaction_id, debt_category FROM debt WHERE user_id = ? and debtor_or_creditor = ?", user_id, debtor_or_creditor
     )
 
+    # Get the debt_category and transaction_id of the first transaction of the specific debtor_or_creditor
     main_transaction_id = repay_check(debtor_or_creditor)[0]['transaction_id']
     main_debt_category = repay_check(debtor_or_creditor)[0]['debt_category']
 
+    # Delete the debt rows from debt table for the specific debtor_or_creditor
     db.execute(
         "DELETE FROM debt WHERE user_id = ? and debtor_or_creditor = ?", user_id, debtor_or_creditor
     )
 
     for transaction_id in transaction_ids:
+        # if the debt_category is borrow and transaction_id is main_transaction_id, relocate the values into other-income category
         if transaction_id['debt_category'] == 'borrow' and transaction_id['transaction_id'] == main_transaction_id:
-            comment = f"Borrow - {debtor_or_creditor}"
+            comment = f"borrow - {debtor_or_creditor}"
             db.execute(
                 "INSERT INTO income (user_id, transaction_id, income_type, comment) VALUES (?, ?, ?, ?)",
                 user_id, transaction_id['transaction_id'], 'other-income', comment
             )
 
+        # if the debt_category is borrow and transaction_id is not main_transaction_id, delete the transaction to avoid repetitive counting
         elif transaction_id['debt_category'] == 'borrow' and transaction_id['transaction_id'] != main_transaction_id:
             db.execute(
                 "DELETE FROM transactions WHERE id = ?", transaction_id['transaction_id']
             )
 
+        # if the debt_category is lend and transaction_id is main_transaction_id, relocate the values into other-epense category
         if transaction_id['debt_category'] == 'lend' and transaction_id['transaction_id'] == main_transaction_id:
-            comment = f"Lend - {debtor_or_creditor}"
+            comment = f"lend - {debtor_or_creditor}"
             db.execute(
                 "INSERT INTO spending (user_id, transaction_id, spending_type, comment) VALUES (?, ?, ?, ?)",
                 user_id, transaction_id['transaction_id'], 'other-spending', comment
             )
 
+        # if the debt_category is lend and transaction_id is not main_transaction_id, delete the transaction to avoid repetitive counting
         elif transaction_id['debt_category'] == 'lend' and transaction_id['transaction_id'] != main_transaction_id:
             db.execute(
                 "DELETE FROM transactions WHERE id = ?", transaction_id['transaction_id']
             )
 
+        # if debt_category is repay, check the main_debt_category
         if transaction_id['debt_category'] == 'repay':
+            # if main_debt_category is lend, relocate the values into other-income category for lend-repay
             if main_debt_category == 'lend':
-                comment = f"Lend Repay - {debtor_or_creditor}"
+                comment = f"lend repay - {debtor_or_creditor}"
                 db.execute(
                 "INSERT INTO income (user_id, transaction_id, income_type, comment) VALUES (?, ?, ?, ?)",
                 user_id, transaction_id['transaction_id'], 'other-income', comment
                 )
 
+            # if main_debt_category is borrow, relocate the values into other-expense category for borrow-repay
             if main_debt_category == 'borrow':
-                comment = f"Borrow Repay - {debtor_or_creditor}"
+                comment = f"borrow repay - {debtor_or_creditor}"
                 db.execute(
                 "INSERT INTO spending (user_id, transaction_id, spending_type, comment) VALUES (?, ?, ?, ?)",
                 user_id, transaction_id['transaction_id'], 'other-spending', comment
+                )
+
+    return jsonify({'status': 'success'})
+
+
+# delete investments with zero quantity from database
+@app.route("/delete_investment", methods=["POST"])
+def delete_investment():
+    user_id = session.get("user_id")
+    data = request.get_json()
+    symbol_comment = data.get('symbol_comment')
+
+    # Get the transaction_ids, investment_type, buy_or_sell, and quantity for the specific symbol_comment
+    transaction_ids = db.execute(
+        "SELECT \
+            transaction_id, \
+            investment_type, \
+            buy_or_sell, \
+            quantity \
+        FROM \
+            investment \
+        WHERE \
+            user_id = ? \
+        AND \
+            (CASE \
+                WHEN investment_type IN ('other-investment', 'real-estate') THEN comment \
+                ELSE symbol \
+            END) = ?", user_id, symbol_comment
+    )
+
+    # Delete the rows from the investment table for the specific symbol_comment
+    db.execute(
+        "DELETE FROM investment \
+        WHERE \
+            user_id = ? \
+        AND \
+            (CASE \
+                WHEN investment_type IN ('other-investment', 'real-estate') THEN comment \
+                ELSE symbol \
+            END) = ?", user_id, symbol_comment
+    )
+
+    # Loop throught the transaction_ids
+    for transaction_id in transaction_ids:
+        quantity = transaction_id['quantity']
+
+        # if the investment_type is stock
+        if transaction_id['investment_type'] == 'stock':
+            buy_comment = f"stock buy - {quantity} {symbol_comment}"
+            sell_comment = f"stock sell - {quantity} {symbol_comment}"
+
+            # if buy_or_sell is buy, relocate the values into other-expense category with comment "Stock Buy - {quantity} {symbol_comment}"
+            if transaction_id['buy_or_sell'] == 'buy':
+                db.execute(
+                "INSERT INTO spending (user_id, transaction_id, spending_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-spending', buy_comment
+                )
+
+            # elif buy_or_sell is sell, relocate the values into other-income category with comment "Stock Sell - {quantity} {symbol_comment}"
+            elif transaction_id['buy_or_sell'] == 'sell':
+                db.execute(
+                "INSERT INTO income (user_id, transaction_id, income_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-income', sell_comment
+                )
+
+        # elif the investment_category is cryptocurrency
+        elif transaction_id['investment_type'] == 'cryptocurrency':
+            buy_comment = f"crypto buy - {quantity} {symbol_comment}"
+            sell_comment = f"crypto sell - {quantity} {symbol_comment}"
+
+            # if buy_or_sell is buy, relocate the values into other-expense category with comment "Crypto Buy - {quantity} {symbol_comment}"
+            if transaction_id['buy_or_sell'] == 'buy':
+                db.execute(
+                "INSERT INTO spending (user_id, transaction_id, spending_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-spending', buy_comment
+                )
+
+            # elif buy_or_sell is sell, relocate the values into other-income category with comment "Crypto Sell - {quantity} {symbol_comment}"
+            elif transaction_id['buy_or_sell'] == 'sell':
+                db.execute(
+                "INSERT INTO income (user_id, transaction_id, income_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-income', sell_comment
+                )
+
+        # elif the investment_category is real-estate
+        elif transaction_id['investment_type'] == 'real-estate':
+            buy_comment = f"real estate buy - {symbol_comment}"
+            sell_comment = f"real estate sell - {symbol_comment}"
+
+            # if buy_or_sell is buy, relocate the values into other-expense category with comment "Real Estate Buy - {symbol_comment}"
+            if transaction_id['buy_or_sell'] == 'buy':
+                db.execute(
+                "INSERT INTO spending (user_id, transaction_id, spending_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-spending', buy_comment
+                )
+
+            # elif buy_or_sell is sell, relocate the values into other-income category with comment "Real Estate Sell - {symbol_comment}"
+            elif transaction_id['buy_or_sell'] == 'sell':
+                db.execute(
+                "INSERT INTO income (user_id, transaction_id, income_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-income', sell_comment
+                )
+
+        # else (other-investment)
+        else:
+            buy_comment = f"investment Buy - {symbol_comment}"
+            sell_comment = f"investment Sell - {symbol_comment}"
+
+            # if buy_or_sell is buy, relocate the values into other-expense category with comment "Investment Buy - {symbol_comment}"
+            if transaction_id['buy_or_sell'] == 'buy':
+                db.execute(
+                "INSERT INTO spending (user_id, transaction_id, spending_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-spending', buy_comment
+                )
+
+            # elif buy_or_sell is sell, relocate the values into other-income category with comment "Investment Sell - {symbol_comment}"
+            elif transaction_id['buy_or_sell'] == 'sell':
+                db.execute(
+                "INSERT INTO income (user_id, transaction_id, income_type, comment) VALUES (?, ?, ?, ?)",
+                user_id, transaction_id['transaction_id'], 'other-income', sell_comment
                 )
 
     return jsonify({'status': 'success'})

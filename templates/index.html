@@ -100,15 +100,7 @@
                 {% for row in investment_rows %}
                 <tr>
                     <td scope="row">
-                        {% if row['investment_type'] == 'stock' %}
-                            Stock
-                        {% elif row['investment_type'] == 'cryptocurrency' %} 
-                            Cryptocurrency
-                        {% elif row['investment_type'] == 'real-estate' %}
-                            Real Estate
-                        {% else %}
-                            Other Investment
-                        {% endif %}
+                        {{ row['investment_type'] }}
                     </td>
                     <td scope="row">{{ row['symbol'] }}</td>
                     <td scope="row">{{ row['quantity'] }}</td>
@@ -196,9 +188,9 @@
                     <td scope="row">
                         <span>
                             {% if row['debt_category'] == 'borrow' %}
-                                Debt
+                                debt
                             {% elif row['debt_category'] == 'lend' %}
-                                Receivable
+                                receivable
                             {% endif %}
                         </span> 
                     </td>
@@ -294,6 +286,7 @@
             })
     }
 
+
     function convertInvestmentCurrency() {
         const selectedCurrency = document.getElementById('investment-currency-select').value;
         const investmentTotal = document.getElementById('investment_total_raw').textContent;
@@ -311,6 +304,7 @@
                 document.getElementById('profit_loss_total').textContent = data.converted_amount
             })
     }
+
 
     function convertDebtCurrency() {
         const selectedCurrency = document.getElementById('debt-currency-select').value;
@@ -330,6 +324,7 @@
             })
     }
 
+
     function convertAssetCurrency() {
         const selectedCurrency = document.getElementById('asset-currency-select').value
         const assetTotal = document.getElementById('total_assets_raw').textContent
@@ -341,6 +336,7 @@
             })
     }
 
+
     function deleteDebt() {
         const debtor_or_creditor = event.target.getAttribute('value');
 
@@ -350,6 +346,29 @@
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({ debtor_or_creditor: debtor_or_creditor }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('Data deleted successfully');
+                window.location.reload();
+            }
+            else {
+                console.log('Data deletion error');
+            }
+        })
+    }
+
+
+    function deleteInvestment() {
+        const symbol_comment = event.target.getAttribute('value');
+
+        fetch('/delete_investment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ symbol_comment: symbol_comment }),
         })
         .then(response => response.json())
         .then(data => {

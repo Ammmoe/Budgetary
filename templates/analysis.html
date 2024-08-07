@@ -11,16 +11,17 @@
 
         <div class="container-topic h5">
             <span class="container-item-topic">Total Financial Position Breakdown of:</span>
-            <span class="container-item-topic 
+            <span class="container-item-topic update-currency 
                 {% if total_assets > 0 %}
                     success-bg-topic
                 {% elif total_assets == 0 %}
                     secondary-bg-topic
                 {% else %}
                     danger-bg-topic
-                {% endif %}" id="total-assets">
+                {% endif %}" id="formatted-total-assets">
                 USD {{ total_assets | currency }}
             </span>
+            <div id="total-assets" style="display: none;">{{ total_assets }}</div>
         </div>
          
         <div class="container-body">
@@ -33,19 +34,40 @@
                 <div class="container-item-innerlegends">
                     <span class="success-color-box"></span>
                     <span>Cash & Bank Deposits:&nbsp;</span>
-                    <span class="success-bg-text">USD {{ net_balance | currency }}</span>
+                    <span class="update-currency
+                    {% if net_balance > 0 %}
+                        success-bg-text
+                    {% elif net_balance == 0 %}
+                        secondary-bg-text
+                    {% else %}
+                        danger-bg-text
+                    {% endif %}" id="formatted-total-cash-bank">USD {{ net_balance | currency }}</span>
                     <div id="total-cash-bank" style="display: none;">{{ net_balance }}</div>
                 </div>
                 <div class="container-item-innerlegends">
                     <span class="warning-color-box"></span>
                     <span>Investments:&nbsp;</span>
-                    <span class="warning-bg-text">USD {{ investment_total | currency }}</span>
+                    <span class="update-currency
+                    {% if investment_total > 0 %}
+                        success-bg-text
+                    {% elif investment_total == 0 %}
+                        secondary-bg-text
+                    {% else %}
+                        danger-bg-text
+                    {% endif %}" id="formatted-investment-total">USD {{ investment_total | currency }}</span>
                     <div id="investment-total" style="display: none;">{{ investment_total }}</div>
                 </div>
                 <div class="container-item-innerlegends">
                     <span class="danger-color-box"></span>
                     <span>Debts & Receivables:&nbsp;</span>
-                    <span class="danger-bg-text">USD {{ debt_total | currency }}</span>
+                    <span class="update-currency
+                    {% if debt_total > 0 %}
+                        success-bg-text
+                    {% elif debt_total == 0 %}
+                        secondary-bg-text
+                    {% else %}
+                        danger-bg-text
+                    {% endif %}" id="formatted-debt-total">USD {{ debt_total | currency }}</span>
                     <div id="debt-total" style="display: none;">{{ debt_total }}</div>
                 </div> 
             </div>
@@ -60,7 +82,7 @@
         </div> 
 
         <div class="container-item-filter">
-            <form class="row justify-content-center">
+            <form class="row justify-content-center align-items-center">
                 <div class="col-md-4">
                     <div class="input-group">
                         <span class="input-group-text fw-bold">From</span>
@@ -73,7 +95,17 @@
                         <input class="form-control" name="end_date" id="end_date" placeholder="Select end date" type="date">
                     </div>
                 </div>
-                <div class="col-md-1 text-start">
+                <div class="col-md-1">
+                    <select name="currency-select" id="currency-select">
+                        <option value="usd" selected>USD</option>
+                        {% for currency_v in currencies %}
+                            {% if currency_v != 'usd' %}
+                            <option value="{{ currency_v }}">{{ currency_v | upper }}</option>
+                            {% endif %}
+                        {% endfor %}    
+                    </select>
+                </div>
+                <div class="col-md-1">
                     <button class="btn btn-secondary" type="button" onclick="analysisFilter()">Filter</button>
                 </div>
             </form>
@@ -318,7 +350,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const doughnutChart = document.getElementById('doughnut-chart');
+    var doughnutChart = document.getElementById('doughnut-chart');
     const totalCashBank = Number(document.getElementById('total-cash-bank').innerText) || 0;
     const investmentTotal = Number(document.getElementById('investment-total').innerText) || 0;
     const debtTotal = Number(document.getElementById('debt-total').innerText) || 0;
@@ -327,20 +359,20 @@
         data: [totalCashBank, investmentTotal, debtTotal]
     }
 
-    new Chart(doughnutChart, {
+    doughnutChart = new Chart(doughnutChart, {
         type: 'doughnut',
         data: {
-        labels: doughnutChartData.labels,
-        datasets: [{
-            label: 'Financial Distribution',
-            data: doughnutChartData.data,
-            backgroundColor: [
-                'rgb(25, 135, 84)',
-                'rgb(255, 193, 7)',
-                'rgb(220, 53, 69)'
-            ],
-            hoverOffset: 4
-        }]
+            labels: doughnutChartData.labels,
+            datasets: [{
+                label: 'Financial Distribution',
+                data: doughnutChartData.data,
+                backgroundColor: [
+                    'rgb(25, 135, 84)',
+                    'rgb(255, 193, 7)',
+                    'rgb(220, 53, 69)'
+                ],
+                hoverOffset: 4
+            }]
         },
         options: {
             plugins: {
@@ -445,8 +477,8 @@
                 y: {
                     stacked: true,
                     beginAtZero: true,
-                    suggestedMin: 0, 
-                    suggestedMax: 5000,
+                    // suggestedMin: 0, 
+                    // suggestedMax: 5000,
                     ticks: {
                         callback: function(value) {
                             return value;
@@ -563,8 +595,8 @@
                 x: {
                     stacked: true,
                     beginAtZero: true,
-                    suggestedMin: 0, 
-                    suggestedMax: 5000,
+                    // suggestedMin: 0, 
+                    // suggestedMax: 5000,
                     ticks: {
                         callback: function(value) {
                             return value;
@@ -693,8 +725,8 @@
                 x: {
                     stacked: true,
                     beginAtZero: true,
-                    suggestedMin: 0, 
-                    suggestedMax: 5000,
+                    // suggestedMin: 0, 
+                    // suggestedMax: 5000,
                     ticks: {
                         callback: function(value) {
                             return value;
@@ -745,11 +777,24 @@
     function analysisFilter() {
         const startDate = document.getElementById('start_date').value;
         const endDate = document.getElementById('end_date').value;
+        const selectedCurrency = document.getElementById('currency-select').value;
+        const totalAssets = document.getElementById('total-assets').textContent;
+        const investmentTotal = document.getElementById('investment-total').textContent;
+        const debtTotal = document.getElementById('debt-total').textContent;
 
-        fetch(`/analysis_filter?start_date=${startDate}&end_date=${endDate}`)
+        fetch(`/analysis_filter?start_date=${startDate}&end_date=${endDate}&selected_currency=${selectedCurrency}` +
+            `&total_assets=${totalAssets}&investment_total=${investmentTotal}&debt_total=${debtTotal}`)
             .then(response => response.json())
             .then(data => {
                 console.log(data)
+
+                document.getElementById('formatted-total-assets').textContent = data.total_assets;
+
+                document.getElementById('formatted-total-cash-bank').textContent = data.net_balance;
+
+                document.getElementById('formatted-investment-total').textContent = data.investment_total;
+
+                document.getElementById('formatted-debt-total').textContent = data.debt_total;
                 
                 document.getElementById('formatted-inflow-income').textContent = data.inflow_income;
                 document.getElementById('inflow-income').textContent = data.inflow_income;
@@ -835,6 +880,18 @@
 
                 document.getElementById('formatted-debt-repay').textContent = data.debt_repay;
                 document.getElementById('debt-repay').textContent = data.debt_repay;
+
+                doughnutChart.data.datasets = [{
+                    label: 'Financial Distribution',
+                    data: [data.net_balance, data.investment_total, data.debt_total],
+                    backgroundColor: [
+                        'rgb(25, 135, 84)',
+                        'rgb(255, 193, 7)',
+                        'rgb(220, 53, 69)'
+                    ],
+                    hoverOffset: 4
+                }]
+                doughnutChart.update();
 
                 stackedChart.data.datasets = [
                     {
@@ -984,23 +1041,27 @@
                 outflowChart.update();
 
                 hideElementByClass('checkZero');
-                updateNetBalanceDisplay(data.net_balance);
-                updateCurrencyDisplay();
+                updateNetBalanceDisplay(data.net_balance, selectedCurrency);
+                updateCurrencyDisplay(selectedCurrency);
             });
     }
 </script>
 
 <script>
-    function updateNetBalanceDisplay(netBalance) {
+    function updateNetBalanceDisplay(netBalance, selectedCurrency) {
         const netBalanceElement = document.getElementById('formatted-net-balance');
+        const upperSelectedCurrency = selectedCurrency.toUpperCase();
 
         // Remove existing success or danger classes
         netBalanceElement.classList.remove('success-bg-text', 'danger-bg-text');
 
         // Add appropriate class based on value
-        if (netBalance >= 0) {
+        if (netBalance > 0) {
             netBalanceElement.classList.add('success-bg-text');
         } 
+        else if (netBalance === 0) {
+            netBalanceElement.classList.add('secondary-bg-text');
+        }
         else {
             netBalanceElement.classList.add('danger-bg-text');
         }
@@ -1012,13 +1073,14 @@
         }).format(netBalance);
 
         // Update the text content
-        netBalanceElement.textContent = `USD ${formattedNetBalance}`;
+        netBalanceElement.textContent = `${upperSelectedCurrency} ${formattedNetBalance}`;
     }
 </script>
 
 <script>
-    function updateCurrencyDisplay() {
+    function updateCurrencyDisplay(selectedCurrency) {
         const currencyElements = document.querySelectorAll('.update-currency');
+        const upperSelectedCurrency = selectedCurrency.toUpperCase();
 
         currencyElements.forEach((element) => {
             const elementContent = parseFloat(element.textContent);
@@ -1029,7 +1091,7 @@
                 maximumFractionDigits: 2
             }).format(elementContent);
 
-            element.textContent = `USD ${formattedElement}`;
+            element.textContent = `${upperSelectedCurrency} ${formattedElement}`;
         });
     }
 </script>

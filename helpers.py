@@ -148,7 +148,7 @@ def amount_in_usd(currency, value):
         return round(float(value), 2)
 
     elif currency.upper() == 'MMK':
-        exchange_rate = 4970
+        exchange_rate = 5480
         amount_in_usd = (1 / exchange_rate) * float(value)
         return round(float(amount_in_usd), 2)
 
