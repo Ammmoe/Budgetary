@@ -781,16 +781,18 @@
         const totalAssets = document.getElementById('total-assets').textContent;
         const investmentTotal = document.getElementById('investment-total').textContent;
         const debtTotal = document.getElementById('debt-total').textContent;
+        const totalCashBank = document.getElementById('total-cash-bank').textContent;
 
         fetch(`/analysis_filter?start_date=${startDate}&end_date=${endDate}&selected_currency=${selectedCurrency}` +
-            `&total_assets=${totalAssets}&investment_total=${investmentTotal}&debt_total=${debtTotal}`)
+            `&total_assets=${totalAssets}&investment_total=${investmentTotal}&debt_total=${debtTotal}&total_cash_bank=${totalCashBank}`)
             .then(response => response.json())
             .then(data => {
                 console.log(data)
 
                 document.getElementById('formatted-total-assets').textContent = data.total_assets;
 
-                document.getElementById('formatted-total-cash-bank').textContent = data.net_balance;
+                document.getElementById('formatted-total-cash-bank').textContent = data.total_cash_bank;
+                // document.getElementById('total-cash-bank').textContent = data.total_cash_bank_usd;
 
                 document.getElementById('formatted-investment-total').textContent = data.investment_total;
 
@@ -883,7 +885,7 @@
 
                 doughnutChart.data.datasets = [{
                     label: 'Financial Distribution',
-                    data: [data.net_balance, data.investment_total, data.debt_total],
+                    data: [data.total_cash_bank, data.investment_total, data.debt_total],
                     backgroundColor: [
                         'rgb(25, 135, 84)',
                         'rgb(255, 193, 7)',
@@ -1053,7 +1055,7 @@
         const upperSelectedCurrency = selectedCurrency.toUpperCase();
 
         // Remove existing success or danger classes
-        netBalanceElement.classList.remove('success-bg-text', 'danger-bg-text');
+        netBalanceElement.classList.remove('success-bg-text', 'secondary-bg-text', 'danger-bg-text');
 
         // Add appropriate class based on value
         if (netBalance > 0) {

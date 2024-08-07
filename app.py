@@ -1693,6 +1693,8 @@ def analysis_filter():
     total_assets = request.args.get("total_assets")
     investment_total = request.args.get("investment_total")
     debt_total = request.args.get("debt_total")
+    total_cash_bank_usd = round(float(request.args.get("total_cash_bank")), 2)
+    total_cash_bank = total_cash_bank_usd
 
     # Initialize query lists
     inflow_income_rows = []
@@ -1987,11 +1989,13 @@ def analysis_filter():
         total_assets = round(float(total_assets), 2)
         investment_total = round(float(investment_total), 2)
         debt_total = round(float(debt_total), 2)
+        total_cash_bank = total_cash_bank
     
     elif selected_currency == 'mmk':
         total_assets = round(MMK_EXCHANGE_RATE * float(total_assets), 2)
         investment_total = round(MMK_EXCHANGE_RATE * float(investment_total), 2)
         debt_total = round(MMK_EXCHANGE_RATE * float(debt_total), 2)
+        total_cash_bank = round(MMK_EXCHANGE_RATE * total_cash_bank)
 
         inflow_income = round(MMK_EXCHANGE_RATE * float(inflow_income), 2)
         inflow_investment = round(MMK_EXCHANGE_RATE * float(inflow_investment), 2)
@@ -2029,6 +2033,7 @@ def analysis_filter():
         total_assets = round(exchange_rate * float(total_assets), 2)
         investment_total = round(exchange_rate * float(investment_total), 2)
         debt_total = round(exchange_rate * float(debt_total), 2)
+        total_cash_bank = round(exchange_rate * float(total_cash_bank), 2)
 
         inflow_income = round(exchange_rate * float(inflow_income), 2)
         inflow_investment = round(exchange_rate * float(inflow_investment), 2)
@@ -2066,7 +2071,8 @@ def analysis_filter():
         'rent': rent, 'other_expense': other_expense, 'stock_sell': stock_sell, 'crypto_sell': crypto_sell, 'real_estate_sell': real_estate_sell, \
         'other_investment_sell': other_investment_sell, 'stock_buy': stock_buy, 'crypto_buy': crypto_buy, 'real_estate_buy': real_estate_buy, \
         'other_investment_buy': other_investment_buy, 'borrow': borrow, 'receivable_repay': receivable_repay, 'lend': lend, 'debt_repay': debt_repay, \
-        'total_assets': total_assets, 'investment_total': investment_total, 'debt_total': debt_total})
+        'total_assets': total_assets, 'investment_total': investment_total, 'debt_total': debt_total, 'total_cash_bank': total_cash_bank, \
+        'total_cash_bank_usd': total_cash_bank_usd})
 
 
 # delete repaid debts from database
