@@ -2129,7 +2129,7 @@ def delete_debt():
         if transaction_id['debt_category'] == 'repay':
             # if main_debt_category is lend, relocate the values into other-income category for lend-repay
             if main_debt_category == 'lend':
-                comment = f"lend repay - {debtor_or_creditor}"
+                comment = f"lend repayment - {debtor_or_creditor}"
                 db.execute(
                 "INSERT INTO income (user_id, transaction_id, income_type, comment) VALUES (?, ?, ?, ?)",
                 user_id, transaction_id['transaction_id'], 'other-income', comment
@@ -2137,7 +2137,7 @@ def delete_debt():
 
             # if main_debt_category is borrow, relocate the values into other-expense category for borrow-repay
             if main_debt_category == 'borrow':
-                comment = f"borrow repay - {debtor_or_creditor}"
+                comment = f"borrow repayment - {debtor_or_creditor}"
                 db.execute(
                 "INSERT INTO spending (user_id, transaction_id, spending_type, comment) VALUES (?, ?, ?, ?)",
                 user_id, transaction_id['transaction_id'], 'other-spending', comment

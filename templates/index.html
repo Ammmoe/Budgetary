@@ -8,9 +8,9 @@
 <div class="row">
     <div class="col-md-4 mb-4 d-flex">
         <div class="card card-custom flex-fill">
-            <div class="card-header text-bg-secondary">Total Assets & Liabilities</div>
+            <div class="card-header text-bg-secondary">Total Net Worth</div>
             <div class="card-body">
-                <span class="card-title h5">Total Assets & Liabilities in</span>
+                <span class="card-title h5">Total Net Worth in</span>
                 <select name="asset-currency-select" id="asset-currency-select" class="h5" onchange="convertAssetCurrency()">
                     <option value="usd" selected>USD</option>
                     {% for currency_v in currencies %}
@@ -47,11 +47,6 @@
                         </tr>
                     </thead>
                     <tbody class="table-group-divider">
-                        <!-- <tr>
-                            <td scope="row">USD</td>
-                            <td>{{ cash['usd'] }}</td>
-                            <td>{{ bank['usd'] }}</td>
-                        </tr> -->
                         {% for currency_v in currencies %}
                             <tr>
                                 <td scope="row">{{ currency_v | upper }}</td>
@@ -82,6 +77,7 @@
     </div>
 </div>   
 
+{% if investment_rows %}
 <div class="card card-custom mb-4 col-md-12">
     <div class="card-header text-bg-warning">Investments</div>
     <div class="card-body table-responsive opacity-80">
@@ -160,7 +156,9 @@
         </table>
     </div>
 </div>
+{% endif %}
 
+{% if debt_rows %}
 <div class="card card-custom mb-4 col-md-12">
     <div class="card-header text-bg-danger">Debts & Receivables</div>
     <div class="card-body table-responsive">
@@ -264,6 +262,7 @@
         </table>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

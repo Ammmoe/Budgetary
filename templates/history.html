@@ -63,7 +63,13 @@
                         {% endif %}
                     </td>
                     <td class="text-start">{{ row['comment'] }}</td>
-                    <td>{{ row['payment_method'] }}</td>
+                    <td>
+                        {% if row['payment_method'] == 'banking' %}
+                            bank transfer
+                        {% else %}
+                            cash
+                        {% endif %}
+                    </td>
                     <td>{{ row['currency'] | upper }}</td>
                     <td class="text-end">{{ row['amount'] | currency }}</td>
                 </tr>
@@ -102,7 +108,13 @@
                     <td>{{ row['symbol_comment'] }}</td>
                     <td>{{ row['buy_sell'] }}</td>
                     <td>{{ row['quantity'] }}</td>
-                    <td>{{ row['payment_method'] }}</td>
+                    <td>
+                        {% if row['payment_method'] == 'banking' %}
+                            bank transfer
+                        {% else %}
+                            cash
+                        {% endif %}
+                    </td>
                     <td>{{ row['currency'] | upper }}</td>
                     <td class="text-end">{{ row['amount'] | currency }}</td>
                 </tr>
@@ -138,7 +150,7 @@
                     <td scope="row">{{ row['date'] }}</td>
                     <td>
                         {% if row['category'] == 'brepay' or row['category'] == 'lrepay' %}
-                            repay
+                            repayment
                         {% else %}
                             {{ row['category'] }}
                         {% endif %}
@@ -151,7 +163,13 @@
                             {{ row['interest_rate'] }}%
                         {% endif %}
                     </td>
-                    <td>{{ row['payment_method'] }}</td>
+                    <td>
+                        {% if row['payment_method'] == 'banking' %}
+                            bank transfer
+                        {% else %}
+                            cash
+                        {% endif %}
+                    </td>
                     <td>{{ row['currency'] | upper }}</td>
                     <td class="text-end">{{ row['amount'] | currency }}</td>
                 </tr>

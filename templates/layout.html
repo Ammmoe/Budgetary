@@ -11,8 +11,8 @@
         <!-- <link rel="stylesheet" href="dist/bootstrap4-card-tables.min.css"> -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
 
-        <!-- https://favicon.io/emoji-favicons/money-bag/ -->
-        <link href="/static/favicon.ico" rel="icon">
+        <!-- https://www.flaticon.com/free-icons/budget -->
+        <link href="/static/budgetary.png" rel="icon">
         
         <link href="/static/styles.css" rel="stylesheet">
 
@@ -79,32 +79,19 @@
 
         <footer class="mb-5">
             <p class="mb-3 small text-center text-muted">
-                Data provided by <a href="https://finance.yahoo.com/">Yahoo</a>
+                Data provided by 
+                <a href="https://www.frankfurter.app/">Frankfurter</a>,&nbsp;
+                <a href="https://finance.yahoo.com/">Yahoo</a>, and
+                <a href="https://www.binance.com/">Binance</a>
                 <!-- To provide other reference APIs as well -->
             </p>
-
-            <form action="https://validator.w3.org/check" class="text-center" enctype="multipart/form-data" method="post" target="_blank">
-                <input name="doctype" type="hidden" value="HTML5">
-                <input name="fragment" type="hidden">
-                <input alt="Validate" src="/static/I_heart_validator.png" type="image"> <!-- https://validator.w3.org/ -->
-            </form>
-            
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    // Adapted from https://stackoverflow.com/a/10162353
-                    const html = '<!DOCTYPE ' +
-                    document.doctype.name +
-                    (document.doctype.publicId ? ' PUBLIC "' + document.doctype.publicId + '"' : '') +
-                    (!document.doctype.publicId && document.doctype.systemId ? ' SYSTEM' : '') +
-                    (document.doctype.systemId ? ' "' + document.doctype.systemId + '"' : '') +
-                    '>\n' + document.documentElement.outerHTML;
-                    document.querySelector('form[action="https://validator.w3.org/check"] > input[name="fragment"]').value = html;
-                });
-            </script>
-
-            <!-- Add a block for additional javascript -->
+            <p class="mb-3 small text-center text-muted">
+                Budget icon created by <a href="https://www.flaticon.com/free-icons/budget" title="budget icons">Freepik - Flaticon</a>
+            </p>
+            <p class="small text-center text-muted">
+                Background image created by <a href="https://th.pngtree.com/freebackground/cartoon-internet-business-finance-poster-background_1071853.html?sol=downref&id=bef" title="budget icons">588ku - pngtree</a>
+            </p>
             {% block scripts %}{% endblock %}
-
         </footer>
     </body>
 </html>

@@ -146,12 +146,12 @@
                     <!-- Select debt category -->
                     <div class="col-md-4 mb-4">
                         <div class="input-group">
-                            <span class="input-group-text fw-bold">Category</span>
+                            <span class="input-group-text fw-bold">Type</span>
                             <select name="debt-category" id="debt-category" class="form-select" onchange="enableInterestRate(this.value)">
-                                <option selected disabled>Select category</option>
+                                <option selected disabled>Select type</option>
                                 <option value="borrow">Borrow</option>
                                 <option value="lend">Lend</option>
-                                <option value="repay">Repay</option>
+                                <option value="repay">Repayment</option>
                             </select>         
                         </div>
                     </div>
@@ -183,7 +183,7 @@
                         <select name="payment-method" id="payment-method" class="form-select">
                             <option selected disabled>Select payment method</option>
                             <option value="cash">Cash</option>
-                            <option value="banking">Banking</option>
+                            <option value="banking">Bank Transfer</option>
                         </select> 
                     </div>
                 </div>
