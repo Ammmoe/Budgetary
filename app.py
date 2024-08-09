@@ -526,17 +526,13 @@ def budgetary():
         currency = request.form.get('currency')
         amount = request.form.get('amount')
 
-        print(f"budgetary_type: {budgetary_type}")
-        print(f"investment_type: {investment_type}")
-        print(f"quantity: {quantity}")
-
         # Error handling at server side
         if date == '':
             flash('Please input date!', 'alert-danger')
             return redirect(url_for('budgetary'))
         
         if budgetary_type not in valid_budgetary_types:
-            msg = flash('Please choose budgetary type!', 'alert-danger')
+            flash('Please choose budgetary type!', 'alert-danger')
             return redirect(url_for('budgetary'))
         
         if budgetary_type == 'income' and income_type not in valid_income_types:
