@@ -882,13 +882,6 @@ def budgetary():
 def analysis():
     user_id = session.get("user_id")
     total_assets = 0
-    total_cash_bank = 0
-    inflow_income = 0
-    inflow_investment = 0
-    inflow_debt = 0
-    outflow_expense = 0
-    outflow_investment = 0
-    outflow_debt = 0
 
     # Retrieve the list of currencies
     # Convert to lowercase because in transactions database, currencies are in lowercase
@@ -897,7 +890,23 @@ def analysis():
     )
 
     # original_currencies will be passed to index.html
-    currencies = [row['currency_code'].lower() for row in currencies_q]
+    original_currencies = [row['currency_code'].lower() for row in currencies_q]
+
+    # create a copy of original_currencies to be used in the loop
+    currencies = original_currencies.copy()
+
+    # Get a list of currencies previously used by the user, which is not included in the user_currencies that they chose
+    used_currencies_q = db.execute(
+        "SELECT DISTINCT currency FROM transactions WHERE user_id = ?", user_id
+    )
+
+    used_currencies = [row['currency'].lower() for row in used_currencies_q]
+
+    # Find currencies in used_currencies that are not in currencies
+    not_included_currencies = list(set(used_currencies) - set(currencies))
+
+    # Add not_included_currencies to the currencies list
+    currencies.extend(not_included_currencies)
     
     # Create analysis routes
     if request.method == "GET":
@@ -1060,230 +1069,346 @@ def analysis():
             new_debt_rows.append(row)
 
         total_assets = total_assets + debt_total
-
-        # Write database code for inflows breakdown
-        # First, get inflow-income data from history
-        inflow_income_rows = db.execute(
-            "SELECT \
-                transactions.transaction_date AS date, \
-                'income' AS type, \
-                income.income_type AS category, \
-                income.comment AS comment, \
-                transactions.payment_method AS payment_method, \
-                transactions.currency AS currency, \
-                transactions.amount AS amount, \
-                transactions.amount_in_usd AS amount_in_usd \
-            FROM \
-                income JOIN transactions ON income.transaction_id = transactions.id \
-            WHERE \
-                income.user_id = ?", user_id)
         
-        # Get amount of each income category in usd
-        salary = 0
-        bank_interest = 0
-        other_income = 0
+        # Initialize the dictionary variables to be used inside the loop
+        salary = {}
+        bank_interest = {}
+        other_income = {}
+        salary_in_usd = 0
+        bank_interest_in_usd = 0
+        other_income_in_usd = 0
 
-        for row in inflow_income_rows:
-            # Salary-related rows
-            if row['category'] == 'salary':
-                salary = salary + round(float(row['amount_in_usd']), 2)
+        food = {}
+        transportation = {}
+        clothing = {}
+        rent = {}
+        other_expense = {}
+        food_in_usd = 0
+        transportation_in_usd = 0
+        clothing_in_usd = 0
+        rent_in_usd = 0
+        other_expense_in_usd = 0
 
-            # Bank-interest-related rows
-            if row['category'] == 'bank-interest':
-                bank_interest = bank_interest + round(float(row['amount_in_usd']), 2)
+        stock_sell = {}
+        crypto_sell = {}
+        real_estate_sell = {}
+        other_investment_sell = {}
+        stock_sell_in_usd = 0
+        crypto_sell_in_usd = 0
+        real_estate_sell_in_usd = 0
+        other_investment_sell_in_usd = 0
 
-            # Other-income-related rows
-            if row['category'] == 'other-income':
-                other_income = other_income + round(float(row['amount_in_usd']), 2)
+        stock_buy = {}
+        crypto_buy = {}
+        real_estate_buy = {}
+        other_investment_buy = {}
+        stock_buy_in_usd = 0
+        crypto_buy_in_usd = 0
+        real_estate_buy_in_usd = 0
+        other_investment_buy_in_usd = 0
 
-            # Update inflow income
-            inflow_income = inflow_income + round(float(row['amount_in_usd']), 2)
+        borrow = {}
+        receivable_repay = {}
+        borrow_in_usd = 0
+        receivable_repay_in_usd = 0
 
-        # Write database code for expenses breakdown
-        outflow_expense_rows = db.execute(
-            "SELECT \
-                transactions.transaction_date AS date, \
-                'expense' AS type, \
-                spending.spending_type AS category, \
-                spending.comment AS comment, \
-                transactions.payment_method AS payment_method, \
-                transactions.currency AS currency, \
-                transactions.amount AS amount, \
-                transactions.amount_in_usd AS amount_in_usd \
-            FROM \
-                spending JOIN transactions ON spending.transaction_id = transactions.id \
-            WHERE \
-                spending.user_id = ?", user_id)
+        lend = {}
+        debt_repay = {}
+        lend_in_usd = 0
+        debt_repay_in_usd = 0
 
-        # Get amount of each expense category in usd
-        food = 0
-        transportation = 0
-        clothing = 0
-        rent = 0
-        other_expense = 0
-
-        for row in outflow_expense_rows:
-            # Food-related rows
-            if row['category'] == 'food':
-                food = food + round(float(row['amount_in_usd']), 2)
-
-            # Transportation-related rows
-            if row['category'] == 'transportation':
-                transportation = transportation + round(float(row['amount_in_usd']), 2)
-
-            # Clothing-related rows
-            if row['category'] == 'clothing':
-                clothing = clothing + round(float(row['amount_in_usd']), 2)
-
-            # Rent-related rows
-            if row['category'] == 'rent':
-                rent = rent + round(float(row['amount_in_usd']), 2)
-
-            # Other-expense-related rows
-            if row['category'] == 'other-spending':
-                other_expense = other_expense + round(float(row['amount_in_usd']), 2)
-
-            # Update outflow expense
-            outflow_expense = outflow_expense + round(float(row['amount_in_usd']), 2)
-
-        # Write database query for investment breakdown
-        inflow_outflow_investment_rows = db.execute(
-            "SELECT \
-                transactions.transaction_date AS date, \
-                investment.investment_type AS type, \
-            CASE \
-                WHEN investment.investment_type IN ('other-investment', 'real-estate') THEN investment.comment \
-                ELSE investment.symbol\
-            END AS symbol_comment, \
-                investment.buy_or_sell AS buy_sell, \
-                investment.quantity, \
-                transactions.payment_method, \
-                transactions.currency, \
-                transactions.amount, \
-                transactions.amount_in_usd \
-            FROM \
-                investment JOIN transactions ON investment.transaction_id = transactions.id \
-            WHERE \
-                investment.user_id = ?", user_id
-        )
-        
-        # Get amount of each inflow investment category in usd
-        stock_sell = 0
-        crypto_sell = 0
-        real_estate_sell = 0
-        other_investment_sell = 0
-
-        # Get amount of each outflow investment category in usd
-        stock_buy = 0
-        crypto_buy = 0
-        real_estate_buy = 0
-        other_investment_buy = 0
-
-        for row in inflow_outflow_investment_rows:
-            # Inflow variables for selling investments
-            if row['type'] == 'stock' and row['buy_sell'] == 'sell':
-                stock_sell = stock_sell + round(float(row['amount_in_usd']), 2)
-
-            if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'sell':
-                crypto_sell = crypto_sell + round(float(row['amount_in_usd']), 2)
+        for currency_v in currencies:
+            # Write database code for inflows breakdown
+            # First, get inflow-income data from history
+            inflow_income_rows = db.execute(
+                "SELECT \
+                    transactions.transaction_date AS date, \
+                    'income' AS type, \
+                    income.income_type AS category, \
+                    income.comment AS comment, \
+                    transactions.payment_method AS payment_method, \
+                    transactions.currency AS currency, \
+                    transactions.amount AS amount, \
+                    transactions.amount_in_usd AS amount_in_usd \
+                FROM \
+                    income JOIN transactions ON income.transaction_id = transactions.id \
+                WHERE \
+                    income.user_id = ? and transactions.currency = ?", user_id, currency_v)
             
-            if row['type'] == 'real-estate' and row['buy_sell'] == 'sell':
-                real_estate_sell = real_estate_sell + round(float(row['amount_in_usd']), 2)
+            # Get amount of each income category in usd
+            salary[currency_v] = 0
+            bank_interest[currency_v] = 0
+            other_income[currency_v] = 0
 
-            if row['type'] == 'other-investment' and row['buy_sell'] == 'sell':
-                other_investment_sell = other_investment_sell + round(float(row['amount_in_usd']), 2)
+            for row in inflow_income_rows:
+                # Salary-related rows
+                if row['category'] == 'salary':
+                    salary[currency_v] = salary[currency_v] + round(float(row['amount']), 2)
 
-            # Outflow variables for buying investments
-            if row['type'] == 'stock' and row['buy_sell'] == 'buy':
-                stock_buy = stock_buy + round(float(row['amount_in_usd']), 2)
+                # Bank-interest-related rows
+                if row['category'] == 'bank-interest':
+                    bank_interest[currency_v] = bank_interest[currency_v] + round(float(row['amount']), 2)
 
-            if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'buy':
-                crypto_buy = crypto_buy + round(float(row['amount_in_usd']), 2)
+                # Other-income-related rows
+                if row['category'] == 'other-income':
+                    other_income[currency_v] = other_income[currency_v] + round(float(row['amount']), 2)
+
+            # Write database code for expenses breakdown
+            outflow_expense_rows = db.execute(
+                "SELECT \
+                    transactions.transaction_date AS date, \
+                    'expense' AS type, \
+                    spending.spending_type AS category, \
+                    spending.comment AS comment, \
+                    transactions.payment_method AS payment_method, \
+                    transactions.currency AS currency, \
+                    transactions.amount AS amount, \
+                    transactions.amount_in_usd AS amount_in_usd \
+                FROM \
+                    spending JOIN transactions ON spending.transaction_id = transactions.id \
+                WHERE \
+                    spending.user_id = ? and transactions.currency = ?", user_id, currency_v)
+
+            # Get amount of each expense category in usd
+            food[currency_v] = 0
+            transportation[currency_v] = 0
+            clothing[currency_v] = 0
+            rent[currency_v] = 0
+            other_expense[currency_v] = 0
+
+            for row in outflow_expense_rows:
+                # Food-related rows
+                if row['category'] == 'food':
+                    food[currency_v] = food[currency_v] + round(float(row['amount']), 2)
+
+                # Transportation-related rows
+                if row['category'] == 'transportation':
+                    transportation[currency_v] = transportation[currency_v] + round(float(row['amount']), 2)
+
+                # Clothing-related rows
+                if row['category'] == 'clothing':
+                    clothing[currency_v] = clothing[currency_v] + round(float(row['amount']), 2)
+
+                # Rent-related rows
+                if row['category'] == 'rent':
+                    rent[currency_v] = rent[currency_v] + round(float(row['amount']), 2)
+
+                # Other-expense-related rows
+                if row['category'] == 'other-spending':
+                    other_expense[currency_v] = other_expense[currency_v] + round(float(row['amount']), 2)
             
-            if row['type'] == 'real-estate' and row['buy_sell'] == 'buy':
-                real_estate_buy = real_estate_buy + round(float(row['amount_in_usd']), 2)
+            # Write database query for investment breakdown
+            inflow_outflow_investment_rows = db.execute(
+                "SELECT \
+                    transactions.transaction_date AS date, \
+                    investment.investment_type AS type, \
+                CASE \
+                    WHEN investment.investment_type IN ('other-investment', 'real-estate') THEN investment.comment \
+                    ELSE investment.symbol\
+                END AS symbol_comment, \
+                    investment.buy_or_sell AS buy_sell, \
+                    investment.quantity, \
+                    transactions.payment_method, \
+                    transactions.currency, \
+                    transactions.amount, \
+                    transactions.amount_in_usd \
+                FROM \
+                    investment JOIN transactions ON investment.transaction_id = transactions.id \
+                WHERE \
+                    investment.user_id = ? and transactions.currency = ?", user_id, currency_v
+            )
 
-            if row['type'] == 'other-investment' and row['buy_sell'] == 'buy':
-                other_investment_buy = other_investment_buy + round(float(row['amount_in_usd']), 2)
+            # Get amount of each inflow investment category in usd
+            stock_sell[currency_v] = 0
+            crypto_sell[currency_v] = 0
+            real_estate_sell[currency_v] = 0
+            other_investment_sell[currency_v] = 0
+
+            # Get amount of each outflow investment category in usd
+            stock_buy[currency_v] = 0
+            crypto_buy[currency_v] = 0
+            real_estate_buy[currency_v] = 0
+            other_investment_buy[currency_v] = 0
+
+            for row in inflow_outflow_investment_rows:
+                # Inflow variables for selling investments
+                if row['type'] == 'stock' and row['buy_sell'] == 'sell':
+                    stock_sell[currency_v] = stock_sell[currency_v] + round(float(row['amount']), 2)
+
+                if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'sell':
+                    crypto_sell[currency_v] = crypto_sell[currency_v] + round(float(row['amount']), 2)
+                
+                if row['type'] == 'real-estate' and row['buy_sell'] == 'sell':
+                    real_estate_sell[currency_v] = real_estate_sell[currency_v] + round(float(row['amount']), 2)
+
+                if row['type'] == 'other-investment' and row['buy_sell'] == 'sell':
+                    other_investment_sell[currency_v] = other_investment_sell[currency_v] + round(float(row['amount']), 2)
+
+                # Outflow variables for buying investments
+                if row['type'] == 'stock' and row['buy_sell'] == 'buy':
+                    stock_buy[currency_v] = stock_buy[currency_v] + round(float(row['amount']), 2)
+
+                if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'buy':
+                    crypto_buy[currency_v] = crypto_buy[currency_v] + round(float(row['amount']), 2)
+                
+                if row['type'] == 'real-estate' and row['buy_sell'] == 'buy':
+                    real_estate_buy[currency_v] = real_estate_buy[currency_v] + round(float(row['amount']), 2)
+
+                if row['type'] == 'other-investment' and row['buy_sell'] == 'buy':
+                    other_investment_buy[currency_v] = other_investment_buy[currency_v] + round(float(row['amount']), 2)
+
+            # Write database query for debt breakdown
+            inflow_outflow_debt_rows = db.execute(
+                "WITH ranked AS ( \
+                SELECT \
+                    transactions.transaction_date AS date, \
+                    debt.id AS debt_id, \
+                    debt.user_id AS user_id, \
+                    debt.debt_category AS category, \
+                    debt.debtor_or_creditor AS debtor_or_creditor, \
+                    debt.interest_rate AS interest_rate, \
+                    transactions.payment_method AS payment_method, \
+                    transactions.currency AS currency, \
+                    transactions.amount AS amount, \
+                    transactions.amount_in_usd AS amount_in_usd, \
+                    ROW_NUMBER() OVER ( \
+                        PARTITION BY \
+                        CASE \
+                            WHEN debt.debt_category IN ('borrow', 'lend') THEN debt.debtor_or_creditor \
+                            WHEN debt.debt_category = 'repay' THEN debt.id \
+                            ELSE NULL \
+                        END \
+                        ORDER BY debt.id ASC) AS row \
+                FROM \
+                    debt JOIN transactions ON debt.transaction_id = transactions.id \
+                WHERE \
+                    debt.user_id = ? and transactions.currency = ?) \
+                SELECT \
+                    date, \
+                    category, \
+                    debtor_or_creditor, \
+                    interest_rate, \
+                    payment_method, \
+                    currency, \
+                    amount, \
+                    amount_in_usd \
+                FROM \
+                    ranked \
+                WHERE \
+                    (row = 1 AND category IN ('borrow', 'lend')) \
+                    OR category = 'repay' \
+                ORDER BY \
+                    debt_id \
+                ASC", user_id, currency_v)
+
+            # Get amount of each inflow debt category in usd
+            borrow[currency_v] = 0
+            receivable_repay[currency_v] = 0
+
+            # Get amount of each outflow debt category in usd
+            lend[currency_v] = 0
+            debt_repay[currency_v] = 0
+
+            for row in inflow_outflow_debt_rows:
+                # Inflow variables for debts
+                if row['category'] == 'borrow':
+                    borrow[currency_v] = borrow[currency_v] + round(float(row['amount']), 2)
+
+                if row['category'] == 'repay':
+                    if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'lend':
+                        receivable_repay[currency_v] = receivable_repay[currency_v] + round(float(row['amount']), 2)
+
+                    elif repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'borrow':
+                        debt_repay[currency_v] = debt_repay[currency_v] + round(float(row['amount']), 2)
+
+                if row['category'] == 'lend':
+                    lend[currency_v] = lend[currency_v] + round(float(row['amount']), 2)
+            
+            if currency_v == 'usd':
+                salary_in_usd = salary_in_usd + salary[currency_v]
+                bank_interest_in_usd = bank_interest_in_usd + bank_interest[currency_v]
+                other_income_in_usd = other_income_in_usd + other_income[currency_v]
+                food_in_usd = food_in_usd + food[currency_v]
+                transportation_in_usd = transportation_in_usd + transportation[currency_v]
+                clothing_in_usd = clothing_in_usd + clothing[currency_v]
+                rent_in_usd = rent_in_usd + rent[currency_v]
+                other_expense_in_usd = other_expense_in_usd + other_expense[currency_v]
+                stock_sell_in_usd = stock_sell_in_usd + stock_sell[currency_v]
+                crypto_sell_in_usd = crypto_sell_in_usd + crypto_sell[currency_v]
+                real_estate_sell_in_usd = real_estate_sell_in_usd + real_estate_sell[currency_v]
+                other_investment_sell_in_usd = other_investment_sell_in_usd + other_investment_sell[currency_v]
+                stock_buy_in_usd = stock_buy_in_usd + stock_buy[currency_v]
+                crypto_buy_in_usd = crypto_buy_in_usd + crypto_buy[currency_v]
+                real_estate_buy_in_usd = real_estate_buy_in_usd + real_estate_buy[currency_v]
+                other_investment_buy_in_usd = other_investment_buy_in_usd + other_investment_buy[currency_v]
+                borrow_in_usd = borrow_in_usd + borrow[currency_v]
+                receivable_repay_in_usd = receivable_repay_in_usd + receivable_repay[currency_v]
+                lend_in_usd = lend_in_usd + lend[currency_v]
+                debt_repay_in_usd = debt_repay_in_usd + debt_repay[currency_v]
+            
+            elif currency_v == 'mmk':
+                salary_in_usd = salary_in_usd + round(((1/MMK_EXCHANGE_RATE) * salary[currency_v]), 2)
+                bank_interest_in_usd = bank_interest_in_usd + round(((1/MMK_EXCHANGE_RATE) * bank_interest[currency_v]), 2)
+                other_income_in_usd = other_income_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_income[currency_v]), 2)
+                food_in_usd = food_in_usd + round(((1/MMK_EXCHANGE_RATE) * food[currency_v]), 2)
+                transportation_in_usd = transportation_in_usd + round(((1/MMK_EXCHANGE_RATE) * transportation[currency_v]), 2)
+                clothing_in_usd = clothing_in_usd + round(((1/MMK_EXCHANGE_RATE) * clothing[currency_v]), 2)
+                rent_in_usd = rent_in_usd + round(((1/MMK_EXCHANGE_RATE) * rent[currency_v]), 2)
+                other_expense_in_usd = other_expense_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_expense[currency_v]), 2)
+                stock_sell_in_usd = stock_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * stock_sell[currency_v]), 2)
+                crypto_sell_in_usd = crypto_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * crypto_sell[currency_v]), 2)
+                real_estate_sell_in_usd = real_estate_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * real_estate_sell[currency_v]), 2)
+                other_investment_sell_in_usd = other_investment_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_investment_sell[currency_v]), 2)
+                stock_buy_in_usd = stock_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * stock_buy[currency_v]), 2)
+                crypto_buy_in_usd = crypto_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * crypto_buy[currency_v]), 2)
+                real_estate_buy_in_usd = real_estate_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * real_estate_buy[currency_v]), 2)
+                other_investment_buy_in_usd = other_investment_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_investment_buy[currency_v]), 2)
+                borrow_in_usd = borrow_in_usd + round(((1/MMK_EXCHANGE_RATE) * borrow[currency_v]), 2)
+                receivable_repay_in_usd = receivable_repay_in_usd + round(((1/MMK_EXCHANGE_RATE) * receivable_repay[currency_v]), 2)
+                lend_in_usd = lend_in_usd + round(((1/MMK_EXCHANGE_RATE) * lend[currency_v]), 2)
+                debt_repay_in_usd = debt_repay_in_usd + round(((1/MMK_EXCHANGE_RATE) * debt_repay[currency_v]), 2)
+            
+            else:
+                exchange_rate = forex_rate(currency_v)["rate"]
+
+                salary_in_usd = salary_in_usd + round(((1/exchange_rate) * salary[currency_v]), 2)
+                bank_interest_in_usd = bank_interest_in_usd + round(((1/exchange_rate) * bank_interest[currency_v]), 2)
+                other_income_in_usd = other_income_in_usd + round(((1/exchange_rate) * other_income[currency_v]), 2)
+                food_in_usd = food_in_usd + round(((1/exchange_rate) * food[currency_v]), 2)
+                transportation_in_usd = transportation_in_usd + round(((1/exchange_rate) * transportation[currency_v]), 2)
+                clothing_in_usd = clothing_in_usd + round(((1/exchange_rate) * clothing[currency_v]), 2)
+                rent_in_usd = rent_in_usd + round(((1/exchange_rate) * rent[currency_v]), 2)
+                other_expense_in_usd = other_expense_in_usd + round(((1/exchange_rate) * other_expense[currency_v]), 2)
+                stock_sell_in_usd = stock_sell_in_usd + round(((1/exchange_rate) * stock_sell[currency_v]), 2)
+                crypto_sell_in_usd = crypto_sell_in_usd + round(((1/exchange_rate) * crypto_sell[currency_v]), 2)
+                real_estate_sell_in_usd = real_estate_sell_in_usd + round(((1/exchange_rate) * real_estate_sell[currency_v]), 2)
+                other_investment_sell_in_usd = other_investment_sell_in_usd + round(((1/exchange_rate) * other_investment_sell[currency_v]), 2)
+                stock_buy_in_usd = stock_buy_in_usd + round(((1/exchange_rate) * stock_buy[currency_v]), 2)
+                crypto_buy_in_usd = crypto_buy_in_usd + round(((1/exchange_rate) * crypto_buy[currency_v]), 2)
+                real_estate_buy_in_usd = real_estate_buy_in_usd + round(((1/exchange_rate) * real_estate_buy[currency_v]), 2)
+                other_investment_buy_in_usd = other_investment_buy_in_usd + round(((1/exchange_rate) * other_investment_buy[currency_v]), 2)
+                borrow_in_usd = borrow_in_usd + round(((1/exchange_rate) * borrow[currency_v]), 2)
+                receivable_repay_in_usd = receivable_repay_in_usd + round(((1/exchange_rate) * receivable_repay[currency_v]), 2)
+                lend_in_usd = lend_in_usd + round(((1/exchange_rate) * lend[currency_v]), 2)
+                debt_repay_in_usd = debt_repay_in_usd + round(((1/exchange_rate) * debt_repay[currency_v]), 2)
+
+        # Update inflow income
+        inflow_income = round((salary_in_usd + bank_interest_in_usd + other_income_in_usd), 2)
+
+        # Update outflow expense
+        outflow_expense = round((food_in_usd + transportation_in_usd + clothing_in_usd + rent_in_usd + other_expense_in_usd), 2)
 
         # Update inflow investment
-        inflow_investment = stock_sell + crypto_sell + real_estate_sell + other_investment_sell
+        inflow_investment = round((stock_sell_in_usd + crypto_sell_in_usd + real_estate_sell_in_usd + other_investment_sell_in_usd), 2)
 
         # Update outflow investment
-        outflow_investment = stock_buy + crypto_buy + real_estate_buy + other_investment_buy
-
-        # Write database query for debt breakdown
-        inflow_outflow_debt_rows = db.execute(
-            "WITH ranked AS ( \
-            SELECT \
-                transactions.transaction_date AS date, \
-                debt.id AS debt_id, \
-                debt.user_id AS user_id, \
-                debt.debt_category AS category, \
-                debt.debtor_or_creditor AS debtor_or_creditor, \
-                debt.interest_rate AS interest_rate, \
-                transactions.payment_method AS payment_method, \
-                transactions.currency AS currency, \
-                transactions.amount AS amount, \
-                transactions.amount_in_usd AS amount_in_usd, \
-                ROW_NUMBER() OVER ( \
-                    PARTITION BY \
-                    CASE \
-                        WHEN debt.debt_category IN ('borrow', 'lend') THEN debt.debtor_or_creditor \
-                        WHEN debt.debt_category = 'repay' THEN debt.id \
-                        ELSE NULL \
-                    END \
-                    ORDER BY debt.id ASC) AS row \
-            FROM \
-                debt JOIN transactions ON debt.transaction_id = transactions.id \
-            WHERE \
-                debt.user_id = ?) \
-            SELECT \
-                date, \
-                category, \
-                debtor_or_creditor, \
-                interest_rate, \
-                payment_method, \
-                currency, \
-                amount, \
-                amount_in_usd \
-            FROM \
-                ranked \
-            WHERE \
-                (row = 1 AND category IN ('borrow', 'lend')) \
-                OR category = 'repay' \
-            ORDER BY \
-                debt_id \
-            ASC", user_id)
-
-        # Get amount of each inflow debt category in usd
-        borrow = 0
-        receivable_repay = 0
-
-        # Get amount of each outflow debt category in usd
-        lend = 0
-        debt_repay = 0
-
-        for row in inflow_outflow_debt_rows:
-            # Inflow variables for debts
-            if row['category'] == 'borrow':
-                borrow = borrow + round(float(row['amount_in_usd']), 2)
-
-            if row['category'] == 'repay':
-                if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'lend':
-                    receivable_repay = receivable_repay + round(float(row['amount_in_usd']), 2)
-
-                elif repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'borrow':
-                    debt_repay = debt_repay + round(float(row['amount_in_usd']), 2)
-
-            if row['category'] == 'lend':
-                lend = lend + round(float(row['amount_in_usd']), 2)
+        outflow_investment = round((stock_buy_in_usd + crypto_buy_in_usd + real_estate_buy_in_usd + other_investment_buy_in_usd), 2)
 
         # Update inflow debt
-        inflow_debt = borrow + receivable_repay
+        inflow_debt = round((borrow_in_usd + receivable_repay_in_usd), 2)
 
         # Update outflow debt
-        outflow_debt = lend + debt_repay
+        outflow_debt = round((lend_in_usd + debt_repay_in_usd), 2)
 
         # Update inflows and outflows
         inflows = inflow_income + inflow_investment + inflow_debt
@@ -1295,13 +1420,14 @@ def analysis():
         # Update total assets
         total_assets = total_assets + net_balance
 
-        return render_template("analysis.html", currencies=currencies, total_assets=total_assets, total_cash_bank=total_cash_bank, investment_total=investment_total, \
+        return render_template("analysis.html", currencies=original_currencies, total_assets=total_assets, investment_total=investment_total, \
             debt_total=debt_total, inflow_income=inflow_income, inflow_investment=inflow_investment, inflow_debt=inflow_debt, outflow_expense=outflow_expense, \
             outflow_investment=outflow_investment, outflow_debt=outflow_debt, inflows=inflows, outflows=outflows, net_balance=net_balance, \
-            salary=salary, bank_interest=bank_interest, other_income=other_income, food=food, transportation=transportation, clothing=clothing, \
-            rent=rent, other_expense=other_expense, stock_sell=stock_sell, crypto_sell=crypto_sell, real_estate_sell=real_estate_sell, \
-            other_investment_sell=other_investment_sell, stock_buy=stock_buy, crypto_buy=crypto_buy, real_estate_buy=real_estate_buy, \
-            other_investment_buy=other_investment_buy, borrow=borrow, receivable_repay=receivable_repay, lend=lend, debt_repay=debt_repay)
+            salary=salary_in_usd, bank_interest=bank_interest_in_usd, other_income=other_income_in_usd, food=food_in_usd, transportation=transportation_in_usd, \
+            clothing=clothing_in_usd, rent=rent_in_usd, other_expense=other_expense_in_usd, stock_sell=stock_sell_in_usd, crypto_sell=crypto_sell_in_usd, \
+            real_estate_sell=real_estate_sell_in_usd, other_investment_sell=other_investment_sell_in_usd, stock_buy=stock_buy_in_usd, crypto_buy=crypto_buy_in_usd, \
+            real_estate_buy=real_estate_buy_in_usd, other_investment_buy=other_investment_buy_in_usd, borrow=borrow_in_usd, receivable_repay=receivable_repay_in_usd, \
+            lend=lend_in_usd, debt_repay=debt_repay_in_usd)
 
 
 @app.route("/history", methods=["GET", "POST"])
@@ -1692,11 +1818,83 @@ def analysis_filter():
     total_cash_bank_usd = round(float(request.args.get("total_cash_bank")), 2)
     total_cash_bank = total_cash_bank_usd
 
+    # Retrieve the list of currencies
+    # Convert to lowercase because in transactions database, currencies are in lowercase
+    currencies_q = db.execute(
+        "SELECT currency_code FROM user_currencies WHERE user_id = ?", user_id
+    )
+
+    # original_currencies will be passed to index.html
+    original_currencies = [row['currency_code'].lower() for row in currencies_q]
+
+    # create a copy of original_currencies to be used in the loop
+    currencies = original_currencies.copy()
+
+    # Get a list of currencies previously used by the user, which is not included in the user_currencies that they chose
+    used_currencies_q = db.execute(
+        "SELECT DISTINCT currency FROM transactions WHERE user_id = ?", user_id
+    )
+
+    used_currencies = [row['currency'].lower() for row in used_currencies_q]
+
+    # Find currencies in used_currencies that are not in currencies
+    not_included_currencies = list(set(used_currencies) - set(currencies))
+
+    # Add not_included_currencies to the currencies list
+    currencies.extend(not_included_currencies)
+
     # Initialize query lists
     inflow_income_rows = []
     outflow_expense_rows = []
     inflow_outflow_investment_rows = []
     inflow_outflow_debt_rows = []
+
+    # Initialize the dictionary variables to be used inside the loop
+    salary = {}
+    bank_interest = {}
+    other_income = {}
+    salary_in_usd = 0
+    bank_interest_in_usd = 0
+    other_income_in_usd = 0
+
+    food = {}
+    transportation = {}
+    clothing = {}
+    rent = {}
+    other_expense = {}
+    food_in_usd = 0
+    transportation_in_usd = 0
+    clothing_in_usd = 0
+    rent_in_usd = 0
+    other_expense_in_usd = 0
+
+    stock_sell = {}
+    crypto_sell = {}
+    real_estate_sell = {}
+    other_investment_sell = {}
+    stock_sell_in_usd = 0
+    crypto_sell_in_usd = 0
+    real_estate_sell_in_usd = 0
+    other_investment_sell_in_usd = 0
+
+    stock_buy = {}
+    crypto_buy = {}
+    real_estate_buy = {}
+    other_investment_buy = {}
+    stock_buy_in_usd = 0
+    crypto_buy_in_usd = 0
+    real_estate_buy_in_usd = 0
+    other_investment_buy_in_usd = 0
+
+    borrow = {}
+    receivable_repay = {}
+    borrow_in_usd = 0
+    receivable_repay_in_usd = 0
+
+    lend = {}
+    debt_repay = {}
+    lend_in_usd = 0
+    debt_repay_in_usd = 0
 
     # Write database code for inflows breakdown
     # First, get inflow-income data from history
@@ -1713,7 +1911,7 @@ def analysis_filter():
         FROM \
             income JOIN transactions ON income.transaction_id = transactions.id \
         WHERE \
-            income.user_id = ? {where_clause} """
+            income.user_id = ? and transactions.currency = ? {where_clause} """
     
     # Write database code for expenses breakdown
     outflow_expense_rows_query = """
@@ -1729,7 +1927,7 @@ def analysis_filter():
         FROM \
             spending JOIN transactions ON spending.transaction_id = transactions.id \
         WHERE \
-            spending.user_id = ? {where_clause} """
+            spending.user_id = ? and transactions.currency = ? {where_clause} """
 
     # Write database query for investment breakdown
     inflow_outflow_investment_rows_query = """
@@ -1749,7 +1947,7 @@ def analysis_filter():
         FROM \
             investment JOIN transactions ON investment.transaction_id = transactions.id \
         WHERE \
-            investment.user_id = ? {where_clause} """
+            investment.user_id = ? and transactions.currency = ? {where_clause} """
     
     
     # Write database query for debt breakdown
@@ -1777,7 +1975,7 @@ def analysis_filter():
         FROM \
             debt JOIN transactions ON debt.transaction_id = transactions.id \
         WHERE \
-            debt.user_id = ? {where_clause}) \
+            debt.user_id = ? and transactions.currency = ? {where_clause}) \
         SELECT \
             date, \
             category, \
@@ -1795,184 +1993,249 @@ def analysis_filter():
         ORDER BY \
             debt_id \
         ASC """
-
-    if start_date and end_date:
-        # Format where clause for query
-        where_clause = "and transactions.transaction_date BETWEEN ? AND ?"
-
-        inflow_income_rows_query = inflow_income_rows_query.format(where_clause=where_clause)
-        inflow_income_rows = db.execute(
-            inflow_income_rows_query, user_id, start_date, end_date
-        )
-
-        outflow_expense_rows_query = outflow_expense_rows_query.format(where_clause=where_clause)
-        outflow_expense_rows = db.execute(
-            outflow_expense_rows_query, user_id, start_date, end_date
-        )
-
-        inflow_outflow_investment_rows_query = inflow_outflow_investment_rows_query.format(where_clause=where_clause)
-        inflow_outflow_investment_rows = db.execute(
-            inflow_outflow_investment_rows_query, user_id, start_date, end_date
-        )
-
-        inflow_outflow_debt_rows_query = inflow_outflow_debt_rows_query.format(where_clause=where_clause)
-        inflow_outflow_debt_rows = db.execute(
-            inflow_outflow_debt_rows_query, user_id, start_date, end_date
-        )
-
-    else:
-        # Format where clause for query
-        where_clause = ""
-
-        inflow_income_rows_query = inflow_income_rows_query.format(where_clause=where_clause)
-        inflow_income_rows = db.execute(
-            inflow_income_rows_query, user_id
-        )
-
-        outflow_expense_rows_query = outflow_expense_rows_query.format(where_clause=where_clause)
-        outflow_expense_rows = db.execute(
-            outflow_expense_rows_query, user_id
-        )
-
-        inflow_outflow_investment_rows_query = inflow_outflow_investment_rows_query.format(where_clause=where_clause)
-        inflow_outflow_investment_rows = db.execute(
-            inflow_outflow_investment_rows_query, user_id
-        )
-
-        inflow_outflow_debt_rows_query = inflow_outflow_debt_rows_query.format(where_clause=where_clause)
-        inflow_outflow_debt_rows = db.execute(
-            inflow_outflow_debt_rows_query, user_id
-        )
-
-    # initialize variables
-    inflow_income = 0
-    outflow_expense = 0
     
-    # Get amount of each income category in usd
-    salary = 0
-    bank_interest = 0
-    other_income = 0
+    for currency_v in currencies:
+        if start_date and end_date:
+            # Format where clause for query
+            where_clause = "and transactions.transaction_date BETWEEN ? AND ?"
 
-    for row in inflow_income_rows:
-        # Salary-related rows
-        if row['category'] == 'salary':
-            salary = salary + round(float(row['amount_in_usd']), 2)
+            inflow_income_rows_query = inflow_income_rows_query.format(where_clause=where_clause)
+            inflow_income_rows = db.execute(
+                inflow_income_rows_query, user_id, currency_v, start_date, end_date
+            )
 
-        # Bank-interest-related rows
-        if row['category'] == 'bank-interest':
-            bank_interest = bank_interest + round(float(row['amount_in_usd']), 2)
+            outflow_expense_rows_query = outflow_expense_rows_query.format(where_clause=where_clause)
+            outflow_expense_rows = db.execute(
+                outflow_expense_rows_query, user_id, currency_v, start_date, end_date
+            )
 
-        # Other-income-related rows
-        if row['category'] == 'other-income':
-            other_income = other_income + round(float(row['amount_in_usd']), 2)
+            inflow_outflow_investment_rows_query = inflow_outflow_investment_rows_query.format(where_clause=where_clause)
+            inflow_outflow_investment_rows = db.execute(
+                inflow_outflow_investment_rows_query, user_id, currency_v, start_date, end_date
+            )
 
-        # Update inflow income
-        inflow_income = inflow_income + round(float(row['amount_in_usd']), 2)  
+            inflow_outflow_debt_rows_query = inflow_outflow_debt_rows_query.format(where_clause=where_clause)
+            inflow_outflow_debt_rows = db.execute(
+                inflow_outflow_debt_rows_query, user_id, currency_v, start_date, end_date
+            )
 
-    # Get amount of each expense category in usd
-    food = 0
-    transportation = 0
-    clothing = 0
-    rent = 0
-    other_expense = 0
+        else:
+            # Format where clause for query
+            where_clause = ""
 
-    for row in outflow_expense_rows:
-        # Food-related rows
-        if row['category'] == 'food':
-            food = food + round(float(row['amount_in_usd']), 2)
+            inflow_income_rows_query = inflow_income_rows_query.format(where_clause=where_clause)
+            inflow_income_rows = db.execute(
+                inflow_income_rows_query, user_id, currency_v
+            )
 
-        # Transportation-related rows
-        if row['category'] == 'transportation':
-            transportation = transportation + round(float(row['amount_in_usd']), 2)
+            outflow_expense_rows_query = outflow_expense_rows_query.format(where_clause=where_clause)
+            outflow_expense_rows = db.execute(
+                outflow_expense_rows_query, user_id, currency_v
+            )
 
-        # Clothing-related rows
-        if row['category'] == 'clothing':
-            clothing = clothing + round(float(row['amount_in_usd']), 2)
+            inflow_outflow_investment_rows_query = inflow_outflow_investment_rows_query.format(where_clause=where_clause)
+            inflow_outflow_investment_rows = db.execute(
+                inflow_outflow_investment_rows_query, user_id, currency_v
+            )
 
-        # Rent-related rows
-        if row['category'] == 'rent':
-            rent = rent + round(float(row['amount_in_usd']), 2)
+            inflow_outflow_debt_rows_query = inflow_outflow_debt_rows_query.format(where_clause=where_clause)
+            inflow_outflow_debt_rows = db.execute(
+                inflow_outflow_debt_rows_query, user_id, currency_v
+            )
 
-        # Other-expense-related rows
-        if row['category'] == 'other-spending':
-            other_expense = other_expense + round(float(row['amount_in_usd']), 2)
+        # Get amount of each income category in usd
+        salary[currency_v] = 0
+        bank_interest[currency_v] = 0
+        other_income[currency_v] = 0
 
-        # Update outflow expense
-        outflow_expense = outflow_expense + round(float(row['amount_in_usd']), 2)
-    
-    # Get amount of each inflow investment category in usd
-    stock_sell = 0
-    crypto_sell = 0
-    real_estate_sell = 0
-    other_investment_sell = 0
+        for row in inflow_income_rows:
+            # Salary-related rows
+            if row['category'] == 'salary':
+                salary[currency_v] = salary[currency_v] + round(float(row['amount']), 2)
 
-    # Get amount of each outflow investment category in usd
-    stock_buy = 0
-    crypto_buy = 0
-    real_estate_buy = 0
-    other_investment_buy = 0
+            # Bank-interest-related rows
+            if row['category'] == 'bank-interest':
+                bank_interest[currency_v] = bank_interest[currency_v] + round(float(row['amount']), 2)
 
-    for row in inflow_outflow_investment_rows:
-        # Inflow variables for selling investments
-        if row['type'] == 'stock' and row['buy_sell'] == 'sell':
-            stock_sell = stock_sell + round(float(row['amount_in_usd']), 2)
+            # Other-income-related rows
+            if row['category'] == 'other-income':
+                other_income[currency_v] = other_income[currency_v] + round(float(row['amount']), 2)
 
-        if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'sell':
-            crypto_sell = crypto_sell + round(float(row['amount_in_usd']), 2)
+        # Get amount of each expense category in usd
+        food[currency_v] = 0
+        transportation[currency_v] = 0
+        clothing[currency_v] = 0
+        rent[currency_v] = 0
+        other_expense[currency_v] = 0
+
+        for row in outflow_expense_rows:
+            # Food-related rows
+            if row['category'] == 'food':
+                food[currency_v] = food[currency_v] + round(float(row['amount']), 2)
+
+            # Transportation-related rows
+            if row['category'] == 'transportation':
+                transportation[currency_v] = transportation[currency_v] + round(float(row['amount']), 2)
+
+            # Clothing-related rows
+            if row['category'] == 'clothing':
+                clothing[currency_v] = clothing[currency_v] + round(float(row['amount']), 2)
+
+            # Rent-related rows
+            if row['category'] == 'rent':
+                rent[currency_v] = rent[currency_v] + round(float(row['amount']), 2)
+
+            # Other-expense-related rows
+            if row['category'] == 'other-spending':
+                other_expense[currency_v] = other_expense[currency_v] + round(float(row['amount']), 2)
+
+        # Get amount of each inflow investment category in usd
+        stock_sell[currency_v] = 0
+        crypto_sell[currency_v] = 0
+        real_estate_sell[currency_v] = 0
+        other_investment_sell[currency_v] = 0
+
+        # Get amount of each outflow investment category in usd
+        stock_buy[currency_v] = 0
+        crypto_buy[currency_v] = 0
+        real_estate_buy[currency_v] = 0
+        other_investment_buy[currency_v] = 0
+
+        for row in inflow_outflow_investment_rows:
+            # Inflow variables for selling investments
+            if row['type'] == 'stock' and row['buy_sell'] == 'sell':
+                stock_sell[currency_v] = stock_sell[currency_v] + round(float(row['amount']), 2)
+
+            if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'sell':
+                crypto_sell[currency_v] = crypto_sell[currency_v] + round(float(row['amount']), 2)
+            
+            if row['type'] == 'real-estate' and row['buy_sell'] == 'sell':
+                real_estate_sell[currency_v] = real_estate_sell[currency_v] + round(float(row['amount']), 2)
+
+            if row['type'] == 'other-investment' and row['buy_sell'] == 'sell':
+                other_investment_sell[currency_v] = other_investment_sell[currency_v] + round(float(row['amount']), 2)
+
+            # Outflow variables for buying investments
+            if row['type'] == 'stock' and row['buy_sell'] == 'buy':
+                stock_buy[currency_v] = stock_buy[currency_v] + round(float(row['amount']), 2)
+
+            if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'buy':
+                crypto_buy[currency_v] = crypto_buy[currency_v] + round(float(row['amount']), 2)
+            
+            if row['type'] == 'real-estate' and row['buy_sell'] == 'buy':
+                real_estate_buy[currency_v] = real_estate_buy[currency_v] + round(float(row['amount']), 2)
+
+            if row['type'] == 'other-investment' and row['buy_sell'] == 'buy':
+                other_investment_buy[currency_v] = other_investment_buy[currency_v] + round(float(row['amount']), 2)
+
+        # Get amount of each inflow debt category in usd
+        borrow[currency_v] = 0
+        receivable_repay[currency_v] = 0
+
+        # Get amount of each outflow debt category in usd
+        lend[currency_v] = 0
+        debt_repay[currency_v] = 0
+
+        for row in inflow_outflow_debt_rows:
+            # Inflow variables for debts
+            if row['category'] == 'borrow':
+                borrow[currency_v] = borrow[currency_v] + round(float(row['amount']), 2)
+
+            if row['category'] == 'repay':
+                if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'lend':
+                    receivable_repay[currency_v] = receivable_repay[currency_v] + round(float(row['amount']), 2)
+
+                elif repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'borrow':
+                    debt_repay[currency_v] = debt_repay[currency_v] + round(float(row['amount']), 2)
+
+            if row['category'] == 'lend':
+                lend[currency_v] = lend[currency_v] + round(float(row['amount']), 2)
         
-        if row['type'] == 'real-estate' and row['buy_sell'] == 'sell':
-            real_estate_sell = real_estate_sell + round(float(row['amount_in_usd']), 2)
-
-        if row['type'] == 'other-investment' and row['buy_sell'] == 'sell':
-            other_investment_sell = other_investment_sell + round(float(row['amount_in_usd']), 2)
-
-        # Outflow variables for buying investments
-        if row['type'] == 'stock' and row['buy_sell'] == 'buy':
-            stock_buy = stock_buy + round(float(row['amount_in_usd']), 2)
-
-        if row['type'] == 'cryptocurrency' and row['buy_sell'] == 'buy':
-            crypto_buy = crypto_buy + round(float(row['amount_in_usd']), 2)
+        if currency_v == 'usd':
+            salary_in_usd = salary_in_usd + salary[currency_v]
+            bank_interest_in_usd = bank_interest_in_usd + bank_interest[currency_v]
+            other_income_in_usd = other_income_in_usd + other_income[currency_v]
+            food_in_usd = food_in_usd + food[currency_v]
+            transportation_in_usd = transportation_in_usd + transportation[currency_v]
+            clothing_in_usd = clothing_in_usd + clothing[currency_v]
+            rent_in_usd = rent_in_usd + rent[currency_v]
+            other_expense_in_usd = other_expense_in_usd + other_expense[currency_v]
+            stock_sell_in_usd = stock_sell_in_usd + stock_sell[currency_v]
+            crypto_sell_in_usd = crypto_sell_in_usd + crypto_sell[currency_v]
+            real_estate_sell_in_usd = real_estate_sell_in_usd + real_estate_sell[currency_v]
+            other_investment_sell_in_usd = other_investment_sell_in_usd + other_investment_sell[currency_v]
+            stock_buy_in_usd = stock_buy_in_usd + stock_buy[currency_v]
+            crypto_buy_in_usd = crypto_buy_in_usd + crypto_buy[currency_v]
+            real_estate_buy_in_usd = real_estate_buy_in_usd + real_estate_buy[currency_v]
+            other_investment_buy_in_usd = other_investment_buy_in_usd + other_investment_buy[currency_v]
+            borrow_in_usd = borrow_in_usd + borrow[currency_v]
+            receivable_repay_in_usd = receivable_repay_in_usd + receivable_repay[currency_v]
+            lend_in_usd = lend_in_usd + lend[currency_v]
+            debt_repay_in_usd = debt_repay_in_usd + debt_repay[currency_v]
         
-        if row['type'] == 'real-estate' and row['buy_sell'] == 'buy':
-            real_estate_buy = real_estate_buy + round(float(row['amount_in_usd']), 2)
+        elif currency_v == 'mmk':
+            salary_in_usd = salary_in_usd + round(((1/MMK_EXCHANGE_RATE) * salary[currency_v]), 2)
+            bank_interest_in_usd = bank_interest_in_usd + round(((1/MMK_EXCHANGE_RATE) * bank_interest[currency_v]), 2)
+            other_income_in_usd = other_income_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_income[currency_v]), 2)
+            food_in_usd = food_in_usd + round(((1/MMK_EXCHANGE_RATE) * food[currency_v]), 2)
+            transportation_in_usd = transportation_in_usd + round(((1/MMK_EXCHANGE_RATE) * transportation[currency_v]), 2)
+            clothing_in_usd = clothing_in_usd + round(((1/MMK_EXCHANGE_RATE) * clothing[currency_v]), 2)
+            rent_in_usd = rent_in_usd + round(((1/MMK_EXCHANGE_RATE) * rent[currency_v]), 2)
+            other_expense_in_usd = other_expense_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_expense[currency_v]), 2)
+            stock_sell_in_usd = stock_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * stock_sell[currency_v]), 2)
+            crypto_sell_in_usd = crypto_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * crypto_sell[currency_v]), 2)
+            real_estate_sell_in_usd = real_estate_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * real_estate_sell[currency_v]), 2)
+            other_investment_sell_in_usd = other_investment_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_investment_sell[currency_v]), 2)
+            stock_buy_in_usd = stock_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * stock_buy[currency_v]), 2)
+            crypto_buy_in_usd = crypto_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * crypto_buy[currency_v]), 2)
+            real_estate_buy_in_usd = real_estate_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * real_estate_buy[currency_v]), 2)
+            other_investment_buy_in_usd = other_investment_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_investment_buy[currency_v]), 2)
+            borrow_in_usd = borrow_in_usd + round(((1/MMK_EXCHANGE_RATE) * borrow[currency_v]), 2)
+            receivable_repay_in_usd = receivable_repay_in_usd + round(((1/MMK_EXCHANGE_RATE) * receivable_repay[currency_v]), 2)
+            lend_in_usd = lend_in_usd + round(((1/MMK_EXCHANGE_RATE) * lend[currency_v]), 2)
+            debt_repay_in_usd = debt_repay_in_usd + round(((1/MMK_EXCHANGE_RATE) * debt_repay[currency_v]), 2)
+        
+        else:
+            exchange_rate = forex_rate(currency_v)["rate"]
 
-        if row['type'] == 'other-investment' and row['buy_sell'] == 'buy':
-            other_investment_buy = other_investment_buy + round(float(row['amount_in_usd']), 2)
+            salary_in_usd = salary_in_usd + round(((1/exchange_rate) * salary[currency_v]), 2)
+            bank_interest_in_usd = bank_interest_in_usd + round(((1/exchange_rate) * bank_interest[currency_v]), 2)
+            other_income_in_usd = other_income_in_usd + round(((1/exchange_rate) * other_income[currency_v]), 2)
+            food_in_usd = food_in_usd + round(((1/exchange_rate) * food[currency_v]), 2)
+            transportation_in_usd = transportation_in_usd + round(((1/exchange_rate) * transportation[currency_v]), 2)
+            clothing_in_usd = clothing_in_usd + round(((1/exchange_rate) * clothing[currency_v]), 2)
+            rent_in_usd = rent_in_usd + round(((1/exchange_rate) * rent[currency_v]), 2)
+            other_expense_in_usd = other_expense_in_usd + round(((1/exchange_rate) * other_expense[currency_v]), 2)
+            stock_sell_in_usd = stock_sell_in_usd + round(((1/exchange_rate) * stock_sell[currency_v]), 2)
+            crypto_sell_in_usd = crypto_sell_in_usd + round(((1/exchange_rate) * crypto_sell[currency_v]), 2)
+            real_estate_sell_in_usd = real_estate_sell_in_usd + round(((1/exchange_rate) * real_estate_sell[currency_v]), 2)
+            other_investment_sell_in_usd = other_investment_sell_in_usd + round(((1/exchange_rate) * other_investment_sell[currency_v]), 2)
+            stock_buy_in_usd = stock_buy_in_usd + round(((1/exchange_rate) * stock_buy[currency_v]), 2)
+            crypto_buy_in_usd = crypto_buy_in_usd + round(((1/exchange_rate) * crypto_buy[currency_v]), 2)
+            real_estate_buy_in_usd = real_estate_buy_in_usd + round(((1/exchange_rate) * real_estate_buy[currency_v]), 2)
+            other_investment_buy_in_usd = other_investment_buy_in_usd + round(((1/exchange_rate) * other_investment_buy[currency_v]), 2)
+            borrow_in_usd = borrow_in_usd + round(((1/exchange_rate) * borrow[currency_v]), 2)
+            receivable_repay_in_usd = receivable_repay_in_usd + round(((1/exchange_rate) * receivable_repay[currency_v]), 2)
+            lend_in_usd = lend_in_usd + round(((1/exchange_rate) * lend[currency_v]), 2)
+            debt_repay_in_usd = debt_repay_in_usd + round(((1/exchange_rate) * debt_repay[currency_v]), 2)
+
+    # Update inflow income
+    inflow_income = round((salary_in_usd + bank_interest_in_usd + other_income_in_usd), 2)
+
+    # Update outflow expense
+    outflow_expense = round((food_in_usd + transportation_in_usd + clothing_in_usd + rent_in_usd + other_expense_in_usd), 2)
 
     # Update inflow investment
-    inflow_investment = stock_sell + crypto_sell + real_estate_sell + other_investment_sell
+    inflow_investment = round((stock_sell_in_usd + crypto_sell_in_usd + real_estate_sell_in_usd + other_investment_sell_in_usd), 2)
 
     # Update outflow investment
-    outflow_investment = stock_buy + crypto_buy + real_estate_buy + other_investment_buy
-
-    # Get amount of each inflow debt category in usd
-    borrow = 0
-    receivable_repay = 0
-
-    # Get amount of each outflow debt category in usd
-    lend = 0
-    debt_repay = 0
-
-    for row in inflow_outflow_debt_rows:
-        # Inflow variables for debts
-        if row['category'] == 'borrow':
-            borrow = borrow + round(float(row['amount_in_usd']), 2)
-
-        if row['category'] == 'repay':
-            if repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'lend':
-                receivable_repay = receivable_repay + round(float(row['amount_in_usd']), 2)
-
-            elif repay_check(row['debtor_or_creditor'])[0]['debt_category'] == 'borrow':
-                debt_repay = debt_repay + round(float(row['amount_in_usd']), 2)
-
-        if row['category'] == 'lend':
-            lend = lend + round(float(row['amount_in_usd']), 2)
+    outflow_investment = round((stock_buy_in_usd + crypto_buy_in_usd + real_estate_buy_in_usd + other_investment_buy_in_usd), 2)
 
     # Update inflow debt
-    inflow_debt = borrow + receivable_repay
+    inflow_debt = round((borrow_in_usd + receivable_repay_in_usd), 2)
 
     # Update outflow debt
-    outflow_debt = lend + debt_repay
+    outflow_debt = round((lend_in_usd + debt_repay_in_usd), 2)
 
     # Update inflows and outflows
     inflows = inflow_income + inflow_investment + inflow_debt
@@ -2002,26 +2265,26 @@ def analysis_filter():
         inflows = round(MMK_EXCHANGE_RATE * float(inflows), 2)
         outflows = round(MMK_EXCHANGE_RATE * float(outflows), 2)
         net_balance = round(MMK_EXCHANGE_RATE * float(net_balance), 2)
-        salary = round(MMK_EXCHANGE_RATE * float(salary), 2)
-        bank_interest = round(MMK_EXCHANGE_RATE * float(bank_interest), 2)
-        other_income = round(MMK_EXCHANGE_RATE * float(other_income), 2)
-        food = round(MMK_EXCHANGE_RATE * float(food), 2)
-        transportation = round(MMK_EXCHANGE_RATE * float(transportation), 2)
-        clothing = round(MMK_EXCHANGE_RATE * float(clothing), 2)
-        rent = round(MMK_EXCHANGE_RATE * float(rent), 2)
-        other_expense = round(MMK_EXCHANGE_RATE * float(other_expense), 2)
-        stock_sell = round(MMK_EXCHANGE_RATE * float(stock_sell), 2)
-        crypto_sell = round(MMK_EXCHANGE_RATE * float(crypto_sell), 2)
-        real_estate_sell = round(MMK_EXCHANGE_RATE * float(real_estate_sell), 2)
-        other_investment_sell = round(MMK_EXCHANGE_RATE * float(other_investment_sell), 2)
-        stock_buy = round(MMK_EXCHANGE_RATE * float(stock_buy), 2)
-        crypto_buy = round(MMK_EXCHANGE_RATE * float(crypto_buy), 2)
-        real_estate_buy = round(MMK_EXCHANGE_RATE * float(real_estate_buy), 2)
-        other_investment_buy = round(MMK_EXCHANGE_RATE * float(other_investment_buy), 2)
-        borrow = round(MMK_EXCHANGE_RATE * float(borrow), 2)
-        receivable_repay = round(MMK_EXCHANGE_RATE * float(receivable_repay), 2)
-        lend = round(MMK_EXCHANGE_RATE * float(lend), 2)
-        debt_repay = round(MMK_EXCHANGE_RATE * float(debt_repay), 2)        
+        salary = round(MMK_EXCHANGE_RATE * float(salary_in_usd), 2)
+        bank_interest = round(MMK_EXCHANGE_RATE * float(bank_interest_in_usd), 2)
+        other_income = round(MMK_EXCHANGE_RATE * float(other_income_in_usd), 2)
+        food = round(MMK_EXCHANGE_RATE * float(food_in_usd), 2)
+        transportation = round(MMK_EXCHANGE_RATE * float(transportation_in_usd), 2)
+        clothing = round(MMK_EXCHANGE_RATE * float(clothing_in_usd), 2)
+        rent = round(MMK_EXCHANGE_RATE * float(rent_in_usd), 2)
+        other_expense = round(MMK_EXCHANGE_RATE * float(other_expense_in_usd), 2)
+        stock_sell = round(MMK_EXCHANGE_RATE * float(stock_sell_in_usd), 2)
+        crypto_sell = round(MMK_EXCHANGE_RATE * float(crypto_sell_in_usd), 2)
+        real_estate_sell = round(MMK_EXCHANGE_RATE * float(real_estate_sell_in_usd), 2)
+        other_investment_sell = round(MMK_EXCHANGE_RATE * float(other_investment_sell_in_usd), 2)
+        stock_buy = round(MMK_EXCHANGE_RATE * float(stock_buy_in_usd), 2)
+        crypto_buy = round(MMK_EXCHANGE_RATE * float(crypto_buy_in_usd), 2)
+        real_estate_buy = round(MMK_EXCHANGE_RATE * float(real_estate_buy_in_usd), 2)
+        other_investment_buy = round(MMK_EXCHANGE_RATE * float(other_investment_buy_in_usd), 2)
+        borrow = round(MMK_EXCHANGE_RATE * float(borrow_in_usd), 2)
+        receivable_repay = round(MMK_EXCHANGE_RATE * float(receivable_repay_in_usd), 2)
+        lend = round(MMK_EXCHANGE_RATE * float(lend_in_usd), 2)
+        debt_repay = round(MMK_EXCHANGE_RATE * float(debt_repay_in_usd), 2)        
     
     else:
         exchange_rate = forex_rate(selected_currency)["rate"]
@@ -2040,26 +2303,26 @@ def analysis_filter():
         inflows = round(exchange_rate * float(inflows), 2)
         outflows = round(exchange_rate * float(outflows), 2)
         net_balance = round(exchange_rate * float(net_balance), 2)
-        salary = round(exchange_rate * float(salary), 2)
-        bank_interest = round(exchange_rate * float(bank_interest), 2)
-        other_income = round(exchange_rate * float(other_income), 2)
-        food = round(exchange_rate * float(food), 2)
-        transportation = round(exchange_rate * float(transportation), 2)
-        clothing = round(exchange_rate * float(clothing), 2)
-        rent = round(exchange_rate * float(rent), 2)
-        other_expense = round(exchange_rate * float(other_expense), 2)
-        stock_sell = round(exchange_rate * float(stock_sell), 2)
-        crypto_sell = round(exchange_rate * float(crypto_sell), 2)
-        real_estate_sell = round(exchange_rate * float(real_estate_sell), 2)
-        other_investment_sell = round(exchange_rate * float(other_investment_sell), 2)
-        stock_buy = round(exchange_rate * float(stock_buy), 2)
-        crypto_buy = round(exchange_rate * float(crypto_buy), 2)
-        real_estate_buy = round(exchange_rate * float(real_estate_buy), 2)
-        other_investment_buy = round(exchange_rate * float(other_investment_buy), 2)
-        borrow = round(exchange_rate * float(borrow), 2)
-        receivable_repay = round(exchange_rate * float(receivable_repay), 2)
-        lend = round(exchange_rate * float(lend), 2)
-        debt_repay = round(exchange_rate * float(debt_repay), 2)
+        salary = round(exchange_rate * float(salary_in_usd), 2)
+        bank_interest = round(exchange_rate * float(bank_interest_in_usd), 2)
+        other_income = round(exchange_rate * float(other_income_in_usd), 2)
+        food = round(exchange_rate * float(food_in_usd), 2)
+        transportation = round(exchange_rate * float(transportation_in_usd), 2)
+        clothing = round(exchange_rate * float(clothing_in_usd), 2)
+        rent = round(exchange_rate * float(rent_in_usd), 2)
+        other_expense = round(exchange_rate * float(other_expense_in_usd), 2)
+        stock_sell = round(exchange_rate * float(stock_sell_in_usd), 2)
+        crypto_sell = round(exchange_rate * float(crypto_sell_in_usd), 2)
+        real_estate_sell = round(exchange_rate * float(real_estate_sell_in_usd), 2)
+        other_investment_sell = round(exchange_rate * float(other_investment_sell_in_usd), 2)
+        stock_buy = round(exchange_rate * float(stock_buy_in_usd), 2)
+        crypto_buy = round(exchange_rate * float(crypto_buy_in_usd), 2)
+        real_estate_buy = round(exchange_rate * float(real_estate_buy_in_usd), 2)
+        other_investment_buy = round(exchange_rate * float(other_investment_buy_in_usd), 2)
+        borrow = round(exchange_rate * float(borrow_in_usd), 2)
+        receivable_repay = round(exchange_rate * float(receivable_repay_in_usd), 2)
+        lend = round(exchange_rate * float(lend_in_usd), 2)
+        debt_repay = round(exchange_rate * float(debt_repay_in_usd), 2)
 
     return jsonify({'inflow_income': inflow_income, 'inflow_investment': inflow_investment, 'inflow_debt': inflow_debt, 'outflow_expense': outflow_expense, \
         'outflow_investment': outflow_investment, 'outflow_debt': outflow_debt, 'inflows': inflows, 'outflows': outflows, 'net_balance': net_balance, \

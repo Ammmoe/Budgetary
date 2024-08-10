@@ -96,7 +96,7 @@
                     </div>
                 </div>
                 <div class="col-md-1">
-                    <select name="currency-select" id="currency-select">
+                    <select name="currency-select" id="currency-select" aria-label="Select currency">
                         <option value="usd" selected>USD</option>
                         {% for currency_v in currencies %}
                             {% if currency_v != 'usd' %}
@@ -758,10 +758,10 @@
         const elements = document.getElementsByClassName(className);
 
         for (let element of elements) {
-            const content = element.textContent.trim();
+            const content = parseFloat(element.textContent.trim());
             const parentElement = element.closest('.parentElement')
 
-            if (content === '0') {
+            if (content === 0) {
                 parentElement.style.display = 'none';
             }
             else {
