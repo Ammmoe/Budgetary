@@ -1074,49 +1074,52 @@ def analysis():
         salary = {}
         bank_interest = {}
         other_income = {}
-        salary_in_usd = 0
-        bank_interest_in_usd = 0
-        other_income_in_usd = 0
 
         food = {}
         transportation = {}
         clothing = {}
         rent = {}
         other_expense = {}
-        food_in_usd = 0
-        transportation_in_usd = 0
-        clothing_in_usd = 0
-        rent_in_usd = 0
-        other_expense_in_usd = 0
 
         stock_sell = {}
         crypto_sell = {}
         real_estate_sell = {}
         other_investment_sell = {}
-        stock_sell_in_usd = 0
-        crypto_sell_in_usd = 0
-        real_estate_sell_in_usd = 0
-        other_investment_sell_in_usd = 0
 
         stock_buy = {}
         crypto_buy = {}
         real_estate_buy = {}
         other_investment_buy = {}
-        stock_buy_in_usd = 0
-        crypto_buy_in_usd = 0
-        real_estate_buy_in_usd = 0
-        other_investment_buy_in_usd = 0
 
         borrow = {}
         receivable_repay = {}
-        borrow_in_usd = 0
-        receivable_repay_in_usd = 0
 
         lend = {}
         debt_repay = {}
-        lend_in_usd = 0
-        debt_repay_in_usd = 0
 
+        usd_var = {
+            "salary_in_usd": 0,
+            "bank_interest_in_usd": 0,
+            "other_income_in_usd": 0,
+            "food_in_usd": 0,
+            "transportation_in_usd": 0,
+            "clothing_in_usd": 0,
+            "rent_in_usd": 0,
+            "other_expense_in_usd": 0,
+            "stock_sell_in_usd": 0,
+            "crypto_sell_in_usd": 0,
+            "real_estate_sell_in_usd": 0,
+            "other_investment_sell_in_usd": 0,
+            "stock_buy_in_usd": 0,
+            "crypto_buy_in_usd": 0,
+            "real_estate_buy_in_usd": 0,
+            "other_investment_buy_in_usd": 0,
+            "borrow_in_usd": 0,
+            "receivable_repay_in_usd": 0,
+            "lend_in_usd": 0,
+            "debt_repay_in_usd": 0
+        }
+            
         for currency_v in currencies:
             # Write database code for inflows breakdown
             # First, get inflow-income data from history
@@ -1323,92 +1326,66 @@ def analysis():
 
                 if row['category'] == 'lend':
                     lend[currency_v] = lend[currency_v] + round(float(row['amount']), 2)
-            
-            if currency_v == 'usd':
-                salary_in_usd = salary_in_usd + salary[currency_v]
-                bank_interest_in_usd = bank_interest_in_usd + bank_interest[currency_v]
-                other_income_in_usd = other_income_in_usd + other_income[currency_v]
-                food_in_usd = food_in_usd + food[currency_v]
-                transportation_in_usd = transportation_in_usd + transportation[currency_v]
-                clothing_in_usd = clothing_in_usd + clothing[currency_v]
-                rent_in_usd = rent_in_usd + rent[currency_v]
-                other_expense_in_usd = other_expense_in_usd + other_expense[currency_v]
-                stock_sell_in_usd = stock_sell_in_usd + stock_sell[currency_v]
-                crypto_sell_in_usd = crypto_sell_in_usd + crypto_sell[currency_v]
-                real_estate_sell_in_usd = real_estate_sell_in_usd + real_estate_sell[currency_v]
-                other_investment_sell_in_usd = other_investment_sell_in_usd + other_investment_sell[currency_v]
-                stock_buy_in_usd = stock_buy_in_usd + stock_buy[currency_v]
-                crypto_buy_in_usd = crypto_buy_in_usd + crypto_buy[currency_v]
-                real_estate_buy_in_usd = real_estate_buy_in_usd + real_estate_buy[currency_v]
-                other_investment_buy_in_usd = other_investment_buy_in_usd + other_investment_buy[currency_v]
-                borrow_in_usd = borrow_in_usd + borrow[currency_v]
-                receivable_repay_in_usd = receivable_repay_in_usd + receivable_repay[currency_v]
-                lend_in_usd = lend_in_usd + lend[currency_v]
-                debt_repay_in_usd = debt_repay_in_usd + debt_repay[currency_v]
-            
-            elif currency_v == 'mmk':
-                salary_in_usd = salary_in_usd + round(((1/MMK_EXCHANGE_RATE) * salary[currency_v]), 2)
-                bank_interest_in_usd = bank_interest_in_usd + round(((1/MMK_EXCHANGE_RATE) * bank_interest[currency_v]), 2)
-                other_income_in_usd = other_income_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_income[currency_v]), 2)
-                food_in_usd = food_in_usd + round(((1/MMK_EXCHANGE_RATE) * food[currency_v]), 2)
-                transportation_in_usd = transportation_in_usd + round(((1/MMK_EXCHANGE_RATE) * transportation[currency_v]), 2)
-                clothing_in_usd = clothing_in_usd + round(((1/MMK_EXCHANGE_RATE) * clothing[currency_v]), 2)
-                rent_in_usd = rent_in_usd + round(((1/MMK_EXCHANGE_RATE) * rent[currency_v]), 2)
-                other_expense_in_usd = other_expense_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_expense[currency_v]), 2)
-                stock_sell_in_usd = stock_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * stock_sell[currency_v]), 2)
-                crypto_sell_in_usd = crypto_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * crypto_sell[currency_v]), 2)
-                real_estate_sell_in_usd = real_estate_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * real_estate_sell[currency_v]), 2)
-                other_investment_sell_in_usd = other_investment_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_investment_sell[currency_v]), 2)
-                stock_buy_in_usd = stock_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * stock_buy[currency_v]), 2)
-                crypto_buy_in_usd = crypto_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * crypto_buy[currency_v]), 2)
-                real_estate_buy_in_usd = real_estate_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * real_estate_buy[currency_v]), 2)
-                other_investment_buy_in_usd = other_investment_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_investment_buy[currency_v]), 2)
-                borrow_in_usd = borrow_in_usd + round(((1/MMK_EXCHANGE_RATE) * borrow[currency_v]), 2)
-                receivable_repay_in_usd = receivable_repay_in_usd + round(((1/MMK_EXCHANGE_RATE) * receivable_repay[currency_v]), 2)
-                lend_in_usd = lend_in_usd + round(((1/MMK_EXCHANGE_RATE) * lend[currency_v]), 2)
-                debt_repay_in_usd = debt_repay_in_usd + round(((1/MMK_EXCHANGE_RATE) * debt_repay[currency_v]), 2)
-            
-            else:
-                exchange_rate = forex_rate(currency_v)["rate"]
 
-                salary_in_usd = salary_in_usd + round(((1/exchange_rate) * salary[currency_v]), 2)
-                bank_interest_in_usd = bank_interest_in_usd + round(((1/exchange_rate) * bank_interest[currency_v]), 2)
-                other_income_in_usd = other_income_in_usd + round(((1/exchange_rate) * other_income[currency_v]), 2)
-                food_in_usd = food_in_usd + round(((1/exchange_rate) * food[currency_v]), 2)
-                transportation_in_usd = transportation_in_usd + round(((1/exchange_rate) * transportation[currency_v]), 2)
-                clothing_in_usd = clothing_in_usd + round(((1/exchange_rate) * clothing[currency_v]), 2)
-                rent_in_usd = rent_in_usd + round(((1/exchange_rate) * rent[currency_v]), 2)
-                other_expense_in_usd = other_expense_in_usd + round(((1/exchange_rate) * other_expense[currency_v]), 2)
-                stock_sell_in_usd = stock_sell_in_usd + round(((1/exchange_rate) * stock_sell[currency_v]), 2)
-                crypto_sell_in_usd = crypto_sell_in_usd + round(((1/exchange_rate) * crypto_sell[currency_v]), 2)
-                real_estate_sell_in_usd = real_estate_sell_in_usd + round(((1/exchange_rate) * real_estate_sell[currency_v]), 2)
-                other_investment_sell_in_usd = other_investment_sell_in_usd + round(((1/exchange_rate) * other_investment_sell[currency_v]), 2)
-                stock_buy_in_usd = stock_buy_in_usd + round(((1/exchange_rate) * stock_buy[currency_v]), 2)
-                crypto_buy_in_usd = crypto_buy_in_usd + round(((1/exchange_rate) * crypto_buy[currency_v]), 2)
-                real_estate_buy_in_usd = real_estate_buy_in_usd + round(((1/exchange_rate) * real_estate_buy[currency_v]), 2)
-                other_investment_buy_in_usd = other_investment_buy_in_usd + round(((1/exchange_rate) * other_investment_buy[currency_v]), 2)
-                borrow_in_usd = borrow_in_usd + round(((1/exchange_rate) * borrow[currency_v]), 2)
-                receivable_repay_in_usd = receivable_repay_in_usd + round(((1/exchange_rate) * receivable_repay[currency_v]), 2)
-                lend_in_usd = lend_in_usd + round(((1/exchange_rate) * lend[currency_v]), 2)
-                debt_repay_in_usd = debt_repay_in_usd + round(((1/exchange_rate) * debt_repay[currency_v]), 2)
+            currency_var = {
+                "salary_in_usd": salary[currency_v],
+                "bank_interest_in_usd": bank_interest[currency_v],
+                "other_income_in_usd": other_income[currency_v],
+                "food_in_usd": food[currency_v],
+                "transportation_in_usd": transportation[currency_v],
+                "clothing_in_usd": clothing[currency_v],
+                "rent_in_usd": rent[currency_v],
+                "other_expense_in_usd": other_expense[currency_v],
+                "stock_sell_in_usd": stock_sell[currency_v],
+                "crypto_sell_in_usd": crypto_sell[currency_v],
+                "real_estate_sell_in_usd": real_estate_sell[currency_v],
+                "other_investment_sell_in_usd": other_investment_sell[currency_v],
+                "stock_buy_in_usd": stock_buy[currency_v],
+                "crypto_buy_in_usd": crypto_buy[currency_v],
+                "real_estate_buy_in_usd": real_estate_buy[currency_v],
+                "other_investment_buy_in_usd": other_investment_buy[currency_v],
+                "borrow_in_usd": borrow[currency_v],
+                "receivable_repay_in_usd": receivable_repay[currency_v],
+                "lend_in_usd": lend[currency_v],
+                "debt_repay_in_usd": debt_repay[currency_v]
+            }
+
+            currency_var_sum = sum(currency_var.values())
+
+            if currency_var_sum != 0:
+                if currency_v == 'usd':
+                    for key in currency_var:
+                        usd_var[key] = usd_var[key] + currency_var[key]
+
+                elif currency_v == 'mmk':
+                    for key in currency_var:
+                        usd_var[key] = usd_var[key] + round((1/MMK_EXCHANGE_RATE) * currency_var[key], 2)
+
+                else:
+                    exchange_rate = forex_rate(currency_v)["rate"]
+                    for key in currency_var:
+                        usd_var[key] = usd_var[key] + round((1/exchange_rate) * currency_var[key], 2)
 
         # Update inflow income
-        inflow_income = round((salary_in_usd + bank_interest_in_usd + other_income_in_usd), 2)
+        inflow_income = round((usd_var["salary_in_usd"] + usd_var["bank_interest_in_usd"] + usd_var["other_income_in_usd"]), 2)
 
         # Update outflow expense
-        outflow_expense = round((food_in_usd + transportation_in_usd + clothing_in_usd + rent_in_usd + other_expense_in_usd), 2)
+        outflow_expense = round((usd_var["food_in_usd"] + usd_var["transportation_in_usd"] + usd_var["clothing_in_usd"] + usd_var["rent_in_usd"] \
+            + usd_var["other_expense_in_usd"]), 2)
 
         # Update inflow investment
-        inflow_investment = round((stock_sell_in_usd + crypto_sell_in_usd + real_estate_sell_in_usd + other_investment_sell_in_usd), 2)
+        inflow_investment = round((usd_var["stock_sell_in_usd"] + usd_var["crypto_sell_in_usd"] + usd_var["real_estate_sell_in_usd"] \
+            + usd_var["other_investment_sell_in_usd"]), 2)
 
         # Update outflow investment
-        outflow_investment = round((stock_buy_in_usd + crypto_buy_in_usd + real_estate_buy_in_usd + other_investment_buy_in_usd), 2)
+        outflow_investment = round((usd_var["stock_buy_in_usd"] + usd_var["crypto_buy_in_usd"] + usd_var["real_estate_buy_in_usd"] \
+            + usd_var["other_investment_buy_in_usd"]), 2)
 
         # Update inflow debt
-        inflow_debt = round((borrow_in_usd + receivable_repay_in_usd), 2)
+        inflow_debt = round((usd_var["borrow_in_usd"] + usd_var["receivable_repay_in_usd"]), 2)
 
         # Update outflow debt
-        outflow_debt = round((lend_in_usd + debt_repay_in_usd), 2)
+        outflow_debt = round((usd_var["lend_in_usd"] + usd_var["debt_repay_in_usd"]), 2)
 
         # Update inflows and outflows
         inflows = inflow_income + inflow_investment + inflow_debt
@@ -1423,11 +1400,12 @@ def analysis():
         return render_template("analysis.html", currencies=original_currencies, total_assets=total_assets, investment_total=investment_total, \
             debt_total=debt_total, inflow_income=inflow_income, inflow_investment=inflow_investment, inflow_debt=inflow_debt, outflow_expense=outflow_expense, \
             outflow_investment=outflow_investment, outflow_debt=outflow_debt, inflows=inflows, outflows=outflows, net_balance=net_balance, \
-            salary=salary_in_usd, bank_interest=bank_interest_in_usd, other_income=other_income_in_usd, food=food_in_usd, transportation=transportation_in_usd, \
-            clothing=clothing_in_usd, rent=rent_in_usd, other_expense=other_expense_in_usd, stock_sell=stock_sell_in_usd, crypto_sell=crypto_sell_in_usd, \
-            real_estate_sell=real_estate_sell_in_usd, other_investment_sell=other_investment_sell_in_usd, stock_buy=stock_buy_in_usd, crypto_buy=crypto_buy_in_usd, \
-            real_estate_buy=real_estate_buy_in_usd, other_investment_buy=other_investment_buy_in_usd, borrow=borrow_in_usd, receivable_repay=receivable_repay_in_usd, \
-            lend=lend_in_usd, debt_repay=debt_repay_in_usd)
+            salary=usd_var["salary_in_usd"], bank_interest=usd_var["bank_interest_in_usd"], other_income=usd_var["other_income_in_usd"], food=usd_var["food_in_usd"], \
+            transportation=usd_var["transportation_in_usd"], clothing=usd_var["clothing_in_usd"], rent=usd_var["rent_in_usd"], other_expense=usd_var["other_expense_in_usd"], \
+            stock_sell=usd_var["stock_sell_in_usd"], crypto_sell=usd_var["crypto_sell_in_usd"], real_estate_sell=usd_var["real_estate_sell_in_usd"], \
+            other_investment_sell=usd_var["other_investment_sell_in_usd"], stock_buy=usd_var["stock_buy_in_usd"], crypto_buy=usd_var["crypto_buy_in_usd"], \
+            real_estate_buy=usd_var["real_estate_buy_in_usd"], other_investment_buy=usd_var["other_investment_buy_in_usd"], borrow=usd_var["borrow_in_usd"], \
+            receivable_repay=usd_var["receivable_repay_in_usd"], lend=usd_var["lend_in_usd"], debt_repay=usd_var["debt_repay_in_usd"])
 
 
 @app.route("/history", methods=["GET", "POST"])
@@ -1853,48 +1831,51 @@ def analysis_filter():
     salary = {}
     bank_interest = {}
     other_income = {}
-    salary_in_usd = 0
-    bank_interest_in_usd = 0
-    other_income_in_usd = 0
 
     food = {}
     transportation = {}
     clothing = {}
     rent = {}
     other_expense = {}
-    food_in_usd = 0
-    transportation_in_usd = 0
-    clothing_in_usd = 0
-    rent_in_usd = 0
-    other_expense_in_usd = 0
 
     stock_sell = {}
     crypto_sell = {}
     real_estate_sell = {}
     other_investment_sell = {}
-    stock_sell_in_usd = 0
-    crypto_sell_in_usd = 0
-    real_estate_sell_in_usd = 0
-    other_investment_sell_in_usd = 0
 
     stock_buy = {}
     crypto_buy = {}
     real_estate_buy = {}
     other_investment_buy = {}
-    stock_buy_in_usd = 0
-    crypto_buy_in_usd = 0
-    real_estate_buy_in_usd = 0
-    other_investment_buy_in_usd = 0
 
     borrow = {}
     receivable_repay = {}
-    borrow_in_usd = 0
-    receivable_repay_in_usd = 0
 
     lend = {}
     debt_repay = {}
-    lend_in_usd = 0
-    debt_repay_in_usd = 0
+
+    usd_var = {
+        "salary_in_usd": 0,
+        "bank_interest_in_usd": 0,
+        "other_income_in_usd": 0,
+        "food_in_usd": 0,
+        "transportation_in_usd": 0,
+        "clothing_in_usd": 0,
+        "rent_in_usd": 0,
+        "other_expense_in_usd": 0,
+        "stock_sell_in_usd": 0,
+        "crypto_sell_in_usd": 0,
+        "real_estate_sell_in_usd": 0,
+        "other_investment_sell_in_usd": 0,
+        "stock_buy_in_usd": 0,
+        "crypto_buy_in_usd": 0,
+        "real_estate_buy_in_usd": 0,
+        "other_investment_buy_in_usd": 0,
+        "borrow_in_usd": 0,
+        "receivable_repay_in_usd": 0,
+        "lend_in_usd": 0,
+        "debt_repay_in_usd": 0
+    }
 
     # Write database code for inflows breakdown
     # First, get inflow-income data from history
@@ -2150,92 +2131,66 @@ def analysis_filter():
 
             if row['category'] == 'lend':
                 lend[currency_v] = lend[currency_v] + round(float(row['amount']), 2)
-        
-        if currency_v == 'usd':
-            salary_in_usd = salary_in_usd + salary[currency_v]
-            bank_interest_in_usd = bank_interest_in_usd + bank_interest[currency_v]
-            other_income_in_usd = other_income_in_usd + other_income[currency_v]
-            food_in_usd = food_in_usd + food[currency_v]
-            transportation_in_usd = transportation_in_usd + transportation[currency_v]
-            clothing_in_usd = clothing_in_usd + clothing[currency_v]
-            rent_in_usd = rent_in_usd + rent[currency_v]
-            other_expense_in_usd = other_expense_in_usd + other_expense[currency_v]
-            stock_sell_in_usd = stock_sell_in_usd + stock_sell[currency_v]
-            crypto_sell_in_usd = crypto_sell_in_usd + crypto_sell[currency_v]
-            real_estate_sell_in_usd = real_estate_sell_in_usd + real_estate_sell[currency_v]
-            other_investment_sell_in_usd = other_investment_sell_in_usd + other_investment_sell[currency_v]
-            stock_buy_in_usd = stock_buy_in_usd + stock_buy[currency_v]
-            crypto_buy_in_usd = crypto_buy_in_usd + crypto_buy[currency_v]
-            real_estate_buy_in_usd = real_estate_buy_in_usd + real_estate_buy[currency_v]
-            other_investment_buy_in_usd = other_investment_buy_in_usd + other_investment_buy[currency_v]
-            borrow_in_usd = borrow_in_usd + borrow[currency_v]
-            receivable_repay_in_usd = receivable_repay_in_usd + receivable_repay[currency_v]
-            lend_in_usd = lend_in_usd + lend[currency_v]
-            debt_repay_in_usd = debt_repay_in_usd + debt_repay[currency_v]
-        
-        elif currency_v == 'mmk':
-            salary_in_usd = salary_in_usd + round(((1/MMK_EXCHANGE_RATE) * salary[currency_v]), 2)
-            bank_interest_in_usd = bank_interest_in_usd + round(((1/MMK_EXCHANGE_RATE) * bank_interest[currency_v]), 2)
-            other_income_in_usd = other_income_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_income[currency_v]), 2)
-            food_in_usd = food_in_usd + round(((1/MMK_EXCHANGE_RATE) * food[currency_v]), 2)
-            transportation_in_usd = transportation_in_usd + round(((1/MMK_EXCHANGE_RATE) * transportation[currency_v]), 2)
-            clothing_in_usd = clothing_in_usd + round(((1/MMK_EXCHANGE_RATE) * clothing[currency_v]), 2)
-            rent_in_usd = rent_in_usd + round(((1/MMK_EXCHANGE_RATE) * rent[currency_v]), 2)
-            other_expense_in_usd = other_expense_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_expense[currency_v]), 2)
-            stock_sell_in_usd = stock_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * stock_sell[currency_v]), 2)
-            crypto_sell_in_usd = crypto_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * crypto_sell[currency_v]), 2)
-            real_estate_sell_in_usd = real_estate_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * real_estate_sell[currency_v]), 2)
-            other_investment_sell_in_usd = other_investment_sell_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_investment_sell[currency_v]), 2)
-            stock_buy_in_usd = stock_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * stock_buy[currency_v]), 2)
-            crypto_buy_in_usd = crypto_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * crypto_buy[currency_v]), 2)
-            real_estate_buy_in_usd = real_estate_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * real_estate_buy[currency_v]), 2)
-            other_investment_buy_in_usd = other_investment_buy_in_usd + round(((1/MMK_EXCHANGE_RATE) * other_investment_buy[currency_v]), 2)
-            borrow_in_usd = borrow_in_usd + round(((1/MMK_EXCHANGE_RATE) * borrow[currency_v]), 2)
-            receivable_repay_in_usd = receivable_repay_in_usd + round(((1/MMK_EXCHANGE_RATE) * receivable_repay[currency_v]), 2)
-            lend_in_usd = lend_in_usd + round(((1/MMK_EXCHANGE_RATE) * lend[currency_v]), 2)
-            debt_repay_in_usd = debt_repay_in_usd + round(((1/MMK_EXCHANGE_RATE) * debt_repay[currency_v]), 2)
-        
-        else:
-            exchange_rate = forex_rate(currency_v)["rate"]
 
-            salary_in_usd = salary_in_usd + round(((1/exchange_rate) * salary[currency_v]), 2)
-            bank_interest_in_usd = bank_interest_in_usd + round(((1/exchange_rate) * bank_interest[currency_v]), 2)
-            other_income_in_usd = other_income_in_usd + round(((1/exchange_rate) * other_income[currency_v]), 2)
-            food_in_usd = food_in_usd + round(((1/exchange_rate) * food[currency_v]), 2)
-            transportation_in_usd = transportation_in_usd + round(((1/exchange_rate) * transportation[currency_v]), 2)
-            clothing_in_usd = clothing_in_usd + round(((1/exchange_rate) * clothing[currency_v]), 2)
-            rent_in_usd = rent_in_usd + round(((1/exchange_rate) * rent[currency_v]), 2)
-            other_expense_in_usd = other_expense_in_usd + round(((1/exchange_rate) * other_expense[currency_v]), 2)
-            stock_sell_in_usd = stock_sell_in_usd + round(((1/exchange_rate) * stock_sell[currency_v]), 2)
-            crypto_sell_in_usd = crypto_sell_in_usd + round(((1/exchange_rate) * crypto_sell[currency_v]), 2)
-            real_estate_sell_in_usd = real_estate_sell_in_usd + round(((1/exchange_rate) * real_estate_sell[currency_v]), 2)
-            other_investment_sell_in_usd = other_investment_sell_in_usd + round(((1/exchange_rate) * other_investment_sell[currency_v]), 2)
-            stock_buy_in_usd = stock_buy_in_usd + round(((1/exchange_rate) * stock_buy[currency_v]), 2)
-            crypto_buy_in_usd = crypto_buy_in_usd + round(((1/exchange_rate) * crypto_buy[currency_v]), 2)
-            real_estate_buy_in_usd = real_estate_buy_in_usd + round(((1/exchange_rate) * real_estate_buy[currency_v]), 2)
-            other_investment_buy_in_usd = other_investment_buy_in_usd + round(((1/exchange_rate) * other_investment_buy[currency_v]), 2)
-            borrow_in_usd = borrow_in_usd + round(((1/exchange_rate) * borrow[currency_v]), 2)
-            receivable_repay_in_usd = receivable_repay_in_usd + round(((1/exchange_rate) * receivable_repay[currency_v]), 2)
-            lend_in_usd = lend_in_usd + round(((1/exchange_rate) * lend[currency_v]), 2)
-            debt_repay_in_usd = debt_repay_in_usd + round(((1/exchange_rate) * debt_repay[currency_v]), 2)
+        currency_var = {
+            "salary_in_usd": salary[currency_v],
+            "bank_interest_in_usd": bank_interest[currency_v],
+            "other_income_in_usd": other_income[currency_v],
+            "food_in_usd": food[currency_v],
+            "transportation_in_usd": transportation[currency_v],
+            "clothing_in_usd": clothing[currency_v],
+            "rent_in_usd": rent[currency_v],
+            "other_expense_in_usd": other_expense[currency_v],
+            "stock_sell_in_usd": stock_sell[currency_v],
+            "crypto_sell_in_usd": crypto_sell[currency_v],
+            "real_estate_sell_in_usd": real_estate_sell[currency_v],
+            "other_investment_sell_in_usd": other_investment_sell[currency_v],
+            "stock_buy_in_usd": stock_buy[currency_v],
+            "crypto_buy_in_usd": crypto_buy[currency_v],
+            "real_estate_buy_in_usd": real_estate_buy[currency_v],
+            "other_investment_buy_in_usd": other_investment_buy[currency_v],
+            "borrow_in_usd": borrow[currency_v],
+            "receivable_repay_in_usd": receivable_repay[currency_v],
+            "lend_in_usd": lend[currency_v],
+            "debt_repay_in_usd": debt_repay[currency_v]
+        }
 
+        currency_var_sum = sum(currency_var.values())
+
+        if currency_var_sum != 0:
+            if currency_v == 'usd':
+                for key in currency_var:
+                    usd_var[key] = usd_var[key] + currency_var[key]
+
+            elif currency_v == 'mmk':
+                for key in currency_var:
+                    usd_var[key] = usd_var[key] + round((1/MMK_EXCHANGE_RATE) * currency_var[key], 2)
+
+            else:
+                exchange_rate = forex_rate(currency_v)["rate"]
+                for key in currency_var:
+                    usd_var[key] = usd_var[key] + round((1/exchange_rate) * currency_var[key], 2)
+        
     # Update inflow income
-    inflow_income = round((salary_in_usd + bank_interest_in_usd + other_income_in_usd), 2)
+    inflow_income = round((usd_var["salary_in_usd"] + usd_var["bank_interest_in_usd"] + usd_var["other_income_in_usd"]), 2)
 
     # Update outflow expense
-    outflow_expense = round((food_in_usd + transportation_in_usd + clothing_in_usd + rent_in_usd + other_expense_in_usd), 2)
+    outflow_expense = round((usd_var["food_in_usd"] + usd_var["transportation_in_usd"] + usd_var["clothing_in_usd"] + usd_var["rent_in_usd"] \
+        + usd_var["other_expense_in_usd"]), 2)
 
     # Update inflow investment
-    inflow_investment = round((stock_sell_in_usd + crypto_sell_in_usd + real_estate_sell_in_usd + other_investment_sell_in_usd), 2)
+    inflow_investment = round((usd_var["stock_sell_in_usd"] + usd_var["crypto_sell_in_usd"] + usd_var["real_estate_sell_in_usd"] \
+        + usd_var["other_investment_sell_in_usd"]), 2)
 
     # Update outflow investment
-    outflow_investment = round((stock_buy_in_usd + crypto_buy_in_usd + real_estate_buy_in_usd + other_investment_buy_in_usd), 2)
+    outflow_investment = round((usd_var["stock_buy_in_usd"] + usd_var["crypto_buy_in_usd"] + usd_var["real_estate_buy_in_usd"] \
+        + usd_var["other_investment_buy_in_usd"]), 2)
 
     # Update inflow debt
-    inflow_debt = round((borrow_in_usd + receivable_repay_in_usd), 2)
+    inflow_debt = round((usd_var["borrow_in_usd"] + usd_var["receivable_repay_in_usd"]), 2)
 
     # Update outflow debt
-    outflow_debt = round((lend_in_usd + debt_repay_in_usd), 2)
+    outflow_debt = round((usd_var["lend_in_usd"] + usd_var["debt_repay_in_usd"]), 2)
 
     # Update inflows and outflows
     inflows = inflow_income + inflow_investment + inflow_debt
@@ -2249,6 +2204,27 @@ def analysis_filter():
         investment_total = round(float(investment_total), 2)
         debt_total = round(float(debt_total), 2)
         total_cash_bank = total_cash_bank
+
+        salary = round(float(usd_var["salary_in_usd"]), 2)
+        bank_interest = round(float(usd_var["bank_interest_in_usd"]), 2)
+        other_income = round(float(usd_var["other_income_in_usd"]), 2)
+        food = round(float(usd_var["food_in_usd"]), 2)
+        transportation = round(float(usd_var["transportation_in_usd"]), 2)
+        clothing = round(float(usd_var["clothing_in_usd"]), 2)
+        rent = round(float(usd_var["rent_in_usd"]), 2)
+        other_expense = round(float(usd_var["other_expense_in_usd"]), 2)
+        stock_sell = round(float(usd_var["stock_sell_in_usd"]), 2)
+        crypto_sell = round(float(usd_var["crypto_sell_in_usd"]), 2)
+        real_estate_sell = round(float(usd_var["real_estate_sell_in_usd"]), 2)
+        other_investment_sell = round(float(usd_var["other_investment_sell_in_usd"]), 2)
+        stock_buy = round(float(usd_var["stock_buy_in_usd"]), 2)
+        crypto_buy = round(float(usd_var["crypto_buy_in_usd"]), 2)
+        real_estate_buy = round(float(usd_var["real_estate_buy_in_usd"]), 2)
+        other_investment_buy = round(float(usd_var["other_investment_buy_in_usd"]), 2)
+        borrow = round(float(usd_var["borrow_in_usd"]), 2)
+        receivable_repay = round(float(usd_var["receivable_repay_in_usd"]), 2)
+        lend = round(float(usd_var["lend_in_usd"]), 2)
+        debt_repay = round(float(usd_var["debt_repay_in_usd"]), 2)   
     
     elif selected_currency == 'mmk':
         total_assets = round(MMK_EXCHANGE_RATE * float(total_assets), 2)
@@ -2265,26 +2241,27 @@ def analysis_filter():
         inflows = round(MMK_EXCHANGE_RATE * float(inflows), 2)
         outflows = round(MMK_EXCHANGE_RATE * float(outflows), 2)
         net_balance = round(MMK_EXCHANGE_RATE * float(net_balance), 2)
-        salary = round(MMK_EXCHANGE_RATE * float(salary_in_usd), 2)
-        bank_interest = round(MMK_EXCHANGE_RATE * float(bank_interest_in_usd), 2)
-        other_income = round(MMK_EXCHANGE_RATE * float(other_income_in_usd), 2)
-        food = round(MMK_EXCHANGE_RATE * float(food_in_usd), 2)
-        transportation = round(MMK_EXCHANGE_RATE * float(transportation_in_usd), 2)
-        clothing = round(MMK_EXCHANGE_RATE * float(clothing_in_usd), 2)
-        rent = round(MMK_EXCHANGE_RATE * float(rent_in_usd), 2)
-        other_expense = round(MMK_EXCHANGE_RATE * float(other_expense_in_usd), 2)
-        stock_sell = round(MMK_EXCHANGE_RATE * float(stock_sell_in_usd), 2)
-        crypto_sell = round(MMK_EXCHANGE_RATE * float(crypto_sell_in_usd), 2)
-        real_estate_sell = round(MMK_EXCHANGE_RATE * float(real_estate_sell_in_usd), 2)
-        other_investment_sell = round(MMK_EXCHANGE_RATE * float(other_investment_sell_in_usd), 2)
-        stock_buy = round(MMK_EXCHANGE_RATE * float(stock_buy_in_usd), 2)
-        crypto_buy = round(MMK_EXCHANGE_RATE * float(crypto_buy_in_usd), 2)
-        real_estate_buy = round(MMK_EXCHANGE_RATE * float(real_estate_buy_in_usd), 2)
-        other_investment_buy = round(MMK_EXCHANGE_RATE * float(other_investment_buy_in_usd), 2)
-        borrow = round(MMK_EXCHANGE_RATE * float(borrow_in_usd), 2)
-        receivable_repay = round(MMK_EXCHANGE_RATE * float(receivable_repay_in_usd), 2)
-        lend = round(MMK_EXCHANGE_RATE * float(lend_in_usd), 2)
-        debt_repay = round(MMK_EXCHANGE_RATE * float(debt_repay_in_usd), 2)        
+
+        salary = round(MMK_EXCHANGE_RATE * float(usd_var["salary_in_usd"]), 2)
+        bank_interest = round(MMK_EXCHANGE_RATE * float(usd_var["bank_interest_in_usd"]), 2)
+        other_income = round(MMK_EXCHANGE_RATE * float(usd_var["other_income_in_usd"]), 2)
+        food = round(MMK_EXCHANGE_RATE * float(usd_var["food_in_usd"]), 2)
+        transportation = round(MMK_EXCHANGE_RATE * float(usd_var["transportation_in_usd"]), 2)
+        clothing = round(MMK_EXCHANGE_RATE * float(usd_var["clothing_in_usd"]), 2)
+        rent = round(MMK_EXCHANGE_RATE * float(usd_var["rent_in_usd"]), 2)
+        other_expense = round(MMK_EXCHANGE_RATE * float(usd_var["other_expense_in_usd"]), 2)
+        stock_sell = round(MMK_EXCHANGE_RATE * float(usd_var["stock_sell_in_usd"]), 2)
+        crypto_sell = round(MMK_EXCHANGE_RATE * float(usd_var["crypto_sell_in_usd"]), 2)
+        real_estate_sell = round(MMK_EXCHANGE_RATE * float(usd_var["real_estate_sell_in_usd"]), 2)
+        other_investment_sell = round(MMK_EXCHANGE_RATE * float(usd_var["other_investment_sell_in_usd"]), 2)
+        stock_buy = round(MMK_EXCHANGE_RATE * float(usd_var["stock_buy_in_usd"]), 2)
+        crypto_buy = round(MMK_EXCHANGE_RATE * float(usd_var["crypto_buy_in_usd"]), 2)
+        real_estate_buy = round(MMK_EXCHANGE_RATE * float(usd_var["real_estate_buy_in_usd"]), 2)
+        other_investment_buy = round(MMK_EXCHANGE_RATE * float(usd_var["other_investment_buy_in_usd"]), 2)
+        borrow = round(MMK_EXCHANGE_RATE * float(usd_var["borrow_in_usd"]), 2)
+        receivable_repay = round(MMK_EXCHANGE_RATE * float(usd_var["receivable_repay_in_usd"]), 2)
+        lend = round(MMK_EXCHANGE_RATE * float(usd_var["lend_in_usd"]), 2)
+        debt_repay = round(MMK_EXCHANGE_RATE * float(usd_var["debt_repay_in_usd"]), 2)        
     
     else:
         exchange_rate = forex_rate(selected_currency)["rate"]
@@ -2303,26 +2280,27 @@ def analysis_filter():
         inflows = round(exchange_rate * float(inflows), 2)
         outflows = round(exchange_rate * float(outflows), 2)
         net_balance = round(exchange_rate * float(net_balance), 2)
-        salary = round(exchange_rate * float(salary_in_usd), 2)
-        bank_interest = round(exchange_rate * float(bank_interest_in_usd), 2)
-        other_income = round(exchange_rate * float(other_income_in_usd), 2)
-        food = round(exchange_rate * float(food_in_usd), 2)
-        transportation = round(exchange_rate * float(transportation_in_usd), 2)
-        clothing = round(exchange_rate * float(clothing_in_usd), 2)
-        rent = round(exchange_rate * float(rent_in_usd), 2)
-        other_expense = round(exchange_rate * float(other_expense_in_usd), 2)
-        stock_sell = round(exchange_rate * float(stock_sell_in_usd), 2)
-        crypto_sell = round(exchange_rate * float(crypto_sell_in_usd), 2)
-        real_estate_sell = round(exchange_rate * float(real_estate_sell_in_usd), 2)
-        other_investment_sell = round(exchange_rate * float(other_investment_sell_in_usd), 2)
-        stock_buy = round(exchange_rate * float(stock_buy_in_usd), 2)
-        crypto_buy = round(exchange_rate * float(crypto_buy_in_usd), 2)
-        real_estate_buy = round(exchange_rate * float(real_estate_buy_in_usd), 2)
-        other_investment_buy = round(exchange_rate * float(other_investment_buy_in_usd), 2)
-        borrow = round(exchange_rate * float(borrow_in_usd), 2)
-        receivable_repay = round(exchange_rate * float(receivable_repay_in_usd), 2)
-        lend = round(exchange_rate * float(lend_in_usd), 2)
-        debt_repay = round(exchange_rate * float(debt_repay_in_usd), 2)
+
+        salary = round(exchange_rate * float(usd_var["salary_in_usd"]), 2)
+        bank_interest = round(exchange_rate * float(usd_var["bank_interest_in_usd"]), 2)
+        other_income = round(exchange_rate * float(usd_var["other_income_in_usd"]), 2)
+        food = round(exchange_rate * float(usd_var["food_in_usd"]), 2)
+        transportation = round(exchange_rate * float(usd_var["transportation_in_usd"]), 2)
+        clothing = round(exchange_rate * float(usd_var["clothing_in_usd"]), 2)
+        rent = round(exchange_rate * float(usd_var["rent_in_usd"]), 2)
+        other_expense = round(exchange_rate * float(usd_var["other_expense_in_usd"]), 2)
+        stock_sell = round(exchange_rate * float(usd_var["stock_sell_in_usd"]), 2)
+        crypto_sell = round(exchange_rate * float(usd_var["crypto_sell_in_usd"]), 2)
+        real_estate_sell = round(exchange_rate * float(usd_var["real_estate_sell_in_usd"]), 2)
+        other_investment_sell = round(exchange_rate * float(usd_var["other_investment_sell_in_usd"]), 2)
+        stock_buy = round(exchange_rate * float(usd_var["stock_buy_in_usd"]), 2)
+        crypto_buy = round(exchange_rate * float(usd_var["crypto_buy_in_usd"]), 2)
+        real_estate_buy = round(exchange_rate * float(usd_var["real_estate_buy_in_usd"]), 2)
+        other_investment_buy = round(exchange_rate * float(usd_var["other_investment_buy_in_usd"]), 2)
+        borrow = round(exchange_rate * float(usd_var["borrow_in_usd"]), 2)
+        receivable_repay = round(exchange_rate * float(usd_var["receivable_repay_in_usd"]), 2)
+        lend = round(exchange_rate * float(usd_var["lend_in_usd"]), 2)
+        debt_repay = round(exchange_rate * float(usd_var["debt_repay_in_usd"]), 2)
 
     return jsonify({'inflow_income': inflow_income, 'inflow_investment': inflow_investment, 'inflow_debt': inflow_debt, 'outflow_expense': outflow_expense, \
         'outflow_investment': outflow_investment, 'outflow_debt': outflow_debt, 'inflows': inflows, 'outflows': outflows, 'net_balance': net_balance, \
