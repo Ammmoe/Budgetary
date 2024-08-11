@@ -552,7 +552,7 @@ tr {
     /* background-color: #006400; */
 }
 
-.history-flex-container {
+.history-date-filter-flex-container {
     flex: 0 1 auto;
     display: flex;
     flex-direction: column;
@@ -560,4 +560,21 @@ tr {
     align-items: center;
     padding: 10px 8px 10px 15px;
     width: auto;
+}
+
+.history-keyword-filter-flex-container {
+    flex: 0 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 15px;
+    width: auto;
+}
+
+mark {
+    background: yellow;
+    color: black;
+    padding: 0;
+    border-radius: 2px;
 }
