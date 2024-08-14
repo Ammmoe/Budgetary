@@ -1636,7 +1636,7 @@ def logout():
     session.clear()
 
     # Redirect user to login form
-    return redirect("/")
+    return redirect("/login")
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -1694,6 +1694,7 @@ def register():
     
 
 @app.route("/change-password", methods=["GET", "POST"])
+@login_required
 def change_password():
     # Get registered user data via POST
     if request.method == "POST":
@@ -1744,6 +1745,7 @@ def change_password():
 
 # Convert usd values into other currencies
 @app.route("/convert_currency")
+@login_required
 def convert_currency():
     final_currency = request.args.get('final_currency')
     final_currency = final_currency.upper()
@@ -1765,6 +1767,7 @@ def convert_currency():
 
 # Convert usd values for profits or interests into other currencies
 @app.route("/convert_profit_currency")
+@login_required
 def convert_profit_currency():
     final_currency = request.args.get('final_currency')
     value_in_usd = float(request.args.get('value_in_usd'))
@@ -1785,6 +1788,7 @@ def convert_profit_currency():
 
 # Date filter in analysis page
 @app.route("/analysis_filter")
+@login_required
 def analysis_filter():
     user_id = session.get("user_id")
     start_date = request.args.get("start_date")
@@ -2314,6 +2318,7 @@ def analysis_filter():
 
 # delete repaid debts from database
 @app.route("/delete_debt", methods=["POST"])
+@login_required
 def delete_debt():
     user_id = session.get("user_id")
     data = request.get_json()
@@ -2385,6 +2390,7 @@ def delete_debt():
 
 # delete investments with zero quantity from database
 @app.route("/delete_investment", methods=["POST"])
+@login_required
 def delete_investment():
     user_id = session.get("user_id")
     data = request.get_json()
@@ -2505,6 +2511,7 @@ def delete_investment():
 
 # Currency route
 @app.route("/currency", methods=["GET", "POST"])
+@login_required
 def choose_currency():
     user_id = session.get("user_id")
 

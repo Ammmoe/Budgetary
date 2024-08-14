@@ -38,6 +38,7 @@
     </div>
 </div>
 
+{% if income_spending_rows %}
 <div class="card card-custom mb-4 col-md-12">
     <div class="card-header text-bg-success">Incomes & Expenses</div>
     <div class="card-body table-responsive">
@@ -86,7 +87,9 @@
         </table>
     </div>
 </div>
+{% endif %}
 
+{% if investment_rows %}
 <div class="card card-custom border-dark mb-4 col-md-12">
     <div class="card-header text-bg-warning">Investments</div>
     <div class="card-body table-responsive">
@@ -131,7 +134,9 @@
         </table>
     </div>
 </div>
+{% endif %}
 
+{% if debt_rows %}
 <div class="card card-custom mb-4 col-md-12">
     <div class="card-header text-bg-danger">Debts & Receivables</div>
     <div class="card-body table-responsive">
@@ -186,6 +191,7 @@
         </table>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
