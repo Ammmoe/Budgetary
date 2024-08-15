@@ -10,7 +10,6 @@ from helpers import login_required, stock_lookup, amount_in_usd, crypto_lookup, 
 
 # Configure application
 app = Flask(__name__)
-#cache = Cache(app, config={'CACHE_TYPE': 'redis'})
 
 # Custom filter
 app.jinja_env.filters["profit"] = profit
