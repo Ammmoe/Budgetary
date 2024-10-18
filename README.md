@@ -1,5 +1,5 @@
 # BUDGETARY
-#### Video Demo:  (https://www.youtube.com/watch?v=MQWdp7ki3fs)
+#### Video Demo:  [Budgetary](https://www.youtube.com/watch?v=MQWdp7ki3fs)
 
 ## Description
 **Budgetary** is a web application for managing personal finances across multiple currencies. Users can track their daily budgets in categories like incomes, expenses, investments, and debts, with real-time insights on net worth, financial trends, and detailed logs.
