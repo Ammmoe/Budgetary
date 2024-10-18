@@ -18,6 +18,8 @@
 ### Backend 
 - Flask framework
 
+- SQLite
+
 - Jinja
 
 - AJAX
