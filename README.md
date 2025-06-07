@@ -1,519 +1,693 @@
-# BUDGETARY
-#### Video Demo: <URL [Budgetary](https://www.youtube.com/watch?v=MQWdp7ki3fs)>
-#### Github: <URL [Project Code](https://github.com/Ammmoe/Budgetary.git)>
+# Budgetary
 
-## Description
-**Budgetary** is a web application for managing personal finances across multiple currencies. Users can track their daily budgets in categories like incomes, expenses, investments, and debts, with real-time insights on net worth, financial trends, and detailed logs.
+**Video Demo**: [Watch on YouTube](https://www.youtube.com/watch?v=MQWdp7ki3fs)  
+**GitHub Repository**: [Project Code](https://github.com/Ammmoe/Budgetary.git)
 
-## Technologies
+---
 
-### Frontend
+## 🧾 Description
+
+**Budgetary** is a web application for managing personal finances across multiple currencies. It allows users to track their daily budgets in categories such as income, expenses, investments, and debts. The app provides real-time insights into total net worth, financial trends, and transaction history with interactive visualizations.
+
+---
+
+## 🛠️ Technologies
+
+### 🔸 Frontend
 - HTML, CSS, Bootstrap, JavaScript
+- [Chart.js](https://www.chartjs.org/) – for interactive data visualizations
+- [Mark.js](https://markjs.io/) – for highlighting search keywords
+- AJAX – for asynchronous UI updates
 
-- Chart.js
+### 🔹 Backend
+- Python (Flask framework)
+- SQLite (relational database)
+- Jinja (templating engine)
+- AJAX (for dynamic server interactions)
 
-- Mark.js
+### 🔗 APIs
+- [Frankfurter API](https://www.frankfurter.app/) – real-time foreign exchange rates
+- [Binance API](https://www.binance.com/) – cryptocurrency quotes
+- [Yahoo Finance API](https://finance.yahoo.com/) – stock quotes
 
-- AJAX
+---
 
-### Backend 
-- Flask framework
+## ✨ Features
 
-- SQLite
+1. **User Registration**
+2. **Login**
+3. **Customized Currency Selection**
+4. **Daily Budget Entry**
+5. **Multi-Currency Budget Monitoring**
+6. **Budget Analysis and Visualization**
+7. **Budget History Review**
+8. **Change Password**
+9. **Logout**
 
-- Jinja
-
-- AJAX
-
-### APIs
-- [Frankfurter API](https://www.frankfurter.app/) to get the foreign currency exchange rate in real time.
-
-- [Binance API](https://www.binance.com/) to get the cryptocurrency quotes in real time.
-
-- [Yahoo Finance API](https://finance.yahoo.com/) to get the stock quotes in real time.
-
-## Features
-
-1. User Registration
-
-2. Login
-
-3. Customized Currency Selection
-
-4. Daily Budget Entry
-
-5. Multi-currency Budget Monitoring
-
-6. Budget Analysis and Visualization
-
-7. Budget History Review
-
-8. Changing Password
-
-9. Logout
+---
  
 ### 1. User Registration
 
-- **Route:** 
-`@app.route("/register", methods=["GET", "POST"])` in `app.py`
+- **Route:**  
+  `@app.route("/register", methods=["GET", "POST"])` in `app.py`
 
-- **Templates:** `register.html` and `layout.html` in `templates`
+- **Templates:**  
+  `register.html`, `layout.html` in the `templates/` directory
 
-- **Database:** `users` table in `budgetary.db`
+- **Database:**  
+  `users` table in `budgetary.db`
 
-- **GET Request:** 
-    
-    - Renders the `register.html` template. When rendering, any flash message from the previous session is stored in a variable before clearing session data to ensure the flash message is displayed. 
-    
-    - As the `layout.html` uses the Jinja condition `{% if session["user_id"] %}`, only the `login` and `register` tabs are displayed in the `nav bar` since the `user_id` has not been established yet in the logged-out state.
+#### GET Request
 
-- **POST Request:** 
-    1. Server-Side Validation
-    
-        - Checks if the `username`, `password`, and `password confirmation` fields are submitted.
+- Renders the `register.html` template.
+- Any flash message from the previous session is stored in a variable before clearing session data to ensure it's displayed correctly.
+- Since `session["user_id"]` is not set (user is logged out), only the **Login** and **Register** tabs are shown in the navigation bar, as determined by the condition `{% if session["user_id"] %}` in `layout.html`.
 
-        - Checks if the `password` and `password confirmation` matches.
+#### POST Request
 
-    2. If Validation Passes
-        
-        - The `username` and `hash value of password` (obtained using `generate_password_hash` from the `werkzeug.security` module) are inserted into the `users` table, completing the registration process. 
+1. **Server-Side Validation**
+   - Ensures the `username`, `password`, and `password confirmation` fields are submitted.
+   - Verifies that `password` and `password confirmation` match.
 
-        - Then, the user is redirected to the `/login` route (`login.html`).
+2. **If Validation Passes**
+   - Inserts the `username` and the hashed password (using `generate_password_hash` from `werkzeug.security`) into the `users` table.
+   - Redirects the user to the `/login` route (`login.html`).
 
-    3. If Validation Fails
-        
-        - The user is redirected to the `/register` route (`register.html`) and a flash message is displayed.
+3. **If Validation Fails**
+   - Redirects the user back to the `/register` route (`register.html`).
+   - A flash message is displayed to indicate the error.
 
-### 2. Login
+---
 
-- **Route:** `@app.route("/login", methods=["GET", "POST"])` in `app.py`
+### 2. User Login
 
-- **Templates:** `login.html` and `layout.html` in `templates`
+- **Route:**  
+  `@app.route("/login", methods=["GET", "POST"])` in `app.py`
 
-- **Database:** `users` and `user_currencies` tables in `budgetary.db`
+- **Templates:**  
+  `login.html`, `layout.html` in the `templates/` directory
 
-- **GET Request:** 
+- **Database:**  
+  `users`, `user_currencies` tables in `budgetary.db`
 
-    - Renders the `login.html` template. When rendering, any flash message from the previous session is stored in a variable before clearing session data to ensure the flash message is displayed.
+#### GET Request
 
-    - As the `layout.html` uses the Jinja condition `{% if session["user_id"] %}`, only the `login` and `register` tabs are displayed in the `nav bar` since the `user_id` has not been established yet in the logged-out state.
+- Renders the `login.html` template.
+- Any flash message from the previous session is stored in a variable before clearing session data to ensure it's displayed correctly.
+- Since `session["user_id"]` is not set (user is logged out), only the **Login** and **Register** tabs are shown in the navigation bar.
 
-- **POST Request:** 
-    1. Server-side Validation
-    
-        - Checks if the `username` and `password` fields are submitted.
+#### POST Request
 
-        - Checks if the `username` and `password` matches with the values stored in the `users` table using the `check_password_hash` function from the `werkzeus.security` module.
+1. **Server-Side Validation**
+   - Ensures the `username` and `password` fields are submitted.
+   - Validates the credentials using `check_password_hash` from `werkzeug.security`.
 
-    2. If Validation Passes
-        
-        - `user_id` is stored in `session`. Then, `user_currencies` table is checked to know if the user has selected any `preferred currencies` previously. 
+2. **If Validation Passes**
+   - Stores the user's ID in `session["user_id"]`.
+   - Checks the `user_currencies` table to determine if the user has selected preferred currencies.
+     - If not, redirects to `/currency` (`currency.html`).
+     - If yes, redirects to `/` (`index.html`).
+   - With `session["user_id"]` set (logged-in state), all nav bar items except **Login** and **Register** are shown via the condition `{% if session["user_id"] %}` in `layout.html`.
 
-        - If the user has not selected any `preferred currencies`, the user is redirected to `/currency` route (`currency.html`). 
+3. **If Validation Fails**
+   - Redirects the user back to the `/login` route (`login.html`).
+   - A flash message is displayed to indicate the error.
 
-        - If the user has already selected `preferred currencies`, then the user will be redirected to `/` route (`index.html`). 
-
-        - Since `session["user_id"]` is established in the logged-in state, all the nav bar items except the `login` and `register` tabs are displayed by the Jinja condition `{% if session["user_id"] %}` in `layout.html`.
-        
-    3. If Validation Fails
-        
-        - The user is redirected to `/login` route (`login.html`) and a flash message is displayed.
+---
 
 ### 3. Customized Currency Selection
 
 - **Route:** `@app.route("/currency", methods=["GET", "POST"])` in `app.py`
+- **Templates:** `currency.html`, `layout.html` (in `templates` folder)
+- **Authentication:** Protected with the `login_required` decorator from `helpers.py`
+- **Database Tables:** `currencies`, `user_currencies` (in `budgetary.db`)
 
-- **Templates:** `currency.html` and `layout.html` in `templates`
+- **Author's Note:**  
+  The available currencies are sourced from the [Frankfurter API](https://www.frankfurter.app/), with `MMK (Myanmar Kyat)` manually added to include support for my home currency.
 
-- **Server-Side Login Validation:** `login_required` decorator from `helpers.py`
+#### GET Request
+- Retrieves the list of available currencies from the `currencies` table.
+- Fetches the user's previously selected currencies from the `user_currencies` table.
+- Renders the `currency.html` template, displaying all available currencies in a `<select>` menu with the previously selected ones preselected.
 
-- **Database:** `currencies` and `user_currencies` tables in `budgetary.db`
+#### POST Request
+- Receives the updated currency selection via `request.form.getlist('currency')`.
+- Deletes the user's previously selected currencies from the `user_currencies` table.
+- Inserts the new currency selections for that user into the `user_currencies` table.
 
-- **Author's Note:** The `available currencies` from the `currencies` table are obtained from the `Frankfurter API`. Additionally, `MMK (Myanmar Kyat)` was manually added to the list to include my home currency.
-
-- **GET Request:** Gets the `available currencies` from the `currencies` table and the previously-selected `preferred currencies` from the `user_currencies` table. Renders the `currency.html` template, showing `available currencies` in a `option select` format, with the previously selected `preferred currencies` in the selected state.
-
-- **POST Request:** Gets the newly-selected currencies via `request.form.getlist('currency')`. Delete the previously-selected currencies from the `user_currencies` table and insert the newly-selected currencies to the `user_currencies` table for that `user_id`.
+---
 
 ### 4. Daily Budget Entry
 
 - **Route:** `@app.route("/budgetary", methods=["GET", "POST"])`
+- **Templates:** `budgetary.html`, `layout.html`
+- **Authentication:** Protected with the `login_required` decorator from `helpers.py`
+- **Database Tables:** `user_currencies`, `transactions`, `income`, `spending`, `investment`, `debt`
 
-- **Templates:** `budgetary.html` and `layout.html` in `templates`
+#### `budgetary.html` Template
 
-- **Server-Side Login Validation:** `login_required` decorator from `helpers.py`
+1. **Form Fields Visibility**
+   - All budget category sections (`income`, `expense`, `investment`, `debt & receivable`) are initially hidden using `style="display: none;"`.
+   - When a user selects a category from the dropdown (`#budgetary-type`), the JavaScript function `displayForm(this.value)` is triggered.
+   - This function reveals the corresponding section using:  
+     `document.getElementById(type).style.display = "block";`.
 
-- **Database:** `user_currencies`, `transactions`, `income`, `spending`, `investment`, and `debt` tables
+2. **Date Input Autofill**
+   - The current date is automatically filled using JavaScript functions: `getDate()`, `getMonth()`, and `getFullYear()`.
 
-- **`budgetary.html` Template:** 
-    1. Form Fields Visibility
-    
-        Initially, form fields related to the budget categories `income`, `expense`, `investment`, and `debt & receivable` are hidden using the CSS property `style="display: none;"`. When the user selects a budget category via the selection-menu id `#budgetary-type`, the JavaScript function `onchange="displayForm(this.value)"` is triggered, revealing the hidden blocks of the selected category in the process using the `document.getElementById(type).style.display = "block";` property.
-        
-    2. Date Input Field
-    
-         `The date of the computer's operating system` is obtained using the JavaScript functions `getDate()`, `getMonth()`, and `getFullYear()` to automatically fill the `date` input field.
-         
-    3. Client-Side Validations
-        - Debt & Receivable Category
-        
-            The JavaScript function `enableInterestRate()` disables the `interest rate` field when the user selects `repayment` in `debt & receivable` category to prevent conflict in the database which could occur when the `borrow / lend interest rate` and the `repayment interest rate` are not equal.
-            
-        - Investment Category
+3. **Client-Side Validations**
+   - **Debt & Receivable Category:**  
+     The `enableInterestRate()` function disables the interest rate field when `repayment` is selected, preventing logical conflicts in the database.
+   
+   - **Investment Category:**  
+     The `setInvestmentQuantity()` function sets the `quantity` field to `1` and disables it if `real-estate` or `other-investment` is selected, ensuring accurate data tracking.
 
-            The JavaScript function `setInvestmentQuantity()` automatically sets the `quantity` field to `1` and disables user input if the investment types `real-estate` or `other-investment` are chosen. This is necessary to keep the investment data monitoring correct in the homepage.
+#### GET Request
+- Renders the `budgetary.html` template.
+- Fetches and displays user-selected currencies in the currency selection menu.
 
-- **GET Request:** Renders the `budgetary.html` template. During rendering, the `user-selected currencies` are extracted from the `user_currencies` table and they are rendered in the `currency selection menu` on this page.
+#### POST Request
 
-- **POST Request:** 
-    1. Server-Side Validations
+1. **Server-Side Validations**
+   - **General Validations:**
+     - Ensures the `date` field is provided.
+     - Validates dropdown values against allowed options.
+     - If `other-income`, `other-spending`, or `other-investment` is selected, the `comment` field is required.
+     - Otherwise, all required fields for the selected category must be submitted (except `comment`).
+     - Fields like `quantity`, `interest rate`, and `amount` are validated using `isinstance()` and must be non-zero positive values.
 
-        - General Validations
+   - **Investment Category:**
+     - If a `stock symbol` or `cryptocurrency symbol` is entered, it is validated using:
+       - `stock_lookup(symbol)` for stocks via Yahoo Finance API
+       - `crypto_lookup(symbol)` for crypto via Binance API
 
-            Check if the `date` field is submitted. Check if the submitted values of the dropdown lists are among the valid options. 
-            
-            If the `other-income`, `other-spending`, and `other-investment` values are selected, `comment` field must be submitted. Otherwise, all relevant input fields for the chosen budget category except the `comment` field must be submitted. 
-            
-            For validations which expect numerical values such as `quantity`, `interest rate`, and `amount` fields, the `isinstance()` function is used to ensure if the user actually inputs a numerical value. Moreover, they must also be `non-zero positive values`. 
-        
-        - Investment Category
-        
-            If the user inputs the `stock symbol` or `cryptocurrency symbol`, the server checks the `stock symbol` with the `Yahoo Finance API` and the `cryptocurrency symbol` with the `Binance API` to ensure the symbol actually exists using the `stock_lookup(symbol)` and `crypto_lookup(symbol)` functions from `helpers.py`. 
-            
-        - Debt & Receivable Category
+   - **Debt & Receivable Category:**
+     - Each `borrow` or `lend` entry must use a unique `debtor_or_creditor` string to track individual debts.
+     - For `repayment`, the name must already exist in the database.
+     - The `repayment amount` must be equal to or less than the total debt (`original amount + interest`).
 
-            Only one unique string is accepted as `debtor_or_creditor` for each borrow or lend process. This is necessary to keep track of each `debt` or `receivable` without any further complication. If `repayment` is chosen, the `debtor_or_creditor` must already exists in the database. 
+2. **Database Updates**
+   - Valid data is inserted into both the relevant category table (`income`, `spending`, `investment`, or `debt`) and the `transactions` table.
+   - Normally, each POST inserts one record into each table.
+   - **Special Case — Repayment:**
+     - Two updates each are made to the `debt` and `transactions` tables:
+       1. Record the repaid amount.
+       2. Record the remaining debt (if the repayment is partial).
+     - This ensures accurate tracking for repayments less than 100%.
 
-            For `repayment`, the `payment amount` must be equal to or lower than the `total debt amount`, which is equal to `original amount + interest rate`.      
-
-    2. Updating Database
-    
-        If the validation passes, the submitted data in each `budget category` is inserted into its respective tables in the `budgetary.db` database. Generally, a `category` table (income, spending, investment, or debt) and the `transactions` table are updated one time each for one POST request.
-
-        However, for `repayment` in `debt & receivable` category, there are two times the `debt` and `transactions` tables are required to be updated each for one POST request. The `first time` is for inserting the `repaid amount` into the database and the `second time` is for inserting the `remaining amount` into the database. This step is necessary to ensure the `repayment` process works for `less than 100% repayment amounts`.
+---
 
 ### 5. Multi-currency Budget Monitoring
 
-- **Routes in `app.py`:** 
-    
-    - `@app.route("/", methods=["GET", "POST"])`
+- **Routes in `app.py`:**  
+  - `@app.route("/", methods=["GET", "POST"])`  
+  - `@app.route("/convert_currency")`  
+  - `@app.route("/convert_profit_currency")`  
+  - `@app.route("/delete_investment", methods=["POST"])`  
+  - `@app.route("/delete_debt", methods=["POST"])`  
 
-    - `@app.route("/convert_currency")`
+- **Templates:**  
+  - `index.html`  
+  - `layout.html` (in `templates` folder)  
 
-    - `@app.route("/convert_profit_currency")`
+- **Server-Side Login Validation:**  
+  - `login_required` decorator from `helpers.py`  
 
-    - `@app.route("/delete_investment", methods=["POST"])`
+- **Database Tables:**  
+  - `user_currencies`  
+  - `transactions`  
+  - `income`  
+  - `spending`  
+  - `investment`  
+  - `debt`  
 
-    - `@app.route("/delete_debt", methods=["POST"])`
+---
 
-- **Templates:** `index.html` and `layout.html` in `templates`
+#### `index.html` Template Overview
 
-- **Server-Side Login Validation:** `login_required` decorator from `helpers.py`
+1. **Layout:**  
+   - The homepage features **4 information cards** displaying:  
+     - Total net worth  
+     - Cash & bank deposits  
+     - Investments  
+     - Debts & receivables  
+   - The **Investments** and **Debts & Receivables** cards are conditionally rendered only if relevant data exists, using Jinja conditions:  
+     ```jinja
+     {% if investment_rows %} ... {% endif %}
+     {% if debt_rows %} ... {% endif %}
+     ```  
 
-- **Database:** `user_currencies`, `transactions`, `income`, `spending`, `investment`, and `debt` tables
+2. **Currency Conversion Functions (AJAX - GET requests):**  
+   - There are **4 AJAX functions** for currency conversion:  
+     - `convertCashCurrency()`  
+     - `convertInvestmentCurrency()`  
+     - `convertDebtCurrency()`  
+     - `convertAssetCurrency()`  
+   - Each function sends `currency` and `amount` parameters to server-side routes:  
+     - `/convert_currency`  
+     - `/convert_profit_currency`  
+   - Server uses the `forex_rate()` function (from `helpers.py`) to perform conversion and returns formatted values as JSON.  
+   - This enables seamless client-side currency conversion **without page refresh**.  
 
-- **`index.html` Template:** 
-    
-    1. Layout
+3. **Deleting Investment Rows (AJAX - POST request):**  
+   - Investments with `quantity == 0` display a **delete button** on their row, controlled by Jinja:  
+     ```jinja
+     {% if row['quantity'] == 0 %} ... {% endif %}
+     ```  
+   - Clicking the delete button triggers the JavaScript function `deleteInvestment(event)`.  
+   - This function sends either the `symbol` (for stock and cryptocurrency investments) or `comment` (for real estate and other investment types) to the server via a POST request to `/delete_investment`.  
+   - **POST method** is used because this action modifies data on the server (deletion).  
+   - On the server:  
+     - Relevant rows in the `investment` table are fetched and deleted.  
+     - If the deleted record corresponds to a **selling investment**, a replacement record is inserted into the `income` table.  
+     - If it is a **buying investment**, a replacement is inserted into the `spending` table.  
+     - Transaction IDs of the deleted rows are reassigned accordingly.  
+   - After successful deletion and replacement, the server responds with JSON `{ "status": "success" }`.  
+   - Upon receiving this success status, the client-side JavaScript reloads the page:  
+     ```js
+     window.location.reload();
+     ```  
 
-        - There are `4 information cards` in `homepage`, which shows `total net worth`, `cash & bank deposits`, `investments`, and `debts & receivables`.
+4. **Deleting Debt Rows (AJAX request using POST)**
 
-        - The `investments` and `debts & receivables` cards are only shown if there is any relevant information for these sessions using the Jinja code `{% if investment_rows %}` and `{% if debt_rows %}`. 
-
-    2. Convert Currency Functions (AJAX request using GET)
-
-        - There are `4 Asynchronous JavaScript (AJAX) functions` for converting currency, which are `convertCashCurrency()`, `convertInvestmentCurrency()`, `convertDebtCurrency()`, and `convertAssetCurrency()`. 
-
-        - Each function sends the `currency` and `amount` to server side using `AJAX fetch request using GET` through the routes `@app.route("/convert_currency")` and `@app.route("/convert_profit_currency")`.
-        
-        - Both routes convert the currencies using the `forex_rate()` function from helpers.py and then returns the formatted string values in `JSON` format back to the client side, which then successfully converts the currency without having to refresh the page.
-
-    3. Deleting Investment Rows (AJAX request using POST)
-
-        - It is beneficial in having a delete button for investment records with `0` quantity, which have less value in existing than to be deleted.
-
-        - For investments, if the `quantity` of an investment is already `0`, a `delete button` appears on the specific row of the `investments card` using Jinja condition `{% if row['quantity'] == 0 %}`. If the `delete button` is clicked, the JavaScript function is triggered using `onclick=deleteInvestment(event)` property.
-
-        - Then, the `deleteInvestment()` function sends the `symbol` (if `stock` and `cryptocurrency` types) and `comment` (if `real-estate` and `other-investment` types) to the server side using `AJAX fetch request using POST` throught the route `@app.route("/delete_investment", methods=["POST"])`.
-
-        - Note: POST method is used here because the request includes data deletion from the server, which is not displayed in the front end of the web app.
-
-        - At the server side, the `delete_investment()` function then stores the relevant rows from the `investment` table in a variable.
-
-        - The relevant rows in the `investment` table are deleted. If the deleted row is about `selling investment`, then the replacement row is inserted to the `income` table, and if it is about `buying investment`, then replacement row is inserted to the `spending` table, re-assigning the `transaction_ids` of the deleted rows.
-
-        - Upon successful deletion and re-assignment, a `JSON` file with the `status: success` is returned to the client side. Upon receiving the `status: success`, the JavaScript function reloads the page using the code `window.location.reload();`.
-
-    4. Deleting Debt Rows (AJAX request using POST)
-    
-        - It is beneficial in having a delete button for fully-repaid debt records, which have less value in existing than to be deleted.
-
-        - For debts & receivables, if the specific debt is `fully repaid`, a `delete button` appears on the specific row of the `debts & receivables card` using Jinja condition `{% if row['amount'] == 0 %}`. If the `delete button` is clicked, the JavaScript function is triggered using `onclick=deleteDebt(event)` property.
-
-        - Then, the `deleteDebt()` function sends the string information of the `debtor_or_creditor` to the server side using `AJAX fetch request using POST` through the route `@app.route("/delete_debt", methods=["POST"])`.
-
-        - Note 1: POST method is used here because the request includes data deletion from the server, which is not displayed in the front end of the web app.
-
-        - At the server side, the `delete_debt()` function then stores the relevant rows from the `debt` table in a variable. Also, using the `repay_check(debtor_or_creditor)` function of `helpers.py`, the `very first debt_category` and the `very first transaction_id` are obtained and stored inside a variable each.
-
-        - Note 2: Remember that the database was updated two times for `repayment` in `/budgetary` route, one time for the `paid amount` and one time for the `remaining amount`. If the `very first debt_category` is `borrow` and there is a `partial repayment`, the `remaining amount` will be inserted to the table with the same `debt_category: borrow`. Therefore, if we were to re-assign all `transaction_ids` from the `deleted rows` into the `income` table, the data will be inflated because of this `repaid amount`. Therefore, for all `debt_categories` other than `repayment`, only the `very first transaction_id` will be re-assigned to the `income` or `spending` table.
-
-        - The relevant rows in the `debt` table are deleted. If the deleted row's `debt_category` is `borrow` or `lend` and the `transaction_id` is not equal to the `very first transaction_id`, the row from `transactions` table with the same `transactions.id` is deleted. If the deleted row's `debt_category` is `borrow` and the `transaction_id` is equal to the `very first transaction_id`, the replacement row is inserted to the `income` table, and else if is the case for `lend`, the replacement row is inserted to the `spending` table. If the deleted row's `debt_category` is `repayment` and the `very first debt_category` is `lend`, the replacement row is inserted to the `income` table, and else if the `very first debt_category` is `borrow`, then the replacement row is inserted to the `spending` table.
-
-        - Upon successful deletion and re-assignment, a `JSON` file with the `status: success` is returned to the client side. Upon receiving the `status: success`, the JavaScript function reloads the page using the code `window.location.reload();`.
+   - A **delete button** is provided for fully repaid debt records, as these have less value in the database and can be safely removed.  
+   
+   - For debts & receivables, if a debt is **fully repaid** (`amount == 0`), the delete button appears on that specific row within the debts & receivables card, controlled by the Jinja condition:  
+     ```jinja
+     {% if row['amount'] == 0 %} ... {% endif %}
+     ```  
+   - Clicking the delete button triggers the JavaScript function `deleteDebt(event)`.  
+   
+   - The `deleteDebt()` function sends the `debtor_or_creditor` string to the server via an AJAX POST request to the route:  
+     ```python
+     @app.route("/delete_debt", methods=["POST"])
+     ```  
+   
+   - **Note 1:** POST method is used because this operation modifies server-side data (deletion), which is not reflected directly on the frontend without a reload.  
+   
+   - On the server side, the `delete_debt()` function:  
+     - Retrieves relevant rows from the `debt` table into a variable.  
+     - Uses the helper function `repay_check(debtor_or_creditor)` (from `helpers.py`) to obtain and store:  
+       - The **very first debt_category**  
+       - The **very first transaction_id**  
+   
+   - **Note 2:**  
+     The database updates twice for each repayment in the `/budgetary` route—once for the paid amount and once for the remaining amount.  
+     - If the **very first debt_category** is `borrow` and a partial repayment exists, the remaining amount is recorded with the same debt_category (`borrow`).  
+     - Therefore, reassigning *all* deleted transaction IDs into the `income` table would inflate the data due to this partial repayment.  
+     - To avoid this, only the **very first transaction_id** is reassigned to either the `income` or `spending` table for all debt_categories other than `repayment`.  
+   
+   - The deletion and reassignment logic:  
+     - Deletes relevant rows from the `debt` table.  
+     - If the deleted row's `debt_category` is `borrow` or `lend` and its `transaction_id` **is not equal** to the very first transaction ID, the corresponding row in the `transactions` table (matching `transactions.id`) is also deleted.  
+     - If the deleted row's `debt_category` is `borrow` and its `transaction_id` **equals** the very first transaction ID, a replacement row is inserted into the `income` table.  
+     - If the deleted row's `debt_category` is `lend` and its `transaction_id` equals the very first transaction ID, a replacement row is inserted into the `spending` table.  
+     - If the deleted row's `debt_category` is `repayment`:  
+       - And the very first debt_category is `lend`, a replacement row is inserted into the `income` table.  
+       - Otherwise, if the very first debt_category is `borrow`, a replacement row is inserted into the `spending` table.  
+   
+   - Upon successful deletion and reassignment, the server responds with JSON:  
+     ```json
+     { "status": "success" }
+     ```  
+   - The client-side JavaScript listens for this response and reloads the page upon success:  
+     ```js
+     window.location.reload();
+     ```
 
 - **GET Request:** 
 
-    1. Getting User Currencies
-    
-        - Note: When calculating the budgets, we cannot just use the `user-selected currencies` in the `user_currencies` table. If the user has used another currency before and then they change their `user_currencies`, the data for that another currency will be sitting around with the same `user_id`, waiting for a potential error to emerge when calculating a large sum of data. Therefore, we cannot ignore the `previously-used currencies` for that `user_id`. 
+    1. **Getting User Currencies**
 
-        - Get the `user-selected currencies` from the `user_currencies` table in a variable, and also get the `previously-used currencies` from the `transactions` table for the same `user_id` in another variable. Then, add the `previously-used currencies` to the `user-selected currencies` so that we can start the calculation with no accuracy error.
+        - **Note:** When calculating budgets, relying solely on the `user-selected currencies` stored in the `user_currencies` table is insufficient. If a user previously used a currency but later changes their selections, data for those previously used currencies still exist under the same `user_id` in the database. Ignoring them risks accuracy errors during calculations.
 
-        - Later in the `/` route, if each `previously-used currency` has an existing amount of `cash` or `bank deposit`, then this currency is added to the `user_currencies` table.
+        - To avoid this, retrieve both:
+          - The `user-selected currencies` from the `user_currencies` table, and
+          - The `previously-used currencies` from the `transactions` table for the same `user_id`.
 
-    2. Cash & Bank Deposits Calculation
+        - Combine these two sets of currencies so calculations include all relevant currencies without accuracy issues.
 
-        - Loop through each currency in `user-selected currencies`.
+        - Later in the `/` route, if any previously used currency has a non-zero amount in `cash` or `bank deposit`, add that currency to the `user_currencies` table to keep the data consistent.
 
-        - For each currency, get the total amount for `cash` and `bank transfer` categories separately from `income`, `spending`, and `transactions` tables.
+    2. **Cash & Bank Deposits Calculation**
 
-        - Also get the total amount for `cash` and `bank transfer` categories separately for `investment: buy` and `investment: sell` types from `investment` and `transactions` tables.
+        - Loop through each currency in the combined `user-selected currencies`.
 
-        - Finally, the `debt_rows` database query extracts rows from the `debt` table with the `first row` and all `repayment rows` of `each debtor_or_creditor` for accurate data calculation as explained in the `Note 2` of the sub-title `4. Deleting Debt Rows`. Then the total amount for `cash` and `bank transfer` categories are obtained separately for `borrow`, `lend`, `borrow repay`, and `lend repay` types from `debt` and `transactions` tables.
+        - For each currency, separately obtain totals for `cash` and `bank transfer` categories from the `income`, `spending`, and `transactions` tables.
 
-        - Then the existing `cash` and `bank deposits` for the `looping currency` are obtained by adding `income`, `investment: sell`, `borrow`, and `lend repay` categories, and subtracting `spending`, `investment: buy`, `lend`, and `borrow repay` categories.
+        - Similarly, get totals for `cash` and `bank transfer` categories under `investment: buy` and `investment: sell` from the `investment` and `transactions` tables.
 
-        - After that, the `cash` and `bank deposits` values for the `looping currency` is converted to `USD` for total amount calculation.
+        - Retrieve relevant `debt_rows` from the `debt` table (including the first row and all repayment rows for each `debtor_or_creditor`) as explained in *Note 2* of the section **4. Deleting Debt Rows**. For these, separately total amounts for `cash` and `bank transfer` under the categories `borrow`, `lend`, `borrow repay`, and `lend repay` from the `debt` and `transactions` tables.
 
-        - When all `user-selected currencies` are looped through, the total `cash` and `bank deposits` of the user is stored accurately in the `USD` format.
+        - Calculate existing `cash` and `bank deposits` for the current currency by summing:
+          - `income`, `investment: sell`, `borrow`, and `lend repay`
+          - Then subtracting `spending`, `investment: buy`, `lend`, and `borrow repay`
 
-        - The `cash` and `bank deposits` information of `each currency` and the `total amount in USD` are rendered in the `cash & bank deposits` information card of the homepage.
+        - Convert these `cash` and `bank deposits` values to `USD` for consistent total amount calculation.
 
-    3. Investments Calculation
+        - After processing all currencies, store the user's total `cash` and `bank deposits` in USD.
 
-        - Note: We calculated `cash & bank deposits` previously. If we want to calculate the `total net worth`, however, the existing amount of `cash & bank deposits` is not the correct answer because the `investments` that you possess also worth a value and it should be added in order to get the `total net worth`. 
+        - Render the cash & bank deposits information per currency and the total amount in USD on the homepage’s corresponding information card.
 
-        - Firstly, we get the `investment_rows` of the `user_id` with their quantities and amounts already summed up for each investment item. Then we loop through each row (each investment item). 
+    3. **Investments Calculation**
 
-        - If the `investment_type` is `stock`, the `original value` of the stock that the user bought is obtained from the `amount_in_usd` column of the `looping row`. Then, we get `current stock price` of that specific stock symbol from the `Yahoo API` using the function `stock_lookup(symbol)`. Subsequently, we can get the `market value` of the user's stock by multiplying `current stock price` with the `quantity`. For profit / loss, the value is calculated by subtracting `amount_in_usd` from the `market value`.
+        - **Note:** Previously, `cash & bank deposits` were calculated, but to determine the `total net worth` accurately, the value of investments must be included.
 
-        - If the `investment_type` is `cryptocurrency`, the `original value` of the cryptocurrency that the user bought is obtained from the `amount_in_usd` column of the `looping row`. Then, we get `current cryptocurrency price` of that specific crypto symbol from the `Binance API` using the function `crypto_lookup(symbol)`. Subsequently, we can get the `market value` of the user's cryptocurrency by multiplying `current cryptocurrency price` with the `quantity`. For `profit / loss`, the value is calculated by subtracting `amount_in_usd` from the `market value`.
+        - Retrieve the user's `investment_rows`, where quantities and amounts are already aggregated per investment item.
 
-        - If the `investment_type` is `real-estate` or `other-investment`, we cannot know the `market value` of each investment item. Therefore, if the investment item is not sold yet (`quantity: 1`), then the `market value` is set as the `original value` and the `profit / loss` is `0`. If the investment item is sold, (`quantity: 0`), then the `market value` is set as `0` and the `profit / loss` is `sold value - buy value`, which is already calculated in the database query (`investment_rows`).
+        - Loop through each investment row:
 
-        - Then, each `investment_row` with `market value` and `profit / loss` values are rendered in the `investments` information card of the homepage. Note that the investment values that we work with in this session are all in `USD` so we can just add them directly for `total_investment` calculation.
+            - For **stocks**:
+              - Use the `amount_in_usd` as the original purchase value.
+              - Obtain the current stock price via the `Yahoo API` using `stock_lookup(symbol)`.
+              - Calculate the current market value as `current price × quantity`.
+              - Profit/loss = `market value - amount_in_usd`.
 
-    4. Debts & Receivables Calculation
+            - For **cryptocurrencies**:
+              - Use the `amount_in_usd` as the original purchase value.
+              - Obtain current crypto price via the `Binance API` using `crypto_lookup(symbol)`.
+              - Calculate current market value as `current price × quantity`.
+              - Profit/loss = `market value - amount_in_usd`.
 
-        - Note 1: So far, we have already calculated `cash & bank deposits` and `investments`. However, in order to get the user's `total net worth` accurately, we need to add `receivables` and subtract `debts` into our equations.
+            - For **real estate** or **other investments**:
+              - Market values cannot be fetched dynamically.
+              - If the item is not sold (`quantity = 1`), market value = original value, profit/loss = 0.
+              - If sold (`quantity = 0`), market value = 0, profit/loss is the sold value minus the purchase value (already pre-calculated in the database).
 
-        - Firstly, `debt_rows` are extracted from the `debt` table. These `debt_rows` only contain the `last-inserted rows` for each `debtor_or_creditor`. 
+        - Render each investment item with its market value and profit/loss in the homepage's investments card.
 
-        - Note 2: If there are no `repayment rows` for a unique `debtor_or_creditor`, then `the very first row` is used for calculating `interest` so the result is correct. Even if there are `repayment rows`, since we only extract the `last-inserted row`, the `interest` calculation would still be correct because the `last-inserted row` is the row with the information of `remaining debt amount` (Remember we have to insert twice for `repayment` category - see `Note 2` of the sub-title `4. Deleting Debt Rows`).
+        - All investment values are in USD, enabling straightforward aggregation for `total_investment`.
 
-        - To work with the extracted data, we start by looping each of the `debt_rows`. For each row, we can get the `original debt amount` and the `monthly interest rate` from the relevant columns. Then, we calculate how many days have passed between `today` and the `transaction date` using the function `days_difference(past_date_str)` from `helper.py`. Then, the `original debt amount`, `monthly interest rate` and the number of `months: days_diff / 30` is used to calculate the `interest` in its `original currency`. For `total_interest` calculation, the `interest` is also converted to `USD`. Finally, the `final debt amount` is calculated by the equation `final debt = original debt amount + interest`. The `final_debt` is also converted to `USD` for `total_debt` calculation. 
+    4. **Debts & Receivables Calculation**
 
-        - Then, each of the `debt_rows` with the `interest` and `final debt` are rendered in the `debts & receivables` information card along with the values of `total_interest` and `total_debt`.
+        - **Note 1:** To calculate the user's `total net worth` precisely, add receivables and subtract debts in addition to cash, bank deposits, and investments.
+
+        - Retrieve `debt_rows` from the `debt` table, selecting only the last inserted row for each unique `debtor_or_creditor`.
+
+        - **Note 2:** If no repayment rows exist for a debtor/creditor, the very first debt row is used for interest calculations to maintain accuracy. If repayment rows do exist, using the last inserted row still provides correct interest information, as it reflects the remaining debt (refer to *Note 2* in section **4. Deleting Debt Rows**).
+
+        - Loop through each `debt_row` to:
+
+            - Extract the original debt amount and monthly interest rate.
+            - Calculate the days passed since the transaction date with `days_difference(past_date_str)` from `helpers.py`.
+            - Compute the interest in the original currency using the formula:
+              
+              ```
+              interest = original_debt_amount × monthly_interest_rate × (days_diff / 30)
+              ```
+
+            - Convert the interest to USD for the total interest calculation.
+            - Calculate the final debt amount as:
+              
+              ```
+              final_debt = original_debt_amount + interest
+              ```
+
+            - Convert the final debt to USD for total debt aggregation.
+
+        - Render each debt row with its calculated interest and final debt on the homepage’s debts & receivables card, along with total interest and total debt values.
+
+---
 
 ### 6. Budget Analysis and Visualization
 
-- **Routes in `app.py`:** 
-    
-    - `@app.route("/analysis", methods=["GET", "POST"])`
+- **Routes in `app.py`:**  
+  - `@app.route("/analysis", methods=["GET", "POST"])`  
+  - `@app.route("/analysis_filter")`
 
-    - `@app.route("/analysis_filter")`
+- **Templates:**  
+  - `analysis.html`  
+  - `layout.html` (in `templates`)
 
-- **Templates:** `analysis.html` and `layout.html` in `templates`
+- **Server-Side Login Validation:**  
+  - Uses the `login_required` decorator from `helpers.py`
 
-- **Server-Side Login Validation:** `login_required` decorator from `helpers.py`
+- **Database Tables:**  
+  - `user_currencies`  
+  - `transactions`  
+  - `income`  
+  - `spending`  
+  - `investment`  
+  - `debt`
 
-- **Database:** `user_currencies`, `transactions`, `income`, `spending`, `investment`, and `debt` tables
+- **`analysis.html` Template Details:**
 
-- **`analysis.html` Template:** 
-    
-    1. Layout
+  1. **Layout**  
+     - Contains 4 cards:  
+       - `Total Net Worth Breakdown`  
+       - `Inflows vs Outflows Analysis`  
+       - `Inflows Breakdown`  
+       - `Outflows Breakdown`  
+     - Each card includes a `<canvas>` element for dynamic chart rendering.
 
-        - There are `4` cards, namely, `total net worth breakdown`, `inflows vs outflows analysis`, `inflows breakdown`, and `outflows breakdown`, each containing a canvas to dynamically draw a chart upon.
+  2. **Chart Creation Using Chart.js**  
+     - Chart.js library is included via:  
+       ```html
+       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+       ```  
+     - Data sets are extracted from HTML elements and converted from strings to numbers using:  
+       ```js
+       Number(document.getElementById('#id-name').innerText)
+       ```  
+     - Labels and background colors are hard-coded per chart.  
+     - Chart types:  
+       - Doughnut chart:  
+         ```js
+         new Chart('#canvas-id', { type: 'doughnut', ... })
+         ```  
+       - Bar chart:  
+         ```js
+         type: 'bar'
+         ```  
+       - Stacked bar chart configuration:  
+         ```js
+         x: { stacked: true },  
+         y: { stacked: true }
+         ```  
+       - Horizontal bar chart uses:  
+         ```js
+         options: { indexAxis: 'y' }
+         ```
 
-    2. Creating Charts Using Chart.js Library
+  3. **Hiding Data Labels with Zero Values**  
+     - Some data labels in `inflows vs outflows analysis`, `inflows breakdown`, and `outflows breakdown` may be zero.  
+     - To improve chart clarity, zero-value labels are hidden using the function:  
+       ```js
+       hideElementByClass('checkZero')
+       ```  
+     - Structure:  
+       - Each data label has a `checkZero` class.  
+       - Its parent container has a `parentElement` class.  
+     - The function loops through `.checkZero` elements, parses their text content, and if the value is zero, sets the parent element’s display to `none`.
 
-        - The source file link for the Chart.js library `<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>` is included at the start of the JavaScript.
+  4. **Updating Charts via Filtering (AJAX GET Request)**  
+     - The `Inflows vs Outflows Analysis` card includes filter inputs: `start date`, `end date`, and `currency`.  
+     - On clicking the filter button, the AJAX function `analysisFilter()` is triggered.  
+     - This function sends the filter inputs and the `total net worth breakdown` data to the server through the `/analysis_filter` GET route.  
+     - The server responds with a JSON payload containing updated data for all charts.  
+     - The client parses this JSON and updates the corresponding label values in the HTML.  
+     - Chart datasets are replaced with updated data, and each chart is refreshed via `chartName.update();`.  
+     - After chart updates, zero-value labels are again hidden by calling `hideElementByClass('checkZero');`.  
+     - The element with ID `#formatted-net-balance` has its CSS class updated based on its value to reflect:  
+       - Greenish background for positive values  
+       - Reddish background for negative values  
+       - Greyish background for zero  
+       This is handled by the function:  
+       ```js
+       updateNetBalanceDisplay(data.net_balance, selectedCurrency);
+       ```  
+     - Finally, all numeric data values are formatted to show 2 decimal places with comma separators, adjusted for the selected currency, via:  
+       ```js
+       updateCurrencyDisplay(selectedCurrency);
+       ```
 
-        - The required `datasets` for the chart are acquired from the `HTML` page and are changed from `string` to `numeric` values using the script `Number(document.getElementById('#id-name').innerText)`. The `labels` and the `backgroundColor` are then hard-coded for each chart.
+- **GET Request:**  
 
-        - To specify the type of chart, we can use the syntax `new Chart(#canvas-id, { type: 'doughnut', ...` for `doughnut chart`, and `type: 'bar'` for `bar chart`. In order to create a `stacked bar chart`, we can use the syntax `x: { stacked: true, ... }, y: { stacked: true, ... }`. For a `horizontal bar chart`, the syntax is `options: { indexAxis: 'y', ... `. 
+  1. **`/analysis` Route**  
 
-    3. Hiding Data Labels with `0` Value
+     - **Purpose:**  
+       This route calculates the necessary values used in the charts on the analysis page.  
 
-        - There are numerous `data labels` that can be `0` value in the charts `inflows vs outflows analysis`, `inflows breakdown`, and `outflows breakdown`. Therefore, we need to hide the `data labels` with the `0` value so that the user can view the chart with minimal nuances.
+     - **Investments Calculation:**  
+       Investment values are computed using the same logic as described in  
+       *5. Multi-Currency Budget Monitoring > GET Request > 3. Investments Calculation*.  
 
-        - In order to do that, the JavaScript function `hideElementByClass('checkZero')` is used. In each of the `<div>` tag of `label` items, there is a class of `parentElement`, and in each `data value`, there is a class of `checkZero`. 
+     - **Debts & Receivables Calculation:**  
+       Calculated following the method outlined in  
+       *5. Multi-Currency Budget Monitoring > GET Request > 4. Debts & Receivables Calculation*.  
 
-        - The `hideElementByClass('checkZero')` function effectively loops through the `checkZero` classes if each have any `0` value by using the script function `parseFloat(element.textContent.trim());`. If a `0` value is found, then the closest `parentElement` is set to be hidden by the script function `parentElement.style.display = 'none';`.
+     - **Inflows & Outflows Calculation:**  
+       The calculation here differs from the `/` route (`index.html`). The `/` route focuses on cash and bank deposits by currency for precise budget monitoring.  
+       In contrast, the `/analysis` route centers on the `type` of each budget category in SQLite queries, as `type-amount` relationships are essential for budget analysis.  
 
-    4. Updating Charts by Filtering with Date and Currency Values (AJAX request using GET)
+       - The process begins by looping through each user currency as explained in  
+         *5. Multi-Currency Budget Monitoring > GET Request > 1. Getting User Currencies*.  
+       - For each currency, the amounts associated with each `type` in the `income`, `spending`, `investment`, and `debt` tables are queried. For detailed understanding, refer to the database queries in  
+         *5. Multi-Currency Budget Monitoring > GET Request > ...*.  
+       - All calculated values are stored in a dictionary named `currency_var`. This dictionary helps reduce API calls in the `/analysis` route.  
+       - The sum of values in `currency_var` (`currency_var_sum`) is computed. If this sum is `0`, the foreign exchange API call is skipped for that currency to reduce load time, especially when many currencies have zero values.  
+       - Values are converted to USD to unify currency units for chart display.  
+         - If the currency is `MMK`, a manual exchange rate `MMK_EXCHANGE_RATE` is applied.  
+         - For other currencies (excluding USD), the exchange rate is fetched using `forex_rate(currency_v)["rate"]` via the Yahoo API.  
+       - Financial components for inflows and outflows are then calculated, enabling computation of `net_balance = inflows - outflows` and `total_assets` (aka total net worth).  
+       - Finally, the route renders the page, providing all required data for chart generation and label values.
 
-        - In the `inflows vs outflows analysis` card, there is a filter input, that accepts the values of `start date`, `end date`, and `currency`. When the `filter` button is clicked, the AJAX function `analysisFilter()` is called.
+  2. **`/analysis_filter` Route**  
 
-        - Then, the function sends the filter inputs (`start date`, `end date`, `currency`), and the `data` from the `total net worth breakdown` table to the server via the route `/analysis_filter` using GET request.
+     - **Purpose:**  
+       This route handles AJAX GET requests from the `analysisFilter()` JavaScript function when the user applies filters for `start date`, `end date`, and `currency` and clicks the filter button.  
+       Client data is accessed via `request.args.get("key")`.  
 
-        - The server then responds with a `JSON` file containing the `data` for all charts in the page. The `analysisFilter()` function then parse the `JSON` file and replace the `label data values` in the `HTML` page with the updated values.
+     - **Calculations:**  
+       - The calculation steps closely follow those in the `/analysis` route.  
+       - However, the `total net worth` is **not recalculated**, since it was already obtained during the initial GET request. The data for the `total net worth breakdown` chart is reused from the client side, avoiding redundant computations for investments and debts & receivables.  
+       - Because filtering by date is required, an additional `WHERE` clause is dynamically added to the database queries.  
+         - If both `start date` and `end date` are provided, the clause becomes:  
+           ```sql
+           transactions.transaction_date BETWEEN ? AND ?
+           ```
+           to restrict data to the requested period.  
+         - Otherwise, the `WHERE` clause remains empty to include all data for the user.  
+       - The selected currency filter is applied by converting all calculated USD values back to the user-selected currency:  
+         - `MMK` uses `MMK_EXCHANGE_RATE`.  
+         - Other currencies use `forex_rate(selected_currency)["rate"]` from the Yahoo API.  
+       - Finally, the filtered and currency-converted data is returned as JSON to the client, where the browser updates the charts and label data accordingly.
 
-        - After updating the `label data values`, all the charts are updated by replacing the `existing chart datasets` with the updated ones and calling the function `chartName.update();`.
-
-        - After updating the charts, the `labels` with `0` values are set to be hidden by calling the function `hideElementByClass('checkZero');`. 
-        
-        - Then the `CSS` class of the id `#formatted-net-balance` is updated based on its value to show a `greenish` background if positive, a `reddish` background if negative, and a `greyish` background if equals to `0` by call the script function `updateNetBalanceDisplay(data.net_balance, selectedCurrency);`. 
-
-        - Finally, all `data` values are formatted to show `2` decimal places in a comma-separated string with the `currency` the user selected using the script function `updateCurrencyDisplay(selectedCurrency);`. 
-
-- **GET Request:** 
-
-    1. `/analysis` Route
-
-        - Note: This route is used to calculate necessary values to be used in the charts of the analysis page.
-
-        - Investments Calculation
-            
-            Investment values are calculated using the same codes as explained at `5. Multi-Currency Budget Monitoring > GET Request > 3. Investments Calculation` in this document.
-
-        - Debts & Receivables Calculation
-
-            Debts & Receivables are calculated using the same codes as explained at `5. Multi-Currency Budget Monitoring > GET Request > 4. Debts & Receivables Calculation` in this document.
-
-        - Inflows & Outflows Calculation
-
-            The calculation procedure used here is a bit different from the one used in the `/` route (`index.html`). The reason is that in the `/` route, we want to focus on `cash` and `bank deposits` information of each `currency` separately for accurate budget monitoring. 
-            
-            However, for the `/analysis` route, we focus on the `type` of each `budget category` in our `SQLite` queries since the `type - amount` relations are crucial for budget analysis.
-
-            First, we loop through each currency using the method explained in the `5. Multi-Currency Budget Monitoring > GET Request > 1. Getting User Currencies` in this document.
-
-            Then, we query the `amount` in the `looping currency` associated with each `type` of the `income`, `spending`, `investment`, and `debt` tables. For difficulty understanding the `database queries`, it is advised to read through the session `5. Multi-Currency Budget Monitoring > GET Request > ..`. 
-
-            After that, all the calculated values are assigned inside a newly-created `dictionary` variable called `currency_var`. This variable is specially created with the sole purpose of `reducing the number of API calls` in the `/analysis` route. In the next line of code, we can see the new variable `currency_var_sum = sum(currency_var.values())` that calculates the sum of all calculated values for the `looping currency`. If that `currency_var_sum` is equal to `0`, we will not call API to know the foreign exchange rate of this `looping currency`, effectively reducing the loading time if the user selected so many currencies with `0` used values.
-
-            Next, all the calculated values are converted into `USD` since we require the same unit of currency to be displayed together in one chart. If the `looping currency` is `MMK`, then the manual foreign exchange rate of `MMK_EXCHANGE_RATE` is used. If it is a currency other than `USD` or `MMK`, then the function `forex_rate(currency_v)["rate"]` that uses `Yahoo API` is used to know the exchange rate.
-
-            Then, all the necessary components of financial `inflows` and `outflows` are calculated, thereby, allowing to calculate the `net_balance = inflows - outflows` and the `total_assets` aka `total net worth` as well. 
-
-            Finally, the page is rendered by providing all necessary data of components to be used in creating the `charts` and `label data`. 
-
-    2. `/analysis_filter` route
-
-        - The route is used to process the fetch request from the `AJAX` function `analysisFilter()` when the user enters the `start date`, `end date`, and `currency` information and then click the `filter` button. We can get the information sent from the client side using the function `request.args.get("key")`.
-
-        - Calculations
-
-            All the calculation steps are almost the same as the ones used in the `/analysis` route. However, we will not re-calculate the `total net worth` as it has already been calculated with the `GET request`. For updating the `total net worth breakdown` chart, we will reuse the data for this chart sent from the client side, skipping the calculations steps of `6. Budget Analysis and Visualization > GET Request > 1. Analysis Route > Investments Calculations` and `... > 1. Analysis Route > Debts & Receivables Calculations`.
-            
-            The other difference is that since we are filtering data by `date`, an additional `WHERE clause` is added to each database query.
-
-            If there is user input for `start date` and `end date`, the `WHERE clause` is updated to `transactions.transaction_date BETWEEN ? AND ?`, effectively filtering data in the requested period. Else, the `WHERE clause` is just set as an `empty string` so all the existing data for that `user_id` will be extracted.
-
-            Since the `filter` also includes `currency` as an input, at the end of the calculations, all calculated values in `USD` will required to be converted to the `user-selected currency` using the exchange rate `MMK_EXCHANGE_RATE` for `MMK`, and the `forex_rate(selected_currency)["rate"]` function that uses `Yahoo API` for currencies other than `USD`. 
-
-            Finally, all the filtered and currency-converted values are returned as a `JSON` file to the client side, where the browser effectively renders the updated `charts` and `label data` for the user's specific request.
+---
 
 ### 7. Budget History Review
 
-- **Route:** `@app.route("/history", methods=["GET", "POST"])` in `app.py`
+- **Route:**  
+  `@app.route("/history", methods=["GET", "POST"])` in `app.py`
 
-- **Templates:** `history.html` and `layout.html` in `templates`
+- **Templates:**  
+  `history.html` and `layout.html` (located in `templates` folder)
 
-- **Server-Side Login Validation:** `login_required` decorator from `helpers.py`
+- **Server-Side Login Validation:**  
+  Uses the `login_required` decorator from `helpers.py`
 
-- **Database:** `transactions`, `income`, `spending`, `investment`, and `debt` tables
+- **Database Tables:**  
+  `transactions`, `income`, `spending`, `investment`, and `debt`
 
-- **`history.html` Template:** 
+- **`history.html` Template:**  
 
-    1. Layout
+  1. **Layout:**  
+     - Contains **3 information cards** displaying historical logs for:  
+       - `Incomes & Expenses`  
+       - `Investments`  
+       - `Debts & Receivables`  
+     - Each card is conditionally displayed only if there is relevant data, using Jinja: 
+       ```jinja
+       {% if income_spending_rows %}
+       {% if investment_rows %}
+       {% if debt_rows %}
+       ```
 
-        - There are `3 information cards` in `history.html`, which shows all the historical logs of `incomes & expenses`, `investments`, and `debts & receivables`.
+  2. **Searching and Highlighting Keywords with Mark.js:**  
+     - Mark.js library is included via CDN in `layout.html` header:  
+       ```html
+       <script src="https://cdn.jsdelivr.net/npm/mark.js/dist/mark.min.js"></script>
+       ```  
+     - The search input with id `searchKeyword` listens for user input:  
+       ```js
+       document.getElementById('searchKeyword').addEventListener('input', function() { ... });
+       ```  
+     - Search is case-insensitive by converting input and table row text content to lowercase.  
+     - Each table row is processed:  
+       - Previous highlights are cleared with `.unmark()` before applying new highlights.  
+       - If a row contains the keyword, it is shown (`row.style.display = '';`) and matching text is highlighted using Mark.js:  
+         ```js
+         instance.mark(filter, ...);
+         ```  
+       - Rows without matches are hidden (`row.style.display = 'none';`).
 
-        - The `incomes & expenses`, `investments` and `debts & receivables` cards are only shown if there is any relevant information for these sessions using the Jinja code `{% if income_spending_rows %}`, `{% if investment_rows %}` and `{% if debt_rows %}`. 
+- **GET Request:**  
 
-    2. Searching and Highlighting Keywords Using Mark.js Library
+  - Data extraction queries:  
+    - `income_spending_query` retrieves combined data from `income` and `spending` tables.  
+    - `investment_query` retrieves data from `investment` table (excluding the `comment` column for `stock` and `cryptocurrency` types; instead, the `symbol` column is selected).  
+    - `debt_query` retrieves data from `debt` table.  
 
-        - The source file link for the Mark.js library `<script src="https://cdn.jsdelivr.net/npm/mark.js/dist/mark.min.js"></script>` is included at the head session of `layout.html`.
+  - In `debt_query`, if the category is `repay`, the function `repay_check(debtor_or_creditor)` (from `helpers.py`) clarifies whether it is a `borrow repay` or `lend repay`.  
+    - This classification controls the text color in HTML:  
+      - `lend repay` → green text  
+      - `borrow repay` → red text  
 
-        - Each individual input to the id `searchKeyword` is listened using the script syntax `document.getElementById('searchKeyword').addEventListener('input', function() { ...`. Then, the input letters are converted to lowercase in order to search without case sensitivity. 
+  - Extracted rows are passed to `history.html` and rendered inside the 3 respective information cards.
 
-        - Each table row is looped through and the text content of each row is also converted to lowercase using the script function `row.textContent.toLowerCase();`. Then, a `mark instance` is added to the `looping row` to get ready for highlighting using the `Mark.js` syntax `new Mark(row);`. 
+- **POST Request:**  
 
-        - Note: It is important to `unmark` any previous highlight before `highlighting` new letters.
+  - Triggered when the user filters history by `start date` and `end date`.  
+  - Query logic mirrors the GET request with the addition of a date filter:  
+    ```sql
+    WHERE transactions.transaction_date BETWEEN ? AND ?
+    ```  
+  - If either `start date` or `end date` is missing, the filter is ignored and unfiltered data is returned.  
+  - Debt categories with `repay` are processed as in the GET request for display clarity.  
+  - Filtered data is rendered in `history.html` within the same 3 information cards.
 
-        - If the row contains the `Keyword`, the row is displayed using the syntax `row.style.display = '';`. The letters in the table row that matches with the `Keyword` are also highlighted using the syntax `instance.mark(filter, ...`. 
-
-        - If the row does not contain the `Keyword`, then the row is hidden using the syntax `row.style.display = 'none';`.
-
-- **GET Request:** 
-
-    - The data from the `income` and `spending` tables are both extracted using the same `SQLite` query named `income_spending_query`. Then, the data from the `investment` and `debt` tables are extracted separately using the `investment_query` and `debt_query`. All information of the user is extracted from the database except for the `investment_query`, which left out the `comment` category for `stock` and `cryptocurrency` types, for which the `symbol` column is extracted instead of `comment` column.
-
-    - In the `debt_query` rows, if the debt category is `repay`, then the category is processed to explicitly mention if it is `borrow repay` or `lend repay` using the function `repay_check(debtor_or_creditor)` from `helpers.py`. The idea behind this clarification is change the color of the text content to `green` if it is `lend repay` and to `red` if it is `borrow repay` when being displayed in `HTML` page.
-
-    - All the extracted rows are fed to the `history.html`, where all the rows are rendered in `3` separate information cards.
-
-- **POST Request:**
-
-    - This request is processed when the user wants to filter `history` data by date by inputting `start date` and `end date` information and submitting to server.
-
-    - The data query process is the same as that of `GET Request` with the exception that the `WHERE clause` of the queries contains the date filtering part `WHERE transactions.transaction_date BETWEEN ? AND ?`. However, if the user does not fully provide `start date` and `end date`, the `WHERE clause` will not contain date filtering part, causing the query to `return unfiltered information` of that user.
-
-    - Then the debt category of `repay` is further processed as mentioned in the `GET Request`. 
-
-    - All the extracted rows are fed to the `history.html`, rendering all information in `3` separate information cards.
+---
 
 ### 8. Changing Password
 
-- **Route:** `@app.route("/change-password", methods=["GET", "POST"])` in `app.py`
+- **Route:**  
+  `@app.route("/change-password", methods=["GET", "POST"])` in `app.py`
 
-- **Templates:** `change-password.html` and `layout.html` in `templates`
+- **Templates:**  
+  `change-password.html` and `layout.html` (located in `templates` folder)
 
-- **Server-Side Login Validation:** `login_required` decorator from `helpers.py`
+- **Server-Side Login Validation:**  
+  Uses the `login_required` decorator from `helpers.py`
 
-- **Database:** `users` table in `budgetary.db`
+- **Database:**  
+  `users` table in `budgetary.db`
 
-- **GET Request:** 
+- **GET Request:**  
+  - Renders the `change-password.html` template.
 
-    - Renders the `change-password.html` template.
+- **POST Request:**  
 
-- **POST Request:** 
+  1. **Server-side Validation:**  
+     - Verifies that the fields `old password`, `new password`, and `confirmation` are submitted.  
+     - Checks if `new password` and `confirmation` match.  
+     - Validates the `old password` against the stored hash in the `users` table using `check_password_hash` from the `werkzeug.security` module.
 
-    1. Server-side Validation
-    
-        - Checks if the `old password`, `new password`, and `confirmation` fields are submitted.
+  2. **If Validation Passes:**  
+     - Updates the user’s password hash in the `users` table with the hash of the `new password`, generated via `generate_password_hash` from `werkzeug.security`.  
+     - Redirects the user back to the `/change-password` route.  
+     - Displays a flash message notifying the user that the password was successfully changed.
 
-        - Checks if the `new password` and `confirmation` inputs are the same.
+  3. **If Validation Fails:**  
+     - Redirects the user back to the `/change-password` route.  
+     - Displays a flash message with the appropriate error message.
 
-        - Checks if the hash value of the `old password` using the `check_password_hash` function from the `werkzeus.security` module matches with the hash stored in the `users` table.
-
-    2. If Validation Passes
-        
-        - The `hash` value in `users` table for that `user_id` is changed to the `hash` value of the `new password` using the `generate_password_hash` function from the `werkzeus.security` module.
-
-        - Then, the user is redirected to the `/change-password` route and a flash message is displayed to notify the user of the successful password change.
-        
-    3. If Validation Fails
-        
-        - The user is redirected to the `/change-password` route and a flash message mentioning the error message is displayed.
+---
 
 ### 9. Logout
 
-- **Route:** `@app.route("/logout")` in `app.py`
+- **Route:**  
+  `@app.route("/logout")` in `app.py`
 
-- **Templates:** `layout.html` in `templates`
+- **Templates:**  
+  `layout.html` (located in `templates` folder)
 
-- **GET Request:** 
+- **GET Request:**  
+  - Logs the user out by clearing the session.  
+  - Redirects the user to the `/login` page.
 
-    - Logs the user out by clearing the session and redirecting the user to the `/login` page.
+---
 
 ## Copyrights and Credits
 
-- Web Application Name: **BUDGETARY** suggested by [ChatGPT](https://www.openai.com/chatgpt).
+- **Web Application Name:**  
+  **BUDGETARY** (suggested by [ChatGPT](https://www.openai.com/chatgpt)).
 
-- [Background Image](https://th.pngtree.com/freebackground/cartoon-internet-business-finance-poster-background_1071853.html?sol=downref&id=bef) created by `588ku - pngtree`.
+- **Background Image:**  
+  Created by `588ku - pngtree`.  
+  Source: [Cartoon Internet Business Finance Poster Background](https://th.pngtree.com/freebackground/cartoon-internet-business-finance-poster-background_1071853.html?sol=downref&id=bef)
 
-- [Budget Icon](https://www.flaticon.com/free-icons/budget) created by `Freepik - Flaticon`.
+- **Budget Icon:**  
+  Created by `Freepik - Flaticon`.  
+  Source: [Budget Icons on Flaticon](https://www.flaticon.com/free-icons/budget)
+
+---
