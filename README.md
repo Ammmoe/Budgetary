@@ -1,7 +1,6 @@
 # Budgetary
 
 **Video Demo**: [Watch on YouTube](https://www.youtube.com/watch?v=MQWdp7ki3fs)  
-**GitHub Repository**: [Project Code](https://github.com/Ammmoe/Budgetary.git)
 
 ---
 
