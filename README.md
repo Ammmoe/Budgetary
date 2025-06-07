@@ -221,8 +221,6 @@
   - `investment`  
   - `debt`  
 
----
-
 #### `index.html` Template Overview
 
 1. **Layout:**  
@@ -689,5 +687,3 @@
 - **Budget Icon:**  
   Created by `Freepik - Flaticon`.  
   Source: [Budget Icons on Flaticon](https://www.flaticon.com/free-icons/budget)
-
----
